@@ -1,0 +1,102 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6883299602288689217
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 180448554496246160}
+  - component: {fileID: 8806126682909041088}
+  - component: {fileID: 2829035038442123993}
+  - component: {fileID: 4375013823933456979}
+  m_Layer: 0
+  m_Name: HoopsManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 1206586993520771344, guid: 0000000000000000d000000000000000, type: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &180448554496246160
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6883299602288689217}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 4.766, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8806126682909041088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6883299602288689217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d88c78ac64664d4dabec81c3872ae7c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  raycastDistance: 100
+  raycastLayerMask:
+    serializedVersion: 2
+    m_Bits: 51
+  grabMode: 1
+  gameplayCamera: {fileID: 0}
+  grabInput: 0
+  isGrabbingEnabled: 1
+  isLockingEnabled: 1
+  allowMiddleClickRotationToggle: 1
+  scrollSensitivity: 0.5
+  isFrozen: 0
+  rotationMode: 0
+  rotationSensitivity: 2
+  holdDistanceOrigin: 0
+  holdOrigin: {fileID: 0}
+--- !u!114 &2829035038442123993
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6883299602288689217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e11d61b3ddeded946a39df9857eb199b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  raycastDistance: 5
+  detectionLayerMask:
+    serializedVersion: 2
+    m_Bits: 51
+  rayMode: 1
+  gameplayCamera: {fileID: 0}
+--- !u!114 &4375013823933456979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6883299602288689217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55667c35ef974b10bc6b04d4a60e9cfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  roundSeconds: 75
+  targetScore: 10
+  startOnAwake: 1
+  onlyOneActiveHoop: 1
+  hoops: []
+  returnToSceneOnFinish: 1
+  returnSceneName: Sc_ArcadeExterior
+  returnDelaySeconds: 2
