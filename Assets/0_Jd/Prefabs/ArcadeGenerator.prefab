@@ -10,8 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4287167353705245171}
   - component: {fileID: 852708876000545695}
-  - component: {fileID: 3600283586878959140}
-  - component: {fileID: 9120527071998061170}
   m_Layer: 0
   m_Name: ArcadeGenerator
   m_TagString: Untagged
@@ -27,7 +25,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7800716905011068172}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -51,7 +49,7 @@ MonoBehaviour:
   - {fileID: 6010777708736884214, guid: 32101f2dd7f54a249b93f8d3848f38d0, type: 3}
   - {fileID: 6010777708736884214, guid: a1282c3190860874f9cecf5e4045bfe1, type: 3}
   - {fileID: 6010777708736884214, guid: 2ae12825fbb1926499e5c23534865ffd, type: 3}
-  firstRoomPrefab: {fileID: 6010777708736884214, guid: 48195415f5b3c8a49ab8e1ad3af7f408, type: 3}
+  firstRoomPrefab: {fileID: 6010777708736884214, guid: 914f32a7979e05e4897d034009a196c3, type: 3}
   lastRoomPrefab: {fileID: 6010777708736884214, guid: 0f5018403b2937142ab78ba25df95dfd, type: 3}
   specialRoomPlacementMode: 1
   roomPrefab: {fileID: 6010777708736884214, guid: a5bd50f1af7e01f458024c3501159b76, type: 3}
@@ -63,49 +61,3 @@ MonoBehaviour:
   openEndOuterWall: 0
   endOuterWallDirection: 0
   respawnPlayerAtStartOnRegenerate: 1
---- !u!114 &3600283586878959140
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7800716905011068172}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0d88c78ac64664d4dabec81c3872ae7c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  raycastDistance: 30
-  raycastLayerMask:
-    serializedVersion: 2
-    m_Bits: 51
-  grabMode: 1
-  gameplayCamera: {fileID: 0}
-  grabInput: 0
-  isGrabbingEnabled: 1
-  isLockingEnabled: 1
-  allowMiddleClickRotationToggle: 1
-  scrollSensitivity: 0.5
-  isFrozen: 0
-  rotationMode: 0
-  rotationSensitivity: 2
-  holdDistanceOrigin: 0
-  holdOrigin: {fileID: 0}
---- !u!114 &9120527071998061170
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7800716905011068172}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e11d61b3ddeded946a39df9857eb199b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  raycastDistance: 30
-  detectionLayerMask:
-    serializedVersion: 2
-    m_Bits: 51
-  rayMode: 1
-  gameplayCamera: {fileID: 0}

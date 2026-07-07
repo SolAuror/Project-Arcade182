@@ -269,7 +269,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b25debf1c2134a31ab66ea8111a56691, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  destinationSceneName: Assets/Shared/Scenes/Sc_ArcadeExterior.unity
+  destinationSceneName: Assets/Sc_ArcadeHub.unity
   exitEnabled: 1
   interactDistance: 10
   interactLayerMask:
