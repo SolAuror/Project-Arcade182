@@ -1112,6 +1112,9 @@ MonoBehaviour:
   roundShots: 10
   startOnAwake: 1
   scoreMultiplierStep: 1
+  minigameId: AtomSmasher
+  ticketsPerPoint: 0.1
+  scoreCarrier: {fileID: 0}
   replayOnClear: 1
   shuffleTargetsOnClear: 1
   shuffleArea:
@@ -1243,12 +1246,11 @@ MonoBehaviour:
   quantumTriggerClip: {fileID: 0}
   waveClearClip: {fileID: 0}
   failedRoundClip: {fileID: 0}
-  targetHitParticles: {fileID: 0}
-  quantumTriggerParticles: {fileID: 0}
-  waveClearParticles: {fileID: 0}
-  failedRoundParticles: {fileID: 0}
+  targetHitParticles: {fileID: 7841571211897169815, guid: 55b4de00fffbf234784599b2b04c010b, type: 3}
+  quantumTriggerParticles: {fileID: 8783303807928443398, guid: fb754a1a81372b642a39764d2322572c, type: 3}
+  waveClearParticles: {fileID: 8652939274824759392, guid: 32beacf47a918014ba64076d20d429e7, type: 3}
+  failedRoundParticles: {fileID: 4211273257269878984, guid: f023d574115394149bde8d13f1633351, type: 3}
   feedbackOrigin: {fileID: 0}
-  useDefaultParticleFallbacks: 1
   defaultParticleLifetime: 1.75
   returnToSceneOnFinish: 1
   returnSceneName: Sc_ArcadeHub

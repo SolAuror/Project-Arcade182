@@ -382,6 +382,10 @@ GameObject:
   - component: {fileID: 8295282825389362197}
   - component: {fileID: 8861423841737197292}
   - component: {fileID: 910000000000510001}
+  - component: {fileID: 1903267933512592173}
+  - component: {fileID: 5640285837265940570}
+  - component: {fileID: 3853517124589700457}
+  - component: {fileID: 1128125214611891113}
   m_Layer: 3
   m_Name: SharedPlayerController
   m_TagString: Player
@@ -471,6 +475,7 @@ MonoBehaviour:
   topDownMovementSpeedMultiplier: 1
   topDownTurnSpeedMultiplier: 1
   cameraMode: 0
+  fixedSideOnPlaneZ: 0
   randomizeCameraModeOnStart: 0
   walkSpeed: 5
   sprintSpeed: 8
@@ -486,6 +491,90 @@ MonoBehaviour:
   groundCheckDistance: 0.08
   groundCheckRadiusScale: 0.802
   groundedVerticalSpeed: -2
+--- !u!114 &910000000000510001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4684500389704870999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f5e1b403f6a4792a4826d8c7c2b1851, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultTicketsPerPoint: 0.1
+--- !u!114 &1903267933512592173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4684500389704870999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e586f9f4e11b47243b2608008133581f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  faction: 0
+  allowFriendlyFire: 0
+  onDamaged:
+    m_PersistentCalls:
+      m_Calls: []
+  onDied:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &5640285837265940570
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4684500389704870999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe584ac9b740cc4439876c368c836377, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxMana: 100
+  regenPerSecond: 8
+  startFull: 1
+--- !u!114 &3853517124589700457
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4684500389704870999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8101dc8d66e7344aae46f46ec853eef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  slots:
+  - definition: {fileID: 11400000, guid: dc830ce8af87c6f44bdda218b65715e6, type: 2}
+    unlockedAtStart: 1
+  - definition: {fileID: 11400000, guid: df05d3b1092695f46898e1cea950727e, type: 2}
+    unlockedAtStart: 0
+  - definition: {fileID: 11400000, guid: a505e139ecfd9fd4e90286764e20c58c, type: 2}
+    unlockedAtStart: 0
+--- !u!114 &1128125214611891113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4684500389704870999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 327d4cf9d5f862442adcf33806f62698, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameplayCamera: {fileID: 0}
+  hitMask:
+    serializedVersion: 2
+    m_Bits: 4294967283
 --- !u!1 &4840945122254801468
 GameObject:
   m_ObjectHideFlags: 0
@@ -1489,16 +1578,3 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   CustomBlends: {fileID: 0}
---- !u!114 &910000000000510001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4684500389704870999}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9f5e1b403f6a4792a4826d8c7c2b1851, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  defaultTicketsPerPoint: 0.1

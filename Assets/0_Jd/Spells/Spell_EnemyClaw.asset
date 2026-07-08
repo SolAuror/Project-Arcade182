@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3a26156fc8c5c14d8de2e84bbee8861, type: 3}
+  m_Name: Spell_EnemyClaw
+  m_EditorClassIdentifier: 
+  displayName: Claw
+  icon: {fileID: 0}
+  baseDamage: 10
+  manaCost: 0
+  cooldownSeconds: 1
+  range: 2.5
+  beamColor: {r: 0.4, g: 0.9, b: 1, a: 1}
+  beamWidth: 0.05
+  beamLifeSeconds: 0.08

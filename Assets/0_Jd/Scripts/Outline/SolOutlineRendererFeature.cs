@@ -59,7 +59,7 @@ namespace Sol.Outline
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             if (_maskMaterial == null || _fullscreenMaterial == null) return;
-            if (s_activeOutlines.Count == 0) return;
+            if (!AnyOutlineWillDraw()) return;
 
             _compositePass.maxOutlineWidth = settings.maxOutlineWidth;
             s_maxOutlineWidth = settings.maxOutlineWidth;
@@ -72,6 +72,20 @@ namespace Sol.Outline
         {
             CoreUtils.Destroy(_maskMaterial);
             CoreUtils.Destroy(_fullscreenMaterial);
+        }
+
+        // Registered components may all be inactive (nothing hovered, no
+        // always-visible outline in the scene); skip both passes entirely then.
+        private static bool AnyOutlineWillDraw()
+        {
+            for (int i = 0; i < s_activeOutlines.Count; i++)
+            {
+                var outline = s_activeOutlines[i];
+                if (outline != null && outline.IsOutlineActive)
+                    return true;
+            }
+
+            return false;
         }
 
         // ----------------------------------------------------------------------
@@ -212,6 +226,10 @@ namespace Sol.Outline
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
+                // The mask pass skips frames with nothing to draw; Get() would
+                // throw and abort the whole render graph in that case.
+                if (!frameData.Contains<SolOutlineMaskData>()) return;
+
                 var maskData = frameData.Get<SolOutlineMaskData>();
                 if (!maskData.maskTexture.IsValid()) return;
 

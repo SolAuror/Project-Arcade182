@@ -1223,6 +1223,15 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Pulse"",
+                    ""type"": ""Button"",
+                    ""id"": ""f4cb4d4f-0c1b-40aa-b0ce-55e4ff57fc9a"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -1399,6 +1408,39 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": "";Gamepad"",
                     ""action"": ""Pause"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""fea804e5-beb7-483c-9950-21eed03fde86"",
+                    ""path"": ""<Keyboard>/q"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Pulse"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""af1cfc54-ff83-4b5f-a9a4-a22358c75646"",
+                    ""path"": ""<Mouse>/middleButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Pulse"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""3c2cc852-c03a-40cd-b563-9d6256e8bc75"",
+                    ""path"": ""<Gamepad>/buttonWest"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";Gamepad"",
+                    ""action"": ""Pulse"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1626,6 +1668,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_LabyrinthCrawler_Interact = m_LabyrinthCrawler.FindAction("Interact", throwIfNotFound: true);
         m_LabyrinthCrawler_Cast = m_LabyrinthCrawler.FindAction("Cast", throwIfNotFound: true);
         m_LabyrinthCrawler_Pause = m_LabyrinthCrawler.FindAction("Pause", throwIfNotFound: true);
+        m_LabyrinthCrawler_Pulse = m_LabyrinthCrawler.FindAction("Pulse", throwIfNotFound: true);
         // Hoops
         m_Hoops = asset.FindActionMap("Hoops", throwIfNotFound: true);
         m_Hoops_AimPoint = m_Hoops.FindAction("AimPoint", throwIfNotFound: true);
@@ -2230,6 +2273,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_LabyrinthCrawler_Interact;
     private readonly InputAction m_LabyrinthCrawler_Cast;
     private readonly InputAction m_LabyrinthCrawler_Pause;
+    private readonly InputAction m_LabyrinthCrawler_Pulse;
     /// <summary>
     /// Provides access to input actions defined in input action map "LabyrinthCrawler".
     /// </summary>
@@ -2265,6 +2309,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "LabyrinthCrawler/Pause".
         /// </summary>
         public InputAction @Pause => m_Wrapper.m_LabyrinthCrawler_Pause;
+        /// <summary>
+        /// Provides access to the underlying input action "LabyrinthCrawler/Pulse".
+        /// </summary>
+        public InputAction @Pulse => m_Wrapper.m_LabyrinthCrawler_Pulse;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -2309,6 +2357,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Pause.started += instance.OnPause;
             @Pause.performed += instance.OnPause;
             @Pause.canceled += instance.OnPause;
+            @Pulse.started += instance.OnPulse;
+            @Pulse.performed += instance.OnPulse;
+            @Pulse.canceled += instance.OnPulse;
         }
 
         /// <summary>
@@ -2338,6 +2389,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Pause.started -= instance.OnPause;
             @Pause.performed -= instance.OnPause;
             @Pause.canceled -= instance.OnPause;
+            @Pulse.started -= instance.OnPulse;
+            @Pulse.performed -= instance.OnPulse;
+            @Pulse.canceled -= instance.OnPulse;
         }
 
         /// <summary>
@@ -2799,6 +2853,13 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnPause(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Pulse" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnPulse(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Hoops" which allows adding and removing callbacks.

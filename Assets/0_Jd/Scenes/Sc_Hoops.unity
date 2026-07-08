@@ -617,6 +617,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   holdDistance: 3
   followSpeed: 15
+  throwPowerMultiplier: 1
+  closeThrowBonusMultiplier: 1
 --- !u!114 &477037200
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1269,8 +1271,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 673998676}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 3, z: 12}
+  m_LocalRotation: {x: 0.6087613, y: -0, z: -0, w: 0.7933535}
+  m_LocalPosition: {x: 0.3, y: 3.62, z: 12.59}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1279,7 +1281,7 @@ Transform:
   - {fileID: 823156010}
   - {fileID: 357216896}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 75, y: 0, z: 0}
 --- !u!1 &736224252
 GameObject:
   m_ObjectHideFlags: 0
@@ -1749,6 +1751,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   holdDistance: 3
   followSpeed: 15
+  throwPowerMultiplier: 1
+  closeThrowBonusMultiplier: 1
 --- !u!114 &1011043389
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2105,8 +2109,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1158435200}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4.5, y: 3.4, z: 12}
+  m_LocalRotation: {x: 0.6087613, y: -0, z: -0, w: 0.7933535}
+  m_LocalPosition: {x: 4.5, y: 4.25, z: 12.83}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2115,7 +2119,7 @@ Transform:
   - {fileID: 214315958}
   - {fileID: 2140949956}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 75, y: 0, z: 0}
 --- !u!20 &1304946330 stripped
 Camera:
   m_CorrespondingSourceObject: {fileID: 4076851992789199664, guid: 7daf2c754566460489fc6355359eabee, type: 3}
@@ -2302,6 +2306,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   holdDistance: 3
   followSpeed: 15
+  throwPowerMultiplier: 1
+  closeThrowBonusMultiplier: 1
 --- !u!114 &1482444494
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3200,6 +3206,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   holdDistance: 3
   followSpeed: 15
+  throwPowerMultiplier: 1
+  closeThrowBonusMultiplier: 1
 --- !u!114 &1913221427
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3688,6 +3696,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   holdDistance: 3
   followSpeed: 15
+  throwPowerMultiplier: 1
+  closeThrowBonusMultiplier: 1
 --- !u!114 &2092251104
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3901,8 +3911,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2123818785}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.5, y: 2.5, z: 12}
+  m_LocalRotation: {x: 0.60876167, y: -0, z: -0, w: 0.79335326}
+  m_LocalPosition: {x: -4.5, y: 2.77, z: 13.02}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3911,7 +3921,7 @@ Transform:
   - {fileID: 764015829}
   - {fileID: 1306264784}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 75, y: 0, z: 0}
 --- !u!1 &2129661075
 GameObject:
   m_ObjectHideFlags: 0

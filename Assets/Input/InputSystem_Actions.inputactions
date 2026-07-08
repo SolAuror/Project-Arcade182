@@ -1137,6 +1137,15 @@
                                          "processors":  "",
                                          "interactions":  "",
                                          "initialStateCheck":  false
+                                     },
+                                     {
+                                         "name":  "Pulse",
+                                         "type":  "Button",
+                                         "id":  "f4cb4d4f-0c1b-40aa-b0ce-55e4ff57fc9a",
+                                         "expectedControlType":  "Button",
+                                         "processors":  "",
+                                         "interactions":  "",
+                                         "initialStateCheck":  false
                                      }
                                  ],
                      "bindings":  [
@@ -1313,6 +1322,39 @@
                                           "processors":  "",
                                           "groups":  ";Gamepad",
                                           "action":  "Pause",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "fea804e5-beb7-483c-9950-21eed03fde86",
+                                          "path":  "<Keyboard>/q",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  ";Keyboard&Mouse",
+                                          "action":  "Pulse",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "af1cfc54-ff83-4b5f-a9a4-a22358c75646",
+                                          "path":  "<Mouse>/middleButton",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  ";Keyboard&Mouse",
+                                          "action":  "Pulse",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "3c2cc852-c03a-40cd-b563-9d6256e8bc75",
+                                          "path":  "<Gamepad>/buttonWest",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  ";Gamepad",
+                                          "action":  "Pulse",
                                           "isComposite":  false,
                                           "isPartOfComposite":  false
                                       }
