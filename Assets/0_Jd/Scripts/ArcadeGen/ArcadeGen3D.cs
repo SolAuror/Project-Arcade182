@@ -9,6 +9,8 @@ namespace Sol
     public class ArcadeMazeRules
     {
         [Header("Room Prefabs")]
+        [Tooltip("When false, the generator keeps its own room prefabs and placement mode; the rules only control size, openings, and player/exit flags.")]
+        public bool overrideRoomPrefabs = true;
         public List<GameObject> possibleRoomPrefabs = new List<GameObject>();
         public GameObject firstRoomPrefab;
         public GameObject lastRoomPrefab;
@@ -903,12 +905,15 @@ namespace Sol
 
         private int CurrentNumX => activeRules != null ? Mathf.Max(1, activeRules.numX) : numX;
         private int CurrentNumZ => activeRules != null ? Mathf.Max(1, activeRules.numZ) : numZ;
-        private List<GameObject> CurrentPossibleRoomPrefabs => activeRules != null ? activeRules.possibleRoomPrefabs : possibleRoomPrefabs;
-        private GameObject CurrentFirstRoomPrefab => activeRules != null ? activeRules.firstRoomPrefab : firstRoomPrefab;
-        private GameObject CurrentLastRoomPrefab => activeRules != null ? activeRules.lastRoomPrefab : lastRoomPrefab;
-        private GameObject CurrentCenterRoomPrefab => activeRules != null ? activeRules.centerRoomPrefab : centerRoomPrefab;
+        // Rules replace the room setup only when they opt in; otherwise the
+        // generator's authored prefabs and placement mode stay in charge.
+        private bool UseRuleRooms => activeRules != null && activeRules.overrideRoomPrefabs;
+        private List<GameObject> CurrentPossibleRoomPrefabs => UseRuleRooms ? activeRules.possibleRoomPrefabs : possibleRoomPrefabs;
+        private GameObject CurrentFirstRoomPrefab => UseRuleRooms ? activeRules.firstRoomPrefab : firstRoomPrefab;
+        private GameObject CurrentLastRoomPrefab => UseRuleRooms ? activeRules.lastRoomPrefab : lastRoomPrefab;
+        private GameObject CurrentCenterRoomPrefab => UseRuleRooms ? activeRules.centerRoomPrefab : centerRoomPrefab;
         private SpecialRoomPlacementMode CurrentSpecialRoomPlacementMode =>
-            activeRules != null ? activeRules.specialRoomPlacementMode : specialRoomPlacementMode;
+            UseRuleRooms ? activeRules.specialRoomPlacementMode : specialRoomPlacementMode;
         private bool CurrentOpenStartOuterWall => activeRules != null ? activeRules.openStartOuterWall : openStartOuterWall;
         private Room3D.Directions CurrentStartOuterWallDirection =>
             activeRules != null ? activeRules.startOuterWallDirection : startOuterWallDirection;

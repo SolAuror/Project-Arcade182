@@ -2,17 +2,31 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace Sol.Minigames
 {
     /// <summary>
-    /// Minimal IMGUI 1-of-3 reward picker. Gameplay is paused by the game while
-    /// this is open; cards are picked by clicking or pressing 1/2/3.
+    /// Prefab-authored 1-of-3 reward picker. Lives on the (initially inactive)
+    /// upgrade panel inside the LabyrinthCrawlerHud prefab; the game pauses
+    /// while it is open. Cards are picked by clicking or pressing 1/2/3.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Sol/Minigames/Labyrinth Crawler/Upgrade Screen")]
     public class LabyrinthUpgradeScreen : MonoBehaviour
     {
+        [Serializable]
+        public class UpgradeCardWidget
+        {
+            public GameObject root;
+            public Text titleText;
+            public Text descriptionText;
+            public Button takeButton;
+        }
+
+        [Header("Cards")]
+        [SerializeField] private List<UpgradeCardWidget> cards = new List<UpgradeCardWidget>();
+
         private List<LabyrinthUpgrade> choices;
         private Action<LabyrinthUpgrade> onPicked;
         private CursorLockMode previousLockState;
@@ -24,18 +38,54 @@ namespace Sol.Minigames
         {
             choices = upgradeChoices;
             onPicked = pickedCallback;
-            IsOpen = choices != null && choices.Count > 0;
 
-            if (!IsOpen)
+            if (choices == null || choices.Count == 0)
             {
                 pickedCallback?.Invoke(null);
                 return;
+            }
+
+            IsOpen = true;
+
+            for (int i = 0; i < cards.Count; i++)
+            {
+                UpgradeCardWidget card = cards[i];
+                if (card == null || card.root == null)
+                {
+                    continue;
+                }
+
+                bool used = i < choices.Count;
+                card.root.SetActive(used);
+                if (!used)
+                {
+                    continue;
+                }
+
+                if (card.titleText != null)
+                {
+                    card.titleText.text = choices[i].Title;
+                }
+
+                if (card.descriptionText != null)
+                {
+                    card.descriptionText.text = choices[i].Description;
+                }
+
+                if (card.takeButton != null)
+                {
+                    int index = i;
+                    card.takeButton.onClick.RemoveAllListeners();
+                    card.takeButton.onClick.AddListener(() => Pick(index));
+                }
             }
 
             previousLockState = Cursor.lockState;
             previousCursorVisible = Cursor.visible;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
+
+            gameObject.SetActive(true);
         }
 
         private void Update()
@@ -59,55 +109,6 @@ namespace Sol.Minigames
             }
         }
 
-        private void OnGUI()
-        {
-            if (!IsOpen)
-            {
-                return;
-            }
-
-            GUI.color = new Color(0f, 0f, 0f, 0.6f);
-            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-
-            const float cardWidth = 240f;
-            const float cardHeight = 190f;
-            const float spacing = 24f;
-            int count = choices.Count;
-            float totalWidth = count * cardWidth + (count - 1) * spacing;
-            float startX = (Screen.width - totalWidth) * 0.5f;
-            float y = (Screen.height - cardHeight) * 0.5f;
-
-            GUIStyle titleStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 18,
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter,
-                wordWrap = true
-            };
-            GUIStyle bodyStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.UpperCenter,
-                wordWrap = true
-            };
-            GUIStyle headerStyle = new GUIStyle(titleStyle) { fontSize = 24 };
-
-            GUI.Label(new Rect(0f, y - 70f, Screen.width, 40f), "Stage clear! Choose an upgrade", headerStyle);
-
-            for (int i = 0; i < count; i++)
-            {
-                Rect card = new Rect(startX + i * (cardWidth + spacing), y, cardWidth, cardHeight);
-                GUI.Box(card, GUIContent.none);
-                GUI.Label(new Rect(card.x + 10f, card.y + 14f, card.width - 20f, 48f), choices[i].Title, titleStyle);
-                GUI.Label(new Rect(card.x + 12f, card.y + 66f, card.width - 24f, 70f), choices[i].Description, bodyStyle);
-
-                if (GUI.Button(new Rect(card.x + 40f, card.yMax - 42f, card.width - 80f, 30f), $"Take [{i + 1}]"))
-                {
-                    Pick(i);
-                }
-            }
-        }
-
         private void Pick(int index)
         {
             if (!IsOpen || index < 0 || index >= choices.Count)
@@ -121,6 +122,8 @@ namespace Sol.Minigames
 
             Cursor.lockState = previousLockState;
             Cursor.visible = previousCursorVisible;
+
+            gameObject.SetActive(false);
 
             Action<LabyrinthUpgrade> callback = onPicked;
             onPicked = null;

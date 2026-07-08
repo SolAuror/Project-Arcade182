@@ -112,6 +112,12 @@ namespace Sol.Minigames
         public bool HasFailed => hasFailed;
         public bool IsChoosingUpgrade => isChoosingUpgrade;
         public bool CanPlayerAct => isRunning && !isChoosingUpgrade && !isComplete;
+        public Health PlayerHealth => playerHealth;
+        public Mana PlayerMana => playerMana;
+        public SpellCaster PlayerCaster => playerCaster;
+        public LabyrinthExitPad ExitPad => currentExitPad;
+        public int TicketsAwarded => ticketsAwarded;
+        public int TotalTickets => totalTickets;
 
         public int EnemiesRemaining
         {
@@ -144,9 +150,11 @@ namespace Sol.Minigames
 
             runTimer.Mode = MinigameTimer.TimerMode.Stopwatch;
 
-            if (!TryGetComponent(out upgradeScreen))
+            // Authored in the LabyrinthCrawlerHud prefab; its panel starts inactive.
+            upgradeScreen = FindFirstObjectByType<LabyrinthUpgradeScreen>(FindObjectsInactive.Include);
+            if (upgradeScreen == null)
             {
-                upgradeScreen = gameObject.AddComponent<LabyrinthUpgradeScreen>();
+                Debug.LogWarning($"{name} found no LabyrinthUpgradeScreen in the scene; stage rewards will be skipped.", this);
             }
 
             ResolveScoreCarrier();
@@ -243,6 +251,12 @@ namespace Sol.Minigames
 
         private void BeginUpgradeChoice()
         {
+            if (upgradeScreen == null)
+            {
+                OnUpgradePicked(null);
+                return;
+            }
+
             isChoosingUpgrade = true;
             runTimer.Pause();
             Time.timeScale = 0f;
@@ -573,147 +587,13 @@ namespace Sol.Minigames
                 : new PlayerScoreCarrier.ScoreRecord(minigameId, 0, 0, 0, 0);
         }
 
-        private void OnGUI()
-        {
-            DrawRunPanel();
-            DrawVitals();
-            DrawSpellSlots();
-            DrawExitDwell();
-        }
-
-        private void DrawRunPanel()
-        {
-            const float width = 300f;
-            const float height = 122f;
-            Rect area = new Rect(16f, 16f, width, height);
-
-            GUI.Box(area, GUIContent.none);
-            GUILayout.BeginArea(new Rect(area.x + 12f, area.y + 10f, width - 24f, height - 20f));
-
-            float seconds = RunSeconds;
-            GUILayout.Label($"Run time: {(int)(seconds / 60f):0}:{seconds % 60f:00.0}");
-            GUILayout.Label($"Score: {score}  Stage: {CurrentStage}  Maze: {currentMazeWidth}x{currentMazeDepth}");
-            GUILayout.Label($"Enemies left: {EnemiesRemaining}  Kills: {enemiesKilled}");
-
-            if (hasFailed)
-            {
-                GUILayout.Label($"You fell. Best: {bestRecordedScore}  Tickets +{ticketsAwarded}/{totalTickets}");
-            }
-            else
-            {
-                GUILayout.Label("Reach the exit pad. Clear speed and kills score points.");
-            }
-
-            GUILayout.EndArea();
-        }
-
-        private void DrawVitals()
-        {
-            float y = Screen.height - 74f;
-            DrawBar(new Rect(16f, y, 240f, 22f),
-                playerHealth != null ? playerHealth.Normalized : 0f,
-                new Color(0.85f, 0.2f, 0.2f, 0.95f),
-                playerHealth != null ? $"HP {playerHealth.Current:0}/{playerHealth.Max:0}" : "HP --");
-
-            DrawBar(new Rect(16f, y + 28f, 240f, 22f),
-                playerMana != null ? playerMana.Normalized : 0f,
-                new Color(0.25f, 0.45f, 0.95f, 0.95f),
-                playerMana != null ? $"MP {playerMana.Current:0}/{playerMana.Max:0}" : "MP --");
-        }
-
-        private void DrawSpellSlots()
-        {
-            if (playerCaster == null)
-            {
-                return;
-            }
-
-            string[] keyHints = { "LMB", "RMB", "Q" };
-            const float slotWidth = 118f;
-            const float slotHeight = 58f;
-            const float spacing = 10f;
-            int count = playerCaster.SlotCount;
-            float totalWidth = count * slotWidth + (count - 1) * spacing;
-            float startX = (Screen.width - totalWidth) * 0.5f;
-            float y = Screen.height - slotHeight - 14f;
-
-            GUIStyle slotStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                wordWrap = true
-            };
-
-            for (int i = 0; i < count; i++)
-            {
-                Rect slot = new Rect(startX + i * (slotWidth + spacing), y, slotWidth, slotHeight);
-                GUI.Box(slot, GUIContent.none);
-
-                SpellDefinition definition = playerCaster.GetDefinition(i);
-                SpellCaster.SlotState state = playerCaster.GetState(i);
-                string hint = i < keyHints.Length ? keyHints[i] : $"#{i + 1}";
-
-                string body;
-                if (definition == null)
-                {
-                    body = "-";
-                }
-                else if (state == null || !state.Unlocked)
-                {
-                    body = $"{definition.DisplayName}\nLOCKED";
-                }
-                else if (state.CooldownRemaining > 0f)
-                {
-                    body = $"{definition.DisplayName} [{hint}]\nLv{state.Level}  {state.CooldownRemaining:0.0}s";
-                }
-                else
-                {
-                    body = $"{definition.DisplayName} [{hint}]\nLv{state.Level}  READY";
-                }
-
-                GUI.Label(slot, body, slotStyle);
-
-                float cooldownFill = playerCaster.GetCooldownNormalized(i);
-                if (cooldownFill > 0f)
-                {
-                    GUI.color = new Color(0f, 0f, 0f, 0.45f);
-                    GUI.DrawTexture(new Rect(slot.x, slot.y, slot.width * cooldownFill, slot.height), Texture2D.whiteTexture);
-                    GUI.color = Color.white;
-                }
-            }
-        }
-
-        private void DrawExitDwell()
-        {
-            if (currentExitPad == null || !currentExitPad.PlayerInside || !isRunning || EnemiesRemaining == 0)
-            {
-                return;
-            }
-
-            Rect bar = new Rect(Screen.width * 0.5f - 130f, Screen.height * 0.62f, 260f, 20f);
-            DrawBar(bar, currentExitPad.DwellProgress, new Color(0.2f, 1f, 0.45f, 0.95f), "Channeling exit...");
-        }
-
-        private static void DrawBar(Rect rect, float normalized, Color fillColor, string label)
-        {
-            GUI.color = new Color(0f, 0f, 0f, 0.55f);
-            GUI.DrawTexture(rect, Texture2D.whiteTexture);
-
-            GUI.color = fillColor;
-            GUI.DrawTexture(new Rect(rect.x + 2f, rect.y + 2f, (rect.width - 4f) * Mathf.Clamp01(normalized), rect.height - 4f), Texture2D.whiteTexture);
-            GUI.color = Color.white;
-
-            GUIStyle labelStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontStyle = FontStyle.Bold
-            };
-            GUI.Label(rect, label, labelStyle);
-        }
-
         [Serializable]
         private class LabyrinthMazeRules
         {
             [Header("Rooms")]
+            [Tooltip("Use the room prefabs and placement mode authored on the ArcadeGen3D generator (thematic dungeon rooms). Disable to override with the lists below.")]
+            [SerializeField] private bool useGeneratorRoomPrefabs = true;
+
             [SerializeField] private List<GameObject> possibleRoomPrefabs = new List<GameObject>();
             [SerializeField] private GameObject firstRoomPrefab;
             [SerializeField] private GameObject lastRoomPrefab;
@@ -750,6 +630,7 @@ namespace Sol.Minigames
             {
                 return new ArcadeMazeRules
                 {
+                    overrideRoomPrefabs = !useGeneratorRoomPrefabs,
                     possibleRoomPrefabs = possibleRoomPrefabs != null
                         ? new List<GameObject>(possibleRoomPrefabs)
                         : new List<GameObject>(),

@@ -1,0 +1,185 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace Sol.Minigames
+{
+    /// <summary>
+    /// Prefab-authored HUD for the Labyrinth Crawler. All visuals live in the
+    /// LabyrinthCrawlerHud prefab and can be restyled by hand; this component
+    /// only pushes current game state into the wired widgets each frame.
+    /// </summary>
+    [DisallowMultipleComponent]
+    [AddComponentMenu("Sol/Minigames/Labyrinth Crawler/Hud")]
+    public class LabyrinthHud : MonoBehaviour
+    {
+        [Serializable]
+        public class SpellSlotWidget
+        {
+            public Text nameText;
+            public Text levelText;
+            [Tooltip("Filled image swept over the slot while the spell cools down.")]
+            public Image cooldownOverlay;
+            [Tooltip("Enabled while the spell is still locked.")]
+            public GameObject lockedOverlay;
+        }
+
+        [Header("Game")]
+        [Tooltip("Found automatically when left empty.")]
+        [SerializeField] private LabyrinthCrawlerGame game;
+
+        [Header("Run Panel")]
+        [SerializeField] private Text timerText;
+        [SerializeField] private Text scoreText;
+        [SerializeField] private Text enemiesText;
+        [SerializeField] private Text statusText;
+
+        [Header("Vitals")]
+        [SerializeField] private Image healthFill;
+        [SerializeField] private Text healthText;
+        [SerializeField] private Image manaFill;
+        [SerializeField] private Text manaText;
+
+        [Header("Spell Slots")]
+        [SerializeField] private List<SpellSlotWidget> spellSlots = new List<SpellSlotWidget>();
+
+        [Header("Exit Dwell")]
+        [SerializeField] private GameObject dwellGroup;
+        [SerializeField] private Image dwellFill;
+
+        [Header("Run Over")]
+        [SerializeField] private GameObject runOverGroup;
+        [SerializeField] private Text runOverText;
+
+        private void Awake()
+        {
+            if (game == null)
+            {
+                game = FindFirstObjectByType<LabyrinthCrawlerGame>();
+            }
+        }
+
+        private void Update()
+        {
+            if (game == null)
+            {
+                return;
+            }
+
+            UpdateRunPanel();
+            UpdateVitals();
+            UpdateSpellSlots();
+            UpdateDwell();
+            UpdateRunOver();
+        }
+
+        private void UpdateRunPanel()
+        {
+            float seconds = game.RunSeconds;
+            SetText(timerText, $"{(int)(seconds / 60f):0}:{seconds % 60f:00.0}");
+            SetText(scoreText, $"Score {game.Score}   Stage {game.CurrentStage}   Maze {game.CurrentMazeWidth}x{game.CurrentMazeDepth}");
+            SetText(enemiesText, $"Enemies {game.EnemiesRemaining}   Kills {game.EnemiesKilled}");
+
+            if (statusText != null)
+            {
+                statusText.text = game.HasFailed
+                    ? "The maze claims another."
+                    : game.IsChoosingUpgrade
+                        ? "Choose a boon."
+                        : "Reach the exit pad. Speed and kills score points.";
+            }
+        }
+
+        private void UpdateVitals()
+        {
+            Health health = game.PlayerHealth;
+            if (healthFill != null)
+            {
+                healthFill.fillAmount = health != null ? health.Normalized : 0f;
+            }
+
+            SetText(healthText, health != null ? $"HP {health.Current:0}/{health.Max:0}" : "HP --");
+
+            Mana mana = game.PlayerMana;
+            if (manaFill != null)
+            {
+                manaFill.fillAmount = mana != null ? mana.Normalized : 0f;
+            }
+
+            SetText(manaText, mana != null ? $"MP {mana.Current:0}/{mana.Max:0}" : "MP --");
+        }
+
+        private void UpdateSpellSlots()
+        {
+            SpellCaster caster = game.PlayerCaster;
+
+            for (int i = 0; i < spellSlots.Count; i++)
+            {
+                SpellSlotWidget widget = spellSlots[i];
+                if (widget == null)
+                {
+                    continue;
+                }
+
+                SpellDefinition definition = caster != null ? caster.GetDefinition(i) : null;
+                SpellCaster.SlotState state = caster != null ? caster.GetState(i) : null;
+
+                SetText(widget.nameText, definition != null ? definition.DisplayName : "-");
+                SetText(widget.levelText, state != null ? $"Lv{state.Level}" : string.Empty);
+
+                bool locked = state == null || !state.Unlocked;
+                if (widget.lockedOverlay != null && widget.lockedOverlay.activeSelf != locked)
+                {
+                    widget.lockedOverlay.SetActive(locked);
+                }
+
+                if (widget.cooldownOverlay != null)
+                {
+                    widget.cooldownOverlay.fillAmount = !locked && caster != null
+                        ? caster.GetCooldownNormalized(i)
+                        : 0f;
+                }
+            }
+        }
+
+        private void UpdateDwell()
+        {
+            LabyrinthExitPad pad = game.ExitPad;
+            bool show = pad != null && pad.PlayerInside && game.IsRunning && game.EnemiesRemaining > 0;
+
+            if (dwellGroup != null && dwellGroup.activeSelf != show)
+            {
+                dwellGroup.SetActive(show);
+            }
+
+            if (show && dwellFill != null)
+            {
+                dwellFill.fillAmount = pad.DwellProgress;
+            }
+        }
+
+        private void UpdateRunOver()
+        {
+            bool show = game.HasFailed;
+            if (runOverGroup != null && runOverGroup.activeSelf != show)
+            {
+                runOverGroup.SetActive(show);
+            }
+
+            if (show)
+            {
+                SetText(runOverText,
+                    $"YOU FELL\nScore {game.Score}   Best {game.BestRecordedScore}   Tickets +{game.TicketsAwarded}");
+            }
+        }
+
+        private static void SetText(Text target, string value)
+        {
+            if (target != null && target.text != value)
+            {
+                target.text = value;
+            }
+        }
+    }
+}

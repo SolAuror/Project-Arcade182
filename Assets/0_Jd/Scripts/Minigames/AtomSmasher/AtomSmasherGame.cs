@@ -175,6 +175,15 @@ namespace Sol.Minigames
         public bool IsRunning => isRunning;
         public bool CanLaunch => isRunning && !isComplete && !hasFailed && ActiveBallCount == 0 && shotsRemaining > 0;
         public int CurrentShotMultiplier => GetCurrentShotMultiplier();
+        public bool UseTimerMode => useTimerMode;
+        public bool IsComplete => isComplete;
+        public bool HasFailed => hasFailed;
+        public int RoundShots => roundShots;
+        public int BestRecordedScore => bestRecordedScore;
+        public int TicketsAwarded => ticketsAwarded;
+        public int TotalTickets => totalTickets;
+        public string StatusMessage => HasStatusMessage ? statusMessage : string.Empty;
+        public string FailReason => useTimerMode && timeRemaining <= 0f ? "Time expired" : "Out of shots";
 
         private int ActiveBallCount
         {
@@ -1160,50 +1169,5 @@ namespace Sol.Minigames
             SceneManager.LoadScene(returnSceneName, LoadSceneMode.Single);
         }
 
-        private void OnGUI()
-        {
-            const int width = 340;
-            int height = useTimerMode ? 176 : 156;
-            if (HasStatusMessage)
-            {
-                height += 22;
-            }
-
-            Rect area = new Rect(16f, 16f, width, height);
-
-            GUI.Box(area, GUIContent.none);
-            GUILayout.BeginArea(new Rect(area.x + 12f, area.y + 10f, width - 24f, height - 20f));
-            GUILayout.Label(GameTitle);
-            GUILayout.Label($"Score: {score}");
-            GUILayout.Label($"Wave: {waveNumber}");
-            GUILayout.Label($"Shots: {shotsRemaining}/{roundShots}");
-            GUILayout.Label($"Targets left: {requiredTargetsRemaining}");
-            GUILayout.Label($"Chain multiplier: x{CurrentShotMultiplier}");
-            if (useTimerMode)
-            {
-                GUILayout.Label($"Timer: {Mathf.CeilToInt(timeRemaining)}s");
-            }
-
-            if (HasStatusMessage)
-            {
-                GUILayout.Label(statusMessage);
-            }
-
-            if (isComplete)
-            {
-                GUILayout.Label($"Board cleared  Best: {bestRecordedScore}  Tickets +{ticketsAwarded}/{totalTickets}");
-            }
-            else if (hasFailed)
-            {
-                string failReason = useTimerMode && timeRemaining <= 0f ? "Time expired" : "Out of shots";
-                GUILayout.Label($"{failReason}  Best: {bestRecordedScore}  Tickets +{ticketsAwarded}/{totalTickets}");
-            }
-            else if (CanLaunch)
-            {
-                GUILayout.Label("Aim and release to launch.");
-            }
-
-            GUILayout.EndArea();
-        }
     }
 }
