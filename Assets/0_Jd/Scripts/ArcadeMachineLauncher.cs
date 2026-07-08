@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Sol.Grab;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -66,7 +67,13 @@ namespace Sol.Arcade
             }
 
             _isLoading = true;
-            SceneManager.LoadScene(targetSceneName, LoadSceneMode.Single);
+            StartCoroutine(LoadSceneAfterCurrentFrame(targetSceneName));
+        }
+
+        private IEnumerator LoadSceneAfterCurrentFrame(string sceneName)
+        {
+            yield return new WaitForEndOfFrame();
+            SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
         }
 
         private void Awake()

@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2829035038442123993}
   - component: {fileID: 4375013823933456979}
   m_Layer: 0
-  m_Name: HoopsManager
+  m_Name: Hoops_Manager
   m_TagString: Untagged
   m_Icon: {fileID: 1206586993520771344, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
@@ -55,7 +55,14 @@ MonoBehaviour:
   grabInput: 0
   isGrabbingEnabled: 1
   isLockingEnabled: 1
-  allowMiddleClickRotationToggle: 1
+  isThrowingEnabled: 1
+  allowKeyboardRotation: 1
+  throwSpeed: 8
+  throwUpwardBias: 0.08
+  maxThrowSpeed: 10
+  closeThrowBonusSpeed: 6
+  fullPowerThrowDistance: 1
+  basePowerThrowDistance: 3
   scrollSensitivity: 0.5
   isFrozen: 0
   rotationMode: 0
@@ -98,5 +105,5 @@ MonoBehaviour:
   onlyOneActiveHoop: 1
   hoops: []
   returnToSceneOnFinish: 1
-  returnSceneName: Sc_ArcadeExterior
+  returnSceneName: Sc_ArcadeHub
   returnDelaySeconds: 2

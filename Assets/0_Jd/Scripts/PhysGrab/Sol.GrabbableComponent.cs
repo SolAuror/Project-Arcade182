@@ -17,10 +17,25 @@ namespace Sol.Grab
         [Range(1f, 50f)]
         public float followSpeed = 15f;
 
+        [Header("Throw")]
+        [Tooltip("Overall throw power multiplier for this object.")]
+        [Min(0f)]
+        public float throwPowerMultiplier = 1f;
+
+        [Tooltip("How strongly this object benefits from close-range throw bonus.")]
+        [Min(0f)]
+        public float closeThrowBonusMultiplier = 1f;
+
         private Rigidbody _rb;
         private bool _hadGravity;
         private bool _wasKinematic;
         private bool _isGrabbed;
+
+        private void OnValidate()
+        {
+            throwPowerMultiplier = Mathf.Max(0f, throwPowerMultiplier);
+            closeThrowBonusMultiplier = Mathf.Max(0f, closeThrowBonusMultiplier);
+        }
 
         private void Awake()
         {

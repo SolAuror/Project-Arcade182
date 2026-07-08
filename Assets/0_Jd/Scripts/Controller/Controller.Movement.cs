@@ -6,7 +6,8 @@ namespace Player
     {
         private void UpdateMovement()
         {
-            isGrounded = verticalSpeed <= 0f && CheckGrounded(); // determine grounded state
+            bool isFixedSideOn = cameraMode == CameraMode.FixedSideOn;
+            isGrounded = isFixedSideOn || verticalSpeed <= 0f && CheckGrounded(); // determine grounded state
 
             if (AllowsJumping())
             {
@@ -38,13 +39,28 @@ namespace Player
 
             horizontalMovementVelocity = Vector3.MoveTowards(horizontalMovementVelocity, desiredMovementVelocity, velocityChangeRate * Time.deltaTime); // smooth velocity
 
-            if (isGrounded && verticalSpeed < 0f)
+            if (isFixedSideOn)
+            {
+                verticalSpeed = 0f; // fixed board mode is planar, not a gravity platformer
+            }
+            else if (isGrounded && verticalSpeed < 0f)
+            {
                 verticalSpeed = groundedVerticalSpeed; // reset vertical speed on ground
+            }
 
-            float gravityMultiplier = verticalSpeed < 0f ? fallGravityMultiplier : GetRisingGravityMultiplier(); // gravity modifier
+            if (!isFixedSideOn)
+            {
+                float gravityMultiplier = verticalSpeed < 0f ? fallGravityMultiplier : GetRisingGravityMultiplier(); // gravity modifier
 
-            verticalSpeed += gravity * gravityMultiplier * Time.deltaTime; // apply gravity
+                verticalSpeed += gravity * gravityMultiplier * Time.deltaTime; // apply gravity
+            }
+
             characterController.Move((horizontalMovementVelocity + Vector3.up * verticalSpeed) * Time.deltaTime); // move character
+
+            if (isFixedSideOn)
+            {
+                LockFixedSideOnPlane();
+            }
         }
 
         private bool CheckGrounded()
@@ -90,7 +106,14 @@ namespace Player
 
         private bool AllowsJumping()
         {
-            return cameraMode != CameraMode.TopDown; // top-down disables jumping
+            return cameraMode != CameraMode.TopDown && cameraMode != CameraMode.FixedSideOn; // fixed board play disables jumping
+        }
+
+        private void LockFixedSideOnPlane()
+        {
+            Vector3 position = transform.position;
+            position.z = fixedSideOnPlaneZ;
+            transform.position = position;
         }
 
         private float GetRisingGravityMultiplier()
@@ -107,6 +130,7 @@ namespace Player
                 CameraMode.TopDown => HasValidTopDownSprintDirection(movementInput),
                 CameraMode.Isometric => HasValidIsometricSprintDirection(movementInput),
                 CameraMode.Platformer => HasValidPlatformerSprintDirection(movementInput),
+                CameraMode.FixedSideOn => HasValidPlatformerSprintDirection(movementInput),
                 _ => false
             }; // delegate sprint checks per mode
         }
@@ -120,6 +144,7 @@ namespace Player
                 CameraMode.TopDown => GetTopDownMovementDirection(movementInput, movementRight, movementForward),
                 CameraMode.Isometric => GetIsometricMovementDirection(movementInput, movementRight, movementForward),
                 CameraMode.Platformer => GetPlatformerMovementDirection(movementInput, movementRight),
+                CameraMode.FixedSideOn => GetPlatformerMovementDirection(movementInput, movementRight),
                 _ => Vector3.zero
             }; // choose movement calculation by mode
         }
@@ -133,6 +158,7 @@ namespace Player
                 CameraMode.TopDown => topDownMovementSpeedMultiplier,
                 CameraMode.Isometric => isometricMovementSpeedMultiplier,
                 CameraMode.Platformer => platformerMovementSpeedMultiplier,
+                CameraMode.FixedSideOn => platformerMovementSpeedMultiplier,
                 _ => 1f
             };
         }
@@ -146,6 +172,7 @@ namespace Player
                 CameraMode.TopDown => topDownTurnSpeedMultiplier,
                 CameraMode.Isometric => isometricTurnSpeedMultiplier,
                 CameraMode.Platformer => platformerTurnSpeedMultiplier,
+                CameraMode.FixedSideOn => platformerTurnSpeedMultiplier,
                 _ => 1f
             };
         }
@@ -159,6 +186,7 @@ namespace Player
                 CameraMode.TopDown => TopDownFacesMovement(),
                 CameraMode.Isometric => IsometricFacesMovement(),
                 CameraMode.Platformer => PlatformerFacesMovement(),
+                CameraMode.FixedSideOn => PlatformerFacesMovement(),
                 _ => true
             };
         }

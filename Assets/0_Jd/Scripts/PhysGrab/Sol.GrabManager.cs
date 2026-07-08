@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 namespace Sol.Grab
 {
@@ -47,11 +48,34 @@ namespace Sol.Grab
         [Tooltip("Enable grabbing functionality.")]
         public bool isGrabbingEnabled = true;
 
-        [Tooltip("Allow objects to be frozen with right click.")]
+        [Tooltip("Allow objects to be frozen with middle click.")]
         public bool isLockingEnabled = true;
 
-        [Tooltip("Allow middle click to toggle rotation mode while playing.")]
-        public bool allowMiddleClickRotationToggle = true;
+        [Tooltip("Allow held objects to be thrown with right click.")]
+        public bool isThrowingEnabled = true;
+
+        [Tooltip("Allow R to rotate held objects while the key is held.")]
+        [FormerlySerializedAs("allowMiddleClickRotationToggle")]
+        [SerializeField] private bool allowKeyboardRotation = true;
+
+        [Header("Throw")]
+        [Tooltip("Forward speed applied when throwing a held object.")]
+        [SerializeField] private float throwSpeed = 8f;
+
+        [Tooltip("Small upward bias added to the throw direction.")]
+        [SerializeField] private float throwUpwardBias = 0.08f;
+
+        [Tooltip("Maximum final throw velocity.")]
+        [SerializeField] private float maxThrowSpeed = 10f;
+
+        [Tooltip("Extra speed added when throwing from close to the hold origin.")]
+        [SerializeField] private float closeThrowBonusSpeed = 6f;
+
+        [Tooltip("Held distance where throw bonus reaches full strength.")]
+        [SerializeField] private float fullPowerThrowDistance = 1f;
+
+        [Tooltip("Held distance where throw bonus falls back to base throw speed.")]
+        [SerializeField] private float basePowerThrowDistance = 3f;
 
         [Header("Held Object")]
         [Tooltip("Scroll wheel sensitivity for adjusting hold distance.")]
@@ -174,7 +198,7 @@ namespace Sol.Grab
             }
 
             UpdateHoveredObject();
-            PollMouseShortcuts();
+            PollUtilityInputs();
 
             if (_heldObject != null && Mathf.Abs(_scrollInput.y) > 0.01f)
             {
@@ -216,6 +240,19 @@ namespace Sol.Grab
             _actions.UI.ScrollWheel.canceled += OnScroll;
         }
 
+        private void OnValidate()
+        {
+            throwSpeed = Mathf.Max(0f, throwSpeed);
+            throwUpwardBias = Mathf.Max(0f, throwUpwardBias);
+            maxThrowSpeed = Mathf.Max(0f, maxThrowSpeed);
+            closeThrowBonusSpeed = Mathf.Max(0f, closeThrowBonusSpeed);
+            fullPowerThrowDistance = Mathf.Max(0f, fullPowerThrowDistance);
+            basePowerThrowDistance = Mathf.Max(fullPowerThrowDistance, basePowerThrowDistance);
+            raycastDistance = Mathf.Max(0f, raycastDistance);
+            scrollSensitivity = Mathf.Max(0f, scrollSensitivity);
+            rotationSensitivity = Mathf.Max(0f, rotationSensitivity);
+        }
+
         private void UnhookInput()
         {
             if (_actions == null)
@@ -250,16 +287,22 @@ namespace Sol.Grab
             _scrollInput = context.ReadValue<Vector2>();
         }
 
-        private void PollMouseShortcuts()
+        private void PollUtilityInputs()
         {
+            rotationMode = allowKeyboardRotation &&
+                _heldObject != null &&
+                Keyboard.current?.rKey.isPressed == true;
+
             if (Mouse.current == null)
+            {
                 return;
+            }
 
-            if (isLockingEnabled && Mouse.current.rightButton.wasPressedThisFrame)
+            if (isThrowingEnabled && Mouse.current.rightButton.wasPressedThisFrame)
+                TryThrowHeldObject();
+
+            if (isLockingEnabled && Mouse.current.middleButton.wasPressedThisFrame)
                 ToggleLockTarget();
-
-            if (allowMiddleClickRotationToggle && Mouse.current.middleButton.wasPressedThisFrame)
-                rotationMode = !rotationMode;
         }
 
         private void ToggleLockTarget()
@@ -330,6 +373,70 @@ namespace Sol.Grab
                 _heldObject.OnRelease();
 
             _heldObject = null;
+        }
+
+        private void TryThrowHeldObject()
+        {
+            if (_heldObject == null || isFrozen || IsFrozen(_heldObject))
+            {
+                return;
+            }
+
+            Camera activeCamera = GetActiveGameplayCamera();
+            if (activeCamera == null)
+            {
+                return;
+            }
+
+            GrabbableComponent thrownObject = _heldObject;
+            Rigidbody rb = thrownObject.Rigidbody;
+            if (rb == null)
+            {
+                ReleaseHeldObject();
+                return;
+            }
+
+            Vector3 throwDirection = GetAimRay(activeCamera).direction + Vector3.up * throwUpwardBias;
+            if (throwDirection.sqrMagnitude <= 0.001f)
+            {
+                throwDirection = activeCamera.transform.forward;
+            }
+
+            ReleaseHeldObject();
+
+            if (rb.isKinematic)
+            {
+                return;
+            }
+
+            float throwVelocity = CalculateThrowSpeed(thrownObject);
+            float effectiveMaxThrowSpeed = CalculateEffectiveMaxThrowSpeed(thrownObject);
+            rb.linearVelocity = Vector3.ClampMagnitude(throwDirection.normalized * throwVelocity, effectiveMaxThrowSpeed);
+        }
+
+        private float CalculateThrowSpeed(GrabbableComponent thrownObject)
+        {
+            float throwPowerMultiplier = Mathf.Max(0f, thrownObject.throwPowerMultiplier);
+            float closeBonusMultiplier = Mathf.Max(0f, thrownObject.closeThrowBonusMultiplier);
+            float closeFactor = CalculateCloseThrowFactor(_currentHoldDistance);
+            float speed = throwSpeed + closeFactor * closeThrowBonusSpeed * closeBonusMultiplier;
+            return speed * throwPowerMultiplier;
+        }
+
+        private float CalculateEffectiveMaxThrowSpeed(GrabbableComponent thrownObject)
+        {
+            float throwPowerMultiplier = Mathf.Max(0f, thrownObject.throwPowerMultiplier);
+            float closeBonusMultiplier = Mathf.Max(0f, thrownObject.closeThrowBonusMultiplier);
+            float closeRangeSpeed = throwSpeed + closeThrowBonusSpeed * closeBonusMultiplier;
+            return Mathf.Max(maxThrowSpeed, closeRangeSpeed) * throwPowerMultiplier;
+        }
+
+        private float CalculateCloseThrowFactor(float holdDistance)
+        {
+            if (basePowerThrowDistance <= fullPowerThrowDistance)
+                return holdDistance <= fullPowerThrowDistance ? 1f : 0f;
+
+            return Mathf.InverseLerp(basePowerThrowDistance, fullPowerThrowDistance, holdDistance);
         }
 
         private void RotateHeldObject(Camera activeCamera)

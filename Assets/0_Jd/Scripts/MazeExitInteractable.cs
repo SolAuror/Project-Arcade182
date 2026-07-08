@@ -1,5 +1,6 @@
 using System;
 using Sol.Grab;
+using Sol.Minigames;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -21,6 +22,10 @@ namespace Sol.Arcade
         [Tooltip("If disabled, interacting with this exit will not load the destination scene.")]
         [SerializeField] private bool exitEnabled = true;
 
+        [Header("Minigame")]
+        [Tooltip("If assigned, using this exit completes the maze stage instead of loading Destination Scene Name.")]
+        [SerializeField] private LabyrinthCrawlerGame labyrinthCrawlerGame;
+
         [Header("Interaction")]
         [Tooltip("Maximum distance for activating this exit.")]
         [SerializeField] private float interactDistance = 10f;
@@ -32,12 +37,27 @@ namespace Sol.Arcade
         [SerializeField] private Camera gameplayCamera;
 
         private InputSystem_Actions _actions;
+        private InputAction _interactAction;
+        private InputAction _attackAction;
+        private InputActionMap _activeActionMap;
         private bool _isLoading;
 
         public bool ExitEnabled
         {
             get => exitEnabled;
             set => exitEnabled = value;
+        }
+
+        public void AssignLabyrinthCrawlerGame(LabyrinthCrawlerGame game)
+        {
+            labyrinthCrawlerGame = game;
+            _isLoading = false;
+
+            if (isActiveAndEnabled)
+            {
+                UnbindInput();
+                BindInput();
+            }
         }
 
         public void TryUseExit()
@@ -48,6 +68,12 @@ namespace Sol.Arcade
             if (!exitEnabled)
             {
                 Debug.Log($"{name} exit is currently locked.", this);
+                return;
+            }
+
+            if (labyrinthCrawlerGame != null)
+            {
+                labyrinthCrawlerGame.CompleteEscape();
                 return;
             }
 
@@ -79,19 +105,57 @@ namespace Sol.Arcade
             if (_actions == null)
                 _actions = new InputSystem_Actions();
 
-            _actions.Player.Interact.started += OnInteractStarted;
-            _actions.Player.Attack.started += OnPrimaryActionStarted;
-            _actions.Player.Enable();
+            BindInput();
         }
 
         private void OnDisable()
         {
+            UnbindInput();
+        }
+
+        private void BindInput()
+        {
+            _interactAction = labyrinthCrawlerGame != null
+                ? _actions.FindAction("LabyrinthCrawler/Interact", false) ?? _actions.Player.Interact
+                : _actions.Player.Interact;
+            _attackAction = labyrinthCrawlerGame != null
+                ? _actions.FindAction("LabyrinthCrawler/Attack", false) ?? _actions.Player.Attack
+                : _actions.Player.Attack;
+            _activeActionMap = _interactAction?.actionMap ?? _attackAction?.actionMap;
+
+            if (_interactAction != null)
+            {
+                _interactAction.started += OnInteractStarted;
+            }
+
+            if (_attackAction != null)
+            {
+                _attackAction.started += OnPrimaryActionStarted;
+            }
+
+            _activeActionMap?.Enable();
+        }
+
+        private void UnbindInput()
+        {
             if (_actions != null)
             {
-                _actions.Player.Interact.started -= OnInteractStarted;
-                _actions.Player.Attack.started -= OnPrimaryActionStarted;
-                _actions.Player.Disable();
+                if (_interactAction != null)
+                {
+                    _interactAction.started -= OnInteractStarted;
+                }
+
+                if (_attackAction != null)
+                {
+                    _attackAction.started -= OnPrimaryActionStarted;
+                }
+
+                _activeActionMap?.Disable();
             }
+
+            _interactAction = null;
+            _attackAction = null;
+            _activeActionMap = null;
         }
 
         private void OnDestroy()

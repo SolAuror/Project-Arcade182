@@ -33,11 +33,13 @@ namespace Player
             ThirdPerson,
             TopDown,
             Isometric,
-            Platformer
+            Platformer,
+            FixedSideOn
         }
 
         [Header("Mode")]
         [SerializeField] private CameraMode cameraMode = CameraMode.FirstPerson; //current camera mode 
+        [SerializeField] private float fixedSideOnPlaneZ = 0f; // board-plane lock for fixed side-on minigames
 
         [Tooltip("Choose a random non-Platformer camera mode before the controller initializes.")]
         [SerializeField] private bool randomizeCameraModeOnStart = false;

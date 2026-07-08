@@ -4,8 +4,8 @@
 
 ## Files
 
-- 2D demo: `Assets/Jd/Scenes/Sc_MazeGen2D.unity`
-- 3D demo: `Assets/Jd/Scenes/Sc_MazeGen3D.unity`
+- 2D demo: `Assets/0_Jd/Scenes/Unused/Sc_MazeGen2D.unity`
+- 3D demo: `Assets/0_Jd/Scenes/Sc_ArcadeGen3D.unity`
 - 2D rooms: `Assets/Jd/Prefabs/2DRooms`
 - 3D rooms: `Assets/Jd/Prefabs/3DRooms`
 - Pregenerated mazes: `Assets/Jd/Prefabs/Pregenerated`

@@ -13,27 +13,27 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: T_Cabinet
-    second: {fileID: 2100000, guid: 18759ab4d2ce91e4c94a42ebccea3a8e, type: 2}
+    second: {fileID: 2100000, guid: 7f9ed50260413d147aa78e6589fd6d7f, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: T_Joystick
-    second: {fileID: 2100000, guid: 7277992fcb7a0b54ea85da27edf42cd3, type: 2}
+    second: {fileID: 2100000, guid: d308492237eafa84d89e03d4fcfa3cb6, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: T_Knob
-    second: {fileID: 2100000, guid: fc87cee01ded8e14491d36b5048a8086, type: 2}
+    second: {fileID: 2100000, guid: 697248abea674fc46ab855759ead8143, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: T_Screen
-    second: {fileID: 2100000, guid: 8cbafe9f6ca96fc418d28f19dd515d2b, type: 2}
+    second: {fileID: 2100000, guid: d308492237eafa84d89e03d4fcfa3cb6, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: T_Trims
-    second: {fileID: 2100000, guid: 6c1337975648b13418e569112b15a72d, type: 2}
+    second: {fileID: 2100000, guid: 2378b7bdc9006ab4c974e83a06dbf449, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

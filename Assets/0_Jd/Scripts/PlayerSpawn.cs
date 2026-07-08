@@ -31,6 +31,13 @@ namespace Sol
 
         private GameObject SpawnOrReuse(bool moveExistingToSpawn)
         {
+            if (TryGetTaggedPlayer(out GameObject taggedPlayer))
+            {
+                SpawnedInstance = taggedPlayer;
+                MoveInstanceToSpawn(SpawnedInstance);
+                return SpawnedInstance;
+            }
+
             if (prefabToSpawn == null)
             {
                 Debug.LogWarning($"{name} has no prefab assigned to spawn.", this);
@@ -126,6 +133,22 @@ namespace Sol
             }
 
             return null;
+        }
+
+        private bool TryGetTaggedPlayer(out GameObject taggedPlayer)
+        {
+            taggedPlayer = null;
+
+            try
+            {
+                taggedPlayer = GameObject.FindGameObjectWithTag("Player");
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
+
+            return taggedPlayer != null;
         }
     }
 }

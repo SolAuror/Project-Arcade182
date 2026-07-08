@@ -5,12 +5,39 @@ using UnityEngine;
 
 namespace Sol
 {
+    [Serializable]
+    public class ArcadeMazeRules
+    {
+        [Header("Room Prefabs")]
+        public List<GameObject> possibleRoomPrefabs = new List<GameObject>();
+        public GameObject firstRoomPrefab;
+        public GameObject lastRoomPrefab;
+        public GameObject centerRoomPrefab;
+        public ArcadeGen3D.SpecialRoomPlacementMode specialRoomPlacementMode =
+            ArcadeGen3D.SpecialRoomPlacementMode.GenerateFromCenter;
+
+        [Header("Maze Size")]
+        [Min(1)] public int numX = 10;
+        [Min(1)] public int numZ = 10;
+
+        [Header("Outer Openings")]
+        public bool openStartOuterWall;
+        public Room3D.Directions startOuterWallDirection = Room3D.Directions.SOUTH;
+        public bool openEndOuterWall;
+        public Room3D.Directions endOuterWallDirection = Room3D.Directions.NORTH;
+
+        [Header("Player And Exit")]
+        public bool respawnPlayerAtStart = true;
+        public bool activateEndRoomExit = true;
+    }
+
     public class ArcadeGen3D : MonoBehaviour
     {
-        private enum SpecialRoomPlacementMode
+        public enum SpecialRoomPlacementMode
         {
             FixedCorners,
-            RandomStartAndEnd
+            RandomStartAndEnd,
+            GenerateFromCenter
         }
 
         [Header("Room Prefabs")]
@@ -23,8 +50,11 @@ namespace Sol
         [Tooltip("Room prefab used for the maze exit.")]
         [SerializeField] private GameObject lastRoomPrefab;
 
-        [Tooltip("Choose fixed corner start/end rooms or random positions.")]
-        [SerializeField] private SpecialRoomPlacementMode specialRoomPlacementMode = SpecialRoomPlacementMode.FixedCorners;
+        [Tooltip("Room prefab used for the center start when Generate From Center is selected.")]
+        [SerializeField] private GameObject centerRoomPrefab;
+
+        [Tooltip("Choose fixed corner, random, or center start/end placement.")]
+        [SerializeField] private SpecialRoomPlacementMode specialRoomPlacementMode = SpecialRoomPlacementMode.GenerateFromCenter;
 
         [SerializeField, HideInInspector] private GameObject roomPrefab;
 
@@ -38,6 +68,12 @@ namespace Sol
         [Header("Generation")]
         [Tooltip("Generate and carve the maze automatically when the scene starts.")]
         [SerializeField] private bool autoGenerateOnStart = true;
+
+        [Tooltip("Allow R to regenerate the maze during play. Disabled by default so R can rotate held objects.")]
+        [SerializeField] private bool allowRuntimeKeyboardRegenerate = false;
+
+        [Tooltip("Maze carving steps processed per frame while generating at runtime.")]
+        [SerializeField, Min(1)] private int generationStepsPerFrame = 32;
 
         [Header("Outer Openings")]
         [Tooltip("Optional outside opening on the start room.")]
@@ -66,9 +102,19 @@ namespace Sol
         private float roomLength;
 
         private Transform generatedRoomsParent;
+        private Vector2Int centerRoomIndex = Vector2Int.zero;
         private Vector2Int startRoomIndex = Vector2Int.zero;
         private Vector2Int endRoomIndex = Vector2Int.zero;
         private bool generating;
+        private ArcadeMazeRules activeRules;
+        private Action generationCompleteCallback;
+
+        public Transform GeneratedRoomsParent => generatedRoomsParent;
+        public Room3D[,] Rooms => rooms;
+        public Vector2Int StartRoomIndex => startRoomIndex;
+        public Vector2Int EndRoomIndex => endRoomIndex;
+        public float RoomWidth => roomWidth;
+        public float RoomLength => roomLength;
 
         private void Start()
         {
@@ -78,14 +124,15 @@ namespace Sol
             }
             else
             {
-                RebuildRooms();
+                generatedRoomsParent = transform.Find("Generated Rooms");
             }
         }
 
         private void Update()
         {
             // Modern Input System approach.
-            if (UnityEngine.InputSystem.Keyboard.current != null &&
+            if (allowRuntimeKeyboardRegenerate &&
+                UnityEngine.InputSystem.Keyboard.current != null &&
                 UnityEngine.InputSystem.Keyboard.current.rKey.wasPressedThisFrame &&
                 !generating)
             {
@@ -101,30 +148,111 @@ namespace Sol
                 return;
             }
 
-            if (!RebuildRooms())
+            activeRules = null;
+            generationCompleteCallback = null;
+
+            if (!PrepareGeneration(respawnPlayerAtStartOnRegenerate))
             {
                 return;
             }
 
-            Reset();
+            StartCoroutine(Coroutine_ArcadeGen());
+        }
+
+        public bool GenerateWithRules(ArcadeMazeRules rules, Action onComplete = null)
+        {
+            if (generating)
+            {
+                Debug.Log("Already generating arcade. Please wait.");
+                return false;
+            }
+
+            if (rules == null)
+            {
+                Debug.LogWarning("ArcadeGen3D GenerateWithRules needs a rules object.", this);
+                return false;
+            }
+
+            activeRules = rules;
+            generationCompleteCallback = onComplete;
+
+            if (!PrepareGeneration(rules.respawnPlayerAtStart))
+            {
+                ClearActiveGenerationRequest();
+                return false;
+            }
+
+            if (!Application.isPlaying)
+            {
+                RunGenerationToCompletion();
+                FinishGeneration();
+                return true;
+            }
+
+            StartCoroutine(Coroutine_ArcadeGen());
+            return true;
+        }
+
+        [ContextMenu("Regenerate Maze")]
+        public bool RegenerateMazeFromInspector()
+        {
+            activeRules = null;
+            generationCompleteCallback = null;
+
+            if (Application.isPlaying)
+            {
+                CreateArcade();
+                return true;
+            }
+
+            if (!PrepareGeneration(respawnPlayerAtStartOnRegenerate))
+            {
+                return false;
+            }
+
+            int generationStepLimit = Mathf.Max(1, CurrentNumX * CurrentNumZ * 4);
+            for (int i = 0; i < generationStepLimit; i++)
+            {
+                if (GenerateStep())
+                {
+                    if (ShouldActivateEndRoomExit())
+                    {
+                        ActivateEndRoomExitClerk();
+                    }
+
+                    return true;
+                }
+            }
+
+            Debug.LogWarning("ArcadeGen3D regeneration hit the safety step limit.", this);
+            return false;
+        }
+
+        private bool PrepareGeneration(bool respawnPlayer)
+        {
+            if (!RebuildRooms())
+            {
+                return false;
+            }
+
+            ResetRoomsForGeneration();
             ApplyOptionalOuterOpenings();
 
-            if (respawnPlayerAtStartOnRegenerate)
+            if (respawnPlayer)
             {
                 RespawnPlayerAtStart();
             }
 
             rooms[startRoomIndex.x, startRoomIndex.y].visited = true;
             stack.Push(rooms[startRoomIndex.x, startRoomIndex.y]);
-
-            StartCoroutine(Coroutine_ArcadeGen());
+            return true;
         }
 
         private bool RebuildRooms()
         {
             stack.Clear();
 
-            if (numX <= 0 || numZ <= 0)
+            if (CurrentNumX <= 0 || CurrentNumZ <= 0)
             {
                 Debug.LogWarning("ArcadeGen3D needs a maze size greater than 0.");
                 DestroyGeneratedRooms();
@@ -156,15 +284,16 @@ namespace Sol
         {
             validRoomPrefabs.Clear();
 
-            if (possibleRoomPrefabs != null)
+            List<GameObject> roomPrefabs = CurrentPossibleRoomPrefabs;
+            if (roomPrefabs != null)
             {
-                foreach (GameObject possibleRoomPrefab in possibleRoomPrefabs)
+                foreach (GameObject possibleRoomPrefab in roomPrefabs)
                 {
                     AddValidRoomPrefab(possibleRoomPrefab);
                 }
             }
 
-            if (validRoomPrefabs.Count == 0)
+            if (activeRules == null && validRoomPrefabs.Count == 0)
             {
                 AddValidRoomPrefab(roomPrefab);
             }
@@ -247,14 +376,14 @@ namespace Sol
 
         private void BuildRoomGrid()
         {
-            rooms = new Room3D[numX, numZ];
+            rooms = new Room3D[CurrentNumX, CurrentNumZ];
 
-            for (int x = 0; x < numX; ++x)
+            for (int x = 0; x < CurrentNumX; ++x)
             {
-                for (int z = 0; z < numZ; ++z)
+                for (int z = 0; z < CurrentNumZ; ++z)
                 {
                     GameObject selectedPrefab = GetRoomPrefabForCell(x, z);
-                    Vector3 roomLocalPosition = new Vector3(x * roomWidth, 0f, z * roomLength);
+                    Vector3 roomLocalPosition = GetRoomLocalPosition(x, z);
                     Vector3 roomWorldPosition = generatedRoomsParent.TransformPoint(roomLocalPosition);
 
                     GameObject room = Instantiate(
@@ -280,13 +409,21 @@ namespace Sol
             }
         }
 
+        private Vector3 GetRoomLocalPosition(int x, int z)
+        {
+            return new Vector3(
+                (x - centerRoomIndex.x) * roomWidth,
+                0f,
+                (z - centerRoomIndex.y) * roomLength);
+        }
+
         private GameObject GetRoomPrefabForCell(int x, int z)
         {
             Vector2Int cellIndex = new Vector2Int(x, z);
 
             if (cellIndex == startRoomIndex)
             {
-                GameObject fixedRoomPrefab = GetFixedRoomPrefab(firstRoomPrefab, "First Room Prefab");
+                GameObject fixedRoomPrefab = GetStartRoomPrefab();
                 if (fixedRoomPrefab != null)
                 {
                     return fixedRoomPrefab;
@@ -295,7 +432,7 @@ namespace Sol
 
             if (cellIndex == endRoomIndex)
             {
-                GameObject fixedRoomPrefab = GetFixedRoomPrefab(lastRoomPrefab, "Last Room Prefab");
+                GameObject fixedRoomPrefab = GetFixedRoomPrefab(CurrentLastRoomPrefab, "Last Room Prefab");
                 if (fixedRoomPrefab != null)
                 {
                     return fixedRoomPrefab;
@@ -303,6 +440,27 @@ namespace Sol
             }
 
             return GetRandomRoomPrefab();
+        }
+
+        private GameObject GetStartRoomPrefab()
+        {
+            if (CurrentSpecialRoomPlacementMode == SpecialRoomPlacementMode.GenerateFromCenter)
+            {
+                if (CurrentCenterRoomPrefab == null)
+                {
+                    Debug.LogWarning("Center Room Prefab is not assigned. Falling back to the first room prefab.", this);
+                }
+                else
+                {
+                    GameObject fixedRoomPrefab = GetFixedRoomPrefab(CurrentCenterRoomPrefab, "Center Room Prefab");
+                    if (fixedRoomPrefab != null)
+                    {
+                        return fixedRoomPrefab;
+                    }
+                }
+            }
+
+            return GetFixedRoomPrefab(CurrentFirstRoomPrefab, "First Room Prefab");
         }
 
         private GameObject GetFixedRoomPrefab(GameObject fixedRoomPrefab, string slotName)
@@ -354,15 +512,22 @@ namespace Sol
 
         private void SelectSpecialRoomIndices()
         {
+            centerRoomIndex = GetCenterRoomIndex();
             startRoomIndex = Vector2Int.zero;
-            endRoomIndex = new Vector2Int(numX - 1, numZ - 1);
+            endRoomIndex = new Vector2Int(CurrentNumX - 1, CurrentNumZ - 1);
 
-            if (specialRoomPlacementMode != SpecialRoomPlacementMode.RandomStartAndEnd)
+            if (CurrentSpecialRoomPlacementMode == SpecialRoomPlacementMode.GenerateFromCenter)
+            {
+                SelectCenterStartRoomIndices();
+                return;
+            }
+
+            if (CurrentSpecialRoomPlacementMode != SpecialRoomPlacementMode.RandomStartAndEnd)
             {
                 return;
             }
 
-            int cellCount = numX * numZ;
+            int cellCount = CurrentNumX * CurrentNumZ;
             if (cellCount < 2)
             {
                 Debug.LogWarning("Random start/end placement needs at least two maze cells. Falling back to fixed corners.");
@@ -381,21 +546,102 @@ namespace Sol
             endRoomIndex = FlatIndexToRoomIndex(endFlatIndex);
         }
 
+        private void SelectCenterStartRoomIndices()
+        {
+            startRoomIndex = centerRoomIndex;
+            endRoomIndex = GetFarthestCornerFrom(startRoomIndex);
+        }
+
+        private Vector2Int GetCenterRoomIndex()
+        {
+            return new Vector2Int((CurrentNumX - 1) / 2, (CurrentNumZ - 1) / 2);
+        }
+
+        private Vector2Int GetFarthestCornerFrom(Vector2Int origin)
+        {
+            Vector2Int[] corners =
+            {
+                new Vector2Int(CurrentNumX - 1, CurrentNumZ - 1),
+                new Vector2Int(0, CurrentNumZ - 1),
+                new Vector2Int(CurrentNumX - 1, 0),
+                Vector2Int.zero
+            };
+
+            Vector2Int farthestCorner = corners[0];
+            int farthestDistance = GetManhattanDistance(origin, farthestCorner);
+
+            for (int i = 1; i < corners.Length; i++)
+            {
+                int distance = GetManhattanDistance(origin, corners[i]);
+                if (distance > farthestDistance)
+                {
+                    farthestDistance = distance;
+                    farthestCorner = corners[i];
+                }
+            }
+
+            return farthestCorner;
+        }
+
+        private static int GetManhattanDistance(Vector2Int a, Vector2Int b)
+        {
+            return Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
+        }
+
         private Vector2Int FlatIndexToRoomIndex(int flatIndex)
         {
-            return new Vector2Int(flatIndex % numX, flatIndex / numX);
+            return new Vector2Int(flatIndex % CurrentNumX, flatIndex / CurrentNumX);
         }
 
         private void ApplyOptionalOuterOpenings()
         {
-            if (openStartOuterWall)
+            if (CurrentOpenStartOuterWall)
             {
-                RemoveRoomWall(startRoomIndex.x, startRoomIndex.y, startOuterWallDirection);
+                TryRemoveOuterRoomWall(startRoomIndex, CurrentStartOuterWallDirection, "start");
             }
 
-            if (openEndOuterWall)
+            if (CurrentOpenEndOuterWall)
             {
-                RemoveRoomWall(endRoomIndex.x, endRoomIndex.y, endOuterWallDirection);
+                TryRemoveOuterRoomWall(endRoomIndex, CurrentEndOuterWallDirection, "end");
+            }
+        }
+
+        private void TryRemoveOuterRoomWall(Vector2Int roomIndex, Room3D.Directions direction, string roomName)
+        {
+            if (direction == Room3D.Directions.NONE)
+            {
+                return;
+            }
+
+            if (!IsOuterWallDirection(roomIndex, direction))
+            {
+                Debug.LogWarning(
+                    $"ArcadeGen3D skipped the {roomName} outer opening because {direction} is not outside the maze at {roomIndex}.",
+                    this);
+                return;
+            }
+
+            RemoveRoomWall(roomIndex.x, roomIndex.y, direction);
+        }
+
+        private bool IsOuterWallDirection(Vector2Int roomIndex, Room3D.Directions direction)
+        {
+            switch (direction)
+            {
+                case Room3D.Directions.NORTH:
+                    return roomIndex.y == CurrentNumZ - 1;
+
+                case Room3D.Directions.EAST:
+                    return roomIndex.x == CurrentNumX - 1;
+
+                case Room3D.Directions.SOUTH:
+                    return roomIndex.y == 0;
+
+                case Room3D.Directions.WEST:
+                    return roomIndex.x == 0;
+
+                default:
+                    return false;
             }
         }
 
@@ -438,7 +684,7 @@ namespace Sol
             switch (dir)
             {
                 case Room3D.Directions.NORTH:
-                    if (z < numZ - 1)
+                    if (z < CurrentNumZ - 1)
                     {
                         opp = Room3D.Directions.SOUTH;
                         ++z;
@@ -446,7 +692,7 @@ namespace Sol
                     break;
 
                 case Room3D.Directions.EAST:
-                    if (x < numX - 1)
+                    if (x < CurrentNumX - 1)
                     {
                         opp = Room3D.Directions.WEST;
                         ++x;
@@ -489,7 +735,7 @@ namespace Sol
                 switch (dir)
                 {
                     case Room3D.Directions.NORTH:
-                        if (z < numZ - 1)
+                        if (z < CurrentNumZ - 1)
                         {
                             ++z;
                             if (!rooms[x, z].visited)
@@ -502,7 +748,7 @@ namespace Sol
                         break;
 
                     case Room3D.Directions.EAST:
-                        if (x < numX - 1)
+                        if (x < CurrentNumX - 1)
                         {
                             ++x;
                             if (!rooms[x, z].visited)
@@ -602,7 +848,8 @@ namespace Sol
 
             while (!flag)
             {
-                for (int i = 0; i < 10; i++) // Process 10 steps per frame.
+                int stepsThisFrame = Mathf.Max(1, generationStepsPerFrame);
+                for (int i = 0; i < stepsThisFrame; i++)
                 {
                     flag = GenerateStep();
                     if (flag)
@@ -614,8 +861,7 @@ namespace Sol
                 yield return null; // Wait one frame.
             }
 
-            ActivateEndRoomExitClerk();
-            generating = false;
+            FinishGeneration();
         }
 
         private void ActivateEndRoomExitClerk()
@@ -639,11 +885,11 @@ namespace Sol
             }
         }
 
-        private void Reset()
+        private void ResetRoomsForGeneration()
         {
-            for (int i = 0; i < numX; ++i)
+            for (int i = 0; i < CurrentNumX; ++i)
             {
-                for (int j = 0; j < numZ; ++j)
+                for (int j = 0; j < CurrentNumZ; ++j)
                 {
                     rooms[i, j].visited = false;
                     rooms[i, j].SetDirFlag(Room3D.Directions.NORTH, true);
@@ -653,6 +899,61 @@ namespace Sol
                     rooms[i, j].visited = false;
                 }
             }
+        }
+
+        private int CurrentNumX => activeRules != null ? Mathf.Max(1, activeRules.numX) : numX;
+        private int CurrentNumZ => activeRules != null ? Mathf.Max(1, activeRules.numZ) : numZ;
+        private List<GameObject> CurrentPossibleRoomPrefabs => activeRules != null ? activeRules.possibleRoomPrefabs : possibleRoomPrefabs;
+        private GameObject CurrentFirstRoomPrefab => activeRules != null ? activeRules.firstRoomPrefab : firstRoomPrefab;
+        private GameObject CurrentLastRoomPrefab => activeRules != null ? activeRules.lastRoomPrefab : lastRoomPrefab;
+        private GameObject CurrentCenterRoomPrefab => activeRules != null ? activeRules.centerRoomPrefab : centerRoomPrefab;
+        private SpecialRoomPlacementMode CurrentSpecialRoomPlacementMode =>
+            activeRules != null ? activeRules.specialRoomPlacementMode : specialRoomPlacementMode;
+        private bool CurrentOpenStartOuterWall => activeRules != null ? activeRules.openStartOuterWall : openStartOuterWall;
+        private Room3D.Directions CurrentStartOuterWallDirection =>
+            activeRules != null ? activeRules.startOuterWallDirection : startOuterWallDirection;
+        private bool CurrentOpenEndOuterWall => activeRules != null ? activeRules.openEndOuterWall : openEndOuterWall;
+        private Room3D.Directions CurrentEndOuterWallDirection =>
+            activeRules != null ? activeRules.endOuterWallDirection : endOuterWallDirection;
+
+        private bool ShouldActivateEndRoomExit()
+        {
+            return activeRules == null || activeRules.activateEndRoomExit;
+        }
+
+        private void RunGenerationToCompletion()
+        {
+            generating = true;
+            int generationStepLimit = Mathf.Max(1, CurrentNumX * CurrentNumZ * 4);
+            for (int i = 0; i < generationStepLimit; i++)
+            {
+                if (GenerateStep())
+                {
+                    return;
+                }
+            }
+
+            Debug.LogWarning("ArcadeGen3D generation hit the safety step limit.", this);
+        }
+
+        private void FinishGeneration()
+        {
+            if (ShouldActivateEndRoomExit())
+            {
+                ActivateEndRoomExitClerk();
+            }
+
+            generating = false;
+
+            Action callback = generationCompleteCallback;
+            ClearActiveGenerationRequest();
+            callback?.Invoke();
+        }
+
+        private void ClearActiveGenerationRequest()
+        {
+            activeRules = null;
+            generationCompleteCallback = null;
         }
     }
 }

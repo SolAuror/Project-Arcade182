@@ -381,6 +381,7 @@ GameObject:
   - component: {fileID: 441065333782150515}
   - component: {fileID: 8295282825389362197}
   - component: {fileID: 8861423841737197292}
+  - component: {fileID: 910000000000510002}
   m_Layer: 3
   m_Name: SolController
   m_TagString: Player
@@ -1488,3 +1489,16 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   CustomBlends: {fileID: 0}
+--- !u!114 &910000000000510002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4684500389704870999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f5e1b403f6a4792a4826d8c7c2b1851, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultTicketsPerPoint: 0.1

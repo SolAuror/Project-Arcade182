@@ -151,6 +151,7 @@ namespace Player
                 CameraMode.TopDown => TopDownUsesLookInput(),
                 CameraMode.Isometric => IsometricUsesLookInput(),
                 CameraMode.Platformer => PlatformerUsesLookInput(),
+                CameraMode.FixedSideOn => false,
                 _ => false
             };
         }
@@ -164,6 +165,7 @@ namespace Player
                 CameraMode.TopDown => TopDownRendersPlayer(),
                 CameraMode.Isometric => IsometricRendersPlayer(),
                 CameraMode.Platformer => PlatformerRendersPlayer(),
+                CameraMode.FixedSideOn => true,
                 _ => true
             };
         }
@@ -203,6 +205,7 @@ namespace Player
             {
                 CameraMode.TopDown => true,
                 CameraMode.Platformer => true,
+                CameraMode.FixedSideOn => true,
                 CameraMode.Isometric => IsIsometricPointerModifierActive(),
                 _ => false
             };
@@ -215,6 +218,7 @@ namespace Player
                 CameraMode.FirstPerson => true,
                 CameraMode.ThirdPerson => true,
                 CameraMode.Isometric => !IsIsometricPointerModifierActive(),
+                CameraMode.FixedSideOn => false,
                 _ => false
             };
         }

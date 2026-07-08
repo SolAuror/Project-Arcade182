@@ -26,8 +26,10 @@ Important `GrabManager` fields:
 - `Grab Input`: `Attack` uses left click; `Interact` uses the interact action.
 - `Grab Mode`: use `Crosshair` for first-person play, or `Mouse` for cursor-driven modes.
 - `Scroll Sensitivity`: held-distance adjustment speed.
-- `Rotation Mode` and `Rotation Sensitivity`: held-object rotation.
-- `Is Locking Enabled`: allows right-click freezing.
+- `Rotation Mode` and `Rotation Sensitivity`: held-object rotation. `Rotation Mode` is driven by holding `R` during play.
+- `Is Throwing Enabled`, `Throw Speed`, `Throw Upward Bias`, and `Max Throw Speed`: controlled held-object throwing.
+- `Close Throw Bonus Speed`, `Full Power Throw Distance`, and `Base Power Throw Distance`: close-range throw bonus. Pulling a held object closer with the mouse wheel gives it more launch speed.
+- `Is Locking Enabled`: allows middle-click freezing.
 - `Is Frozen`: freezes all grabbable rigidbodies.
 
 ## Grabbable Setup
@@ -40,12 +42,18 @@ Add these to a prop:
 
 Objects without `GrabbableComponent` are ignored.
 
+Important `GrabbableComponent` fields:
+
+- `Throw Power Multiplier`: overall throw strength for that object.
+- `Close Throw Bonus Multiplier`: how much that object benefits from close-range throwing.
+
 ## Controls
 
 - Hold left click: grab and release.
 - Mouse wheel: adjust held distance.
-- Right click: freeze or unfreeze the aimed or held object.
-- Middle click: toggle held-object rotation.
+- Right click while holding: throw the held object.
+- Middle click: freeze or unfreeze the aimed or held object.
+- Hold `R` while holding: rotate the held object.
 
 ## Code API
 
