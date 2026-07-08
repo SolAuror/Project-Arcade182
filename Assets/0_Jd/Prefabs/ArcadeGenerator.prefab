@@ -48,12 +48,11 @@ MonoBehaviour:
   - {fileID: 6010777708736884214, guid: 914f32a7979e05e4897d034009a196c3, type: 3}
   - {fileID: 6010777708736884214, guid: 32101f2dd7f54a249b93f8d3848f38d0, type: 3}
   - {fileID: 6010777708736884214, guid: a1282c3190860874f9cecf5e4045bfe1, type: 3}
-  - {fileID: 6010777708736884214, guid: 2ae12825fbb1926499e5c23534865ffd, type: 3}
   firstRoomPrefab: {fileID: 6010777708736884214, guid: 914f32a7979e05e4897d034009a196c3, type: 3}
   lastRoomPrefab: {fileID: 6010777708736884214, guid: 0f5018403b2937142ab78ba25df95dfd, type: 3}
   centerRoomPrefab: {fileID: 6010777708736884214, guid: 287136fa6d078f244bdbd1ae203d856a, type: 3}
   specialRoomPlacementMode: 2
-  roomPrefab: {fileID: 6010777708736884214, guid: a5bd50f1af7e01f458024c3501159b76, type: 3}
+  roomPrefab: {fileID: 0}
   numX: 3
   numZ: 14
   autoGenerateOnStart: 1
