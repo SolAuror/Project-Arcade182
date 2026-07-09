@@ -113,6 +113,7 @@ namespace Sol
 
         public Transform GeneratedRoomsParent => generatedRoomsParent;
         public Room3D[,] Rooms => rooms;
+        public bool IsGenerating => generating;
         public Vector2Int StartRoomIndex => startRoomIndex;
         public Vector2Int EndRoomIndex => endRoomIndex;
         public float RoomWidth => roomWidth;
@@ -819,6 +820,12 @@ namespace Sol
             }
 
             return false;
+        }
+
+        /// <summary>Moves (or spawns) the player at the current start room's PlayerSpawn.</summary>
+        public void RespawnPlayerAtStartRoom()
+        {
+            RespawnPlayerAtStart();
         }
 
         private void RespawnPlayerAtStart()

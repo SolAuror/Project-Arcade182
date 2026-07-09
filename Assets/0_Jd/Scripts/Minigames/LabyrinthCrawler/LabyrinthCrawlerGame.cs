@@ -63,12 +63,30 @@ namespace Sol.Minigames
         [SerializeField] private string legacyLastScorePlayerPrefsKey = "TimedMazeEscape.LastScore";
         [SerializeField] private string legacyBestScorePlayerPrefsKey = "TimedMazeEscape.BestScore";
 
+        [Header("Audio")]
+        [Tooltip("2D source for run feedback. Auto-added when missing; assign clips to enable each cue.")]
+        [SerializeField] private AudioSource feedbackAudioSource;
+
+        [SerializeField] private AudioClip playerHurtClip;
+        [SerializeField] private AudioClip enemyKillClip;
+
+        [Tooltip("Dry-fire cue when a cast fails for lack of mana.")]
+        [SerializeField] private AudioClip castFailClip;
+
+        [SerializeField] private AudioClip stageClearClip;
+        [SerializeField] private AudioClip upgradePickedClip;
+        [SerializeField] private AudioClip runOverClip;
+
+        [Header("Fall Safety")]
+        [Tooltip("Players falling below this world Y are teleported back to the stage start room.")]
+        [SerializeField] private float fallRespawnY = -5f;
+
         [Header("Upgrades")]
         [SerializeField] private LabyrinthUpgradeSystem upgradeSystem = new LabyrinthUpgradeSystem();
 
         [Header("Scene Flow")]
         [SerializeField] private bool returnToSceneOnFinish = true;
-        [SerializeField] private string returnSceneName = "Sc_ArcadeExterior";
+        [SerializeField] private string returnSceneName = "Sc_ArcadeHub";
         [SerializeField] private float returnDelaySeconds = 2f;
 
         private readonly List<EnemyController> enemies = new List<EnemyController>();
@@ -95,6 +113,7 @@ namespace Sol.Minigames
         private bool hasFailed;
         private bool isChoosingUpgrade;
         private bool scoreRecorded;
+        private float lastSeenManaFailTime = -999f;
 
         public float RunSeconds => runTimer != null ? runTimer.Elapsed : 0f;
         public int CurrentMazeWidth => currentMazeWidth;
@@ -150,6 +169,14 @@ namespace Sol.Minigames
 
             runTimer.Mode = MinigameTimer.TimerMode.Stopwatch;
 
+            if (feedbackAudioSource == null && !TryGetComponent(out feedbackAudioSource))
+            {
+                feedbackAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+
+            feedbackAudioSource.playOnAwake = false;
+            feedbackAudioSource.spatialBlend = 0f; // 2D run feedback
+
             // Authored in the LabyrinthCrawlerHud prefab; its panel starts inactive.
             upgradeScreen = FindFirstObjectByType<LabyrinthUpgradeScreen>(FindObjectsInactive.Include);
             if (upgradeScreen == null)
@@ -174,7 +201,50 @@ namespace Sol.Minigames
             if (!isRunning && !isChoosingUpgrade)
             {
                 TickReturnDelay();
+                return;
             }
+
+            if (isRunning && !isChoosingUpgrade)
+            {
+                RespawnPlayerIfFallenOut();
+                TickCastFailAudio();
+            }
+        }
+
+        private void TickCastFailAudio()
+        {
+            if (playerMana == null || playerMana.LastFailedSpendTime <= lastSeenManaFailTime)
+            {
+                return;
+            }
+
+            lastSeenManaFailTime = playerMana.LastFailedSpendTime;
+            PlayClip(castFailClip);
+        }
+
+        private void PlayClip(AudioClip clip)
+        {
+            if (feedbackAudioSource != null && clip != null)
+            {
+                feedbackAudioSource.PlayOneShot(clip);
+            }
+        }
+
+        private void OnPlayerDamaged(float amount)
+        {
+            PlayClip(playerHurtClip);
+        }
+
+        private void RespawnPlayerIfFallenOut()
+        {
+            Transform player = playerHealth != null ? playerHealth.transform : null;
+            if (player == null || mazeGenerator == null || player.position.y >= fallRespawnY)
+            {
+                return;
+            }
+
+            Debug.Log($"Player fell below y {fallRespawnY:0.0}; respawning at the stage start room.", this);
+            mazeGenerator.RespawnPlayerAtStartRoom();
         }
 
         private void OnValidate()
@@ -192,6 +262,7 @@ namespace Sol.Minigames
             if (playerHealth != null)
             {
                 playerHealth.OnDied.RemoveListener(OnPlayerDied);
+                playerHealth.OnDamaged.RemoveListener(OnPlayerDamaged);
             }
         }
 
@@ -232,6 +303,7 @@ namespace Sol.Minigames
             }
 
             exitsFound++;
+            PlayClip(stageClearClip);
 
             float stageClearSeconds = runTimer.Elapsed - stageStartElapsed;
             float parSeconds = parBaseSeconds + parPerStageSeconds * exitsFound;
@@ -247,6 +319,7 @@ namespace Sol.Minigames
         {
             enemies.Remove(enemy);
             enemiesKilled++;
+            PlayClip(enemyKillClip);
         }
 
         private void BeginUpgradeChoice()
@@ -266,6 +339,10 @@ namespace Sol.Minigames
         private void OnUpgradePicked(LabyrinthUpgrade upgrade)
         {
             upgradeSystem.Apply(upgrade);
+            if (upgrade != null)
+            {
+                PlayClip(upgradePickedClip);
+            }
 
             isChoosingUpgrade = false;
             Time.timeScale = 1f;
@@ -290,6 +367,7 @@ namespace Sol.Minigames
             Time.timeScale = 1f;
             runTimer.Pause();
             finishTime = Time.unscaledTime;
+            PlayClip(runOverClip);
 
             int killScore = enemiesKilled * exitsFound * killStageMultiplier;
             score += killScore;
@@ -347,6 +425,9 @@ namespace Sol.Minigames
 
         private void OnMazeReady()
         {
+            // Generation finishes after every scene PlayerSpawn.Start() has run,
+            // so this is the final word on where the stage begins.
+            mazeGenerator.RespawnPlayerAtStartRoom();
             ConfigureGeneratedExit();
             SpawnEnemies();
             stageStartElapsed = runTimer.Elapsed;
@@ -533,10 +614,17 @@ namespace Sol.Minigames
                 player.AddComponent<PlayerSpellInput>();
             }
 
+            if (!player.TryGetComponent(out PlayerHitFeedback _))
+            {
+                player.AddComponent<PlayerHitFeedback>();
+            }
+
             playerHealth.ResetToMax();
             playerMana.ResetToMax();
             playerHealth.OnDied.RemoveListener(OnPlayerDied);
             playerHealth.OnDied.AddListener(OnPlayerDied);
+            playerHealth.OnDamaged.RemoveListener(OnPlayerDamaged);
+            playerHealth.OnDamaged.AddListener(OnPlayerDamaged);
         }
 
         private void ResolveScoreCarrier()
@@ -612,6 +700,9 @@ namespace Sol.Minigames
             [SerializeField] private int startingEnemyCount = 2;
             [SerializeField] private int enemyGrowthPerStage = 1;
 
+            [Tooltip("One extra enemy every N stages on top of the linear growth, so packs snowball on later waves.")]
+            [SerializeField, Min(1)] private int bonusEnemyEveryNStages = 2;
+
             [Header("Outer Openings")]
             [SerializeField] private bool openStartOuterWall;
             [SerializeField] private Room3D.Directions startOuterWallDirection = Room3D.Directions.SOUTH;
@@ -656,7 +747,9 @@ namespace Sol.Minigames
 
             public int GetEnemyCount(int stage)
             {
-                return Mathf.Max(0, startingEnemyCount + Mathf.Max(0, stage - 1) * enemyGrowthPerStage);
+                int stagesIn = Mathf.Max(0, stage - 1);
+                int bonus = stagesIn / Mathf.Max(1, bonusEnemyEveryNStages);
+                return Mathf.Max(0, startingEnemyCount + stagesIn * enemyGrowthPerStage + bonus);
             }
 
             public void OnValidate()
@@ -668,6 +761,7 @@ namespace Sol.Minigames
                 scoreMultiplierGrowthPerStage = Mathf.Max(0, scoreMultiplierGrowthPerStage);
                 startingEnemyCount = Mathf.Max(0, startingEnemyCount);
                 enemyGrowthPerStage = Mathf.Max(0, enemyGrowthPerStage);
+                bonusEnemyEveryNStages = Mathf.Max(1, bonusEnemyEveryNStages);
             }
         }
     }

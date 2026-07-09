@@ -81,6 +81,16 @@ namespace Sol.Minigames
                 return;
             }
 
+            // Friendly projectiles pass through each other (a fireball must
+            // never eat another of the caster's shots). Opposing projectiles
+            // still collide, so shots can intercept enemy bolts.
+            Projectile otherProjectile = collision.collider.GetComponentInParent<Projectile>();
+            if (otherProjectile != null && otherProjectile.Owner == owner)
+            {
+                IgnoreCollisionsWith(collision.collider.transform.root);
+                return;
+            }
+
             consumed = true;
 
             Health health = collision.collider.GetComponentInParent<Health>();
@@ -89,14 +99,79 @@ namespace Sol.Minigames
                 health.TakeDamage(damage, owner);
             }
 
-            if (hitVfxPrefab != null)
+            Vector3 point = collision.contactCount > 0 ? collision.GetContact(0).point : transform.position;
+            SpawnHitVfx(point);
+            Destroy(gameObject);
+        }
+
+        /// <summary>Destroys the projectile mid-air as if it hit something (shot down by a beam).</summary>
+        public void Detonate()
+        {
+            if (consumed)
             {
-                Vector3 point = collision.contactCount > 0 ? collision.GetContact(0).point : transform.position;
-                GameObject vfx = Instantiate(hitVfxPrefab, point, Quaternion.identity);
-                Destroy(vfx, hitVfxLifeSeconds);
+                return;
             }
 
+            consumed = true;
+            SpawnHitVfx(transform.position);
             Destroy(gameObject);
+        }
+
+        /// <summary>
+        /// Bats the projectile back (pulse reflect): it now belongs to the
+        /// reflector's faction and flies away from the reflection point.
+        /// </summary>
+        public void Reflect(Faction newOwner, Vector3 awayFrom, Transform newOwnerRoot)
+        {
+            if (consumed || rb == null)
+            {
+                return;
+            }
+
+            owner = newOwner;
+
+            Vector3 direction = transform.position - awayFrom;
+            direction.y *= 0.25f; // mostly level so it can find enemies
+            if (direction.sqrMagnitude < 0.001f)
+            {
+                direction = -rb.linearVelocity;
+            }
+
+            float speed = Mathf.Max(rb.linearVelocity.magnitude, 8f);
+            rb.linearVelocity = direction.normalized * speed;
+            transform.rotation = Quaternion.LookRotation(direction.normalized);
+            despawnTime = Time.time + lifeSeconds; // fresh life for the return trip
+            IgnoreOwnerColliders(newOwnerRoot);
+        }
+
+        private void SpawnHitVfx(Vector3 point)
+        {
+            if (hitVfxPrefab == null)
+            {
+                return;
+            }
+
+            GameObject vfx = Instantiate(hitVfxPrefab, point, Quaternion.identity);
+            Destroy(vfx, hitVfxLifeSeconds);
+        }
+
+        private void IgnoreCollisionsWith(Transform otherRoot)
+        {
+            if (otherRoot == null)
+            {
+                return;
+            }
+
+            foreach (Collider own in GetComponentsInChildren<Collider>())
+            {
+                foreach (Collider other in otherRoot.GetComponentsInChildren<Collider>())
+                {
+                    if (own != null && other != null)
+                    {
+                        Physics.IgnoreCollision(own, other);
+                    }
+                }
+            }
         }
 
         private void ConfigureRigidbody()

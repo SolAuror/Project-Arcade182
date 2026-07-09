@@ -36,6 +36,9 @@ namespace Sol.Minigames
 
         public float Normalized => maxMana > 0f ? Mathf.Clamp01(Current / maxMana) : 0f;
 
+        /// <summary>Time.time of the last spend that failed for lack of mana. For HUD flashes.</summary>
+        public float LastFailedSpendTime { get; private set; } = -999f;
+
         public float RegenPerSecond
         {
             get => regenPerSecond;
@@ -79,6 +82,7 @@ namespace Sol.Minigames
 
             if (current < cost)
             {
+                LastFailedSpendTime = Time.time;
                 return false;
             }
 

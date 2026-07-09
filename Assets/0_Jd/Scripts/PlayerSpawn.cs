@@ -34,7 +34,14 @@ namespace Sol
             if (TryGetTaggedPlayer(out GameObject taggedPlayer))
             {
                 SpawnedInstance = taggedPlayer;
-                MoveInstanceToSpawn(SpawnedInstance);
+
+                // Scene-start spawns must not yank an already-placed player;
+                // only an explicit respawn request (maze start room) moves them.
+                if (moveExistingToSpawn)
+                {
+                    MoveInstanceToSpawn(SpawnedInstance);
+                }
+
                 return SpawnedInstance;
             }
 

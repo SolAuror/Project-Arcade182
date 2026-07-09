@@ -26,11 +26,15 @@ namespace Sol.Minigames
         [Tooltip("Seconds between casts before upgrade multipliers.")]
         [SerializeField, Min(0f)] private float cooldownSeconds = 0.5f;
 
+        [Tooltip("While the cast input is held, keep re-casting every cooldown tick (sustained beams/streams).")]
+        [SerializeField] private bool continuousWhileHeld;
+
         public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
         public Sprite Icon => icon;
         public float BaseDamage => baseDamage;
         public float ManaCost => manaCost;
         public float CooldownSeconds => cooldownSeconds;
+        public bool ContinuousWhileHeld => continuousWhileHeld;
 
         /// <summary>Resolve one cast. Implementations must not mutate this asset.</summary>
         public abstract void Cast(in SpellCastContext context);

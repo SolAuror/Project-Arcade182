@@ -14,9 +14,16 @@ namespace Sol.Minigames
         [Tooltip("Blast radius before upgrade bonuses.")]
         [SerializeField, Min(0.5f)] private float baseRadius = 5f;
 
+        [Header("Knockback")]
+        [Tooltip("Impulse pushing struck targets away from the caster (crowd control).")]
+        [SerializeField, Min(0f)] private float knockbackForce = 9f;
+
+        [Tooltip("Upward tilt mixed into the knockback direction.")]
+        [SerializeField, Range(0f, 1f)] private float knockbackUpward = 0.25f;
+
         [Header("Burst Visual")]
         [SerializeField] private Color burstColor = new Color(0.55f, 0.35f, 1f, 1f);
-        [SerializeField, Min(0.02f)] private float burstLifeSeconds = 0.2f;
+        [SerializeField, Min(0.02f)] private float burstLifeSeconds = 0.35f;
 
         public float BaseRadius => baseRadius;
 
@@ -32,6 +39,7 @@ namespace Sol.Minigames
 
             Collider[] overlaps = Physics.OverlapSphere(center, radius, context.HitMask, QueryTriggerInteraction.Ignore);
             HashSet<Health> damaged = new HashSet<Health>();
+            HashSet<Projectile> reflected = new HashSet<Projectile>();
 
             foreach (Collider overlap in overlaps)
             {
@@ -40,36 +48,50 @@ namespace Sol.Minigames
                     continue;
                 }
 
+                // Enemy projectiles caught in the pulse are batted back and
+                // become the caster's shots.
+                Projectile projectile = overlap.GetComponentInParent<Projectile>();
+                if (projectile != null)
+                {
+                    if (projectile.Owner != context.Faction && reflected.Add(projectile))
+                    {
+                        projectile.Reflect(context.Faction, center, context.Caster);
+                    }
+
+                    continue;
+                }
+
                 Health health = FindHealth(overlap);
                 if (health != null && health.Faction != context.Faction && damaged.Add(health))
                 {
                     health.TakeDamage(GetDamage(context), context.Faction);
+                    ApplyKnockback(center, health);
                 }
             }
 
-            SpawnBurst(center, radius);
+            SpellBurstVisual.Spawn(center, radius, burstColor, burstLifeSeconds);
         }
 
-        private void SpawnBurst(Vector3 center, float radius)
+        private void ApplyKnockback(Vector3 center, Health health)
         {
-            GameObject burst = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            burst.name = $"{DisplayName} Burst";
-            burst.transform.position = center;
-            burst.transform.localScale = Vector3.one * (radius * 2f);
-
-            Collider burstCollider = burst.GetComponent<Collider>();
-            if (burstCollider != null)
+            if (knockbackForce <= 0f)
             {
-                Destroy(burstCollider);
+                return;
             }
 
-            Renderer burstRenderer = burst.GetComponent<Renderer>();
-            if (burstRenderer != null)
-            {
-                burstRenderer.material.color = burstColor;
-            }
+            Vector3 away = health.transform.position - center;
+            away.y = 0f;
+            Vector3 direction = away.sqrMagnitude > 0.001f ? away.normalized : Vector3.forward;
+            Vector3 impulse = (direction + Vector3.up * knockbackUpward).normalized * knockbackForce;
 
-            Destroy(burst, burstLifeSeconds);
+            if (health.TryGetComponent(out Rigidbody body) && !body.isKinematic)
+            {
+                body.AddForce(impulse, ForceMode.VelocityChange);
+            }
+            else if (health.TryGetComponent(out EnemyController enemy))
+            {
+                enemy.ApplyKnockback(impulse);
+            }
         }
     }
 }

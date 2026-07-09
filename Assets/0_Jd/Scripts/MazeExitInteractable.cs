@@ -26,6 +26,12 @@ namespace Sol.Arcade
         [Tooltip("If assigned, using this exit completes the maze stage instead of loading Destination Scene Name.")]
         [SerializeField] private LabyrinthCrawlerGame labyrinthCrawlerGame;
 
+        [Header("Golden Coin Clerk")]
+        [Tooltip("In the hub (no labyrinth game assigned) the clerk sells the golden coin instead of loading a scene.")]
+        [SerializeField] private bool actAsGoldenCoinClerk = true;
+
+        [SerializeField, Min(1)] private int goldenCoinTicketPrice = 1000000;
+
         [Header("Interaction")]
         [Tooltip("Maximum distance for activating this exit.")]
         [SerializeField] private float interactDistance = 10f;
@@ -77,6 +83,12 @@ namespace Sol.Arcade
                 return;
             }
 
+            if (actAsGoldenCoinClerk)
+            {
+                HandleGoldenCoinPurchase();
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(destinationSceneName))
             {
                 Debug.LogWarning($"{name} has no destination scene assigned.", this);
@@ -93,6 +105,37 @@ namespace Sol.Arcade
 
             _isLoading = true;
             SceneManager.LoadScene(destinationSceneName, LoadSceneMode.Single);
+        }
+
+        private void HandleGoldenCoinPurchase()
+        {
+            PlayerScoreCarrier carrier = PlayerScoreCarrier.FindForPlayer();
+            Vector3 popupPosition = transform.position + Vector3.up * 2.2f;
+
+            if (carrier == null)
+            {
+                Debug.LogWarning($"{name} found no PlayerScoreCarrier; the golden coin cannot be sold.", this);
+                return;
+            }
+
+            if (carrier.HasGoldenCoin)
+            {
+                DamagePopup.SpawnText(popupPosition, "TAKE THE COIN TO THE EXIT DOOR", new Color(1f, 0.85f, 0.25f), 2.5f);
+                return;
+            }
+
+            if (carrier.TrySpendTickets(goldenCoinTicketPrice))
+            {
+                DamagePopup.SpawnText(popupPosition, "THE GOLDEN COIN IS YOURS!", new Color(1f, 0.85f, 0.25f), 3f);
+                carrier.GrantGoldenCoin();
+                return;
+            }
+
+            DamagePopup.SpawnText(
+                popupPosition,
+                $"COME BACK WITH {goldenCoinTicketPrice:N0} TICKETS\n(YOU HAVE {carrier.TotalTickets:N0})",
+                new Color(1f, 0.4f, 0.3f),
+                3f);
         }
 
         private void Awake()

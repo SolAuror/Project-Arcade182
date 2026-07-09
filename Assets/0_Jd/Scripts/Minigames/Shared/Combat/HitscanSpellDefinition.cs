@@ -36,6 +36,21 @@ namespace Sol.Minigames
                     continue;
                 }
 
+                // The beam ignores the caster's own projectiles entirely, but
+                // shoots enemy projectiles out of the air.
+                Projectile projectile = hit.collider.GetComponentInParent<Projectile>();
+                if (projectile != null)
+                {
+                    if (projectile.Owner == context.Faction)
+                    {
+                        continue;
+                    }
+
+                    beamEnd = hit.point;
+                    projectile.Detonate();
+                    break;
+                }
+
                 beamEnd = hit.point;
 
                 Health health = FindHealth(hit.collider);

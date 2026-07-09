@@ -43,12 +43,33 @@ namespace Sol.Minigames
         [Tooltip("Aim at this height above the player's feet.")]
         [SerializeField, Min(0f)] private float targetHeight = 1.2f;
 
+        [Header("Wander")]
+        [Tooltip("Aimless patrol speed while the player is not detected.")]
+        [SerializeField, Min(0f)] private float wanderSpeed = 1.7f;
+
+        [SerializeField] private Vector2 wanderMoveSecondsRange = new Vector2(1.5f, 3.5f);
+        [SerializeField] private Vector2 wanderPauseSecondsRange = new Vector2(0.5f, 2f);
+
+        [Header("Knockback")]
+        [Tooltip("How quickly knockback velocity bleeds off (units/sec of deceleration).")]
+        [SerializeField, Min(1f)] private float knockbackRecovery = 14f;
+
+        [Header("Death")]
+        [Tooltip("Shockwave color when this enemy dies. Alpha 0 disables the burst.")]
+        [SerializeField] private Color deathBurstColor = new Color(0.95f, 0.3f, 0.2f, 1f);
+
+        [SerializeField, Min(0.1f)] private float deathBurstRadius = 1.2f;
+
         private CharacterController characterController;
         private Health health;
         private SpellCaster caster;
         private LabyrinthCrawlerGame game;
         private Transform player;
         private bool reportedDeath;
+        private Vector3 wanderDirection;
+        private float wanderPhaseEndTime;
+        private bool wanderMoving;
+        private Vector3 knockbackVelocity;
 
         public Health Health => health;
 
@@ -59,6 +80,12 @@ namespace Sol.Minigames
             caster = GetComponent<SpellCaster>();
             health.Faction = Faction.Enemy;
             health.OnDied.AddListener(HandleDied);
+            health.OnDamaged.AddListener(HandleDamaged);
+
+            if (!TryGetComponent(out HitFlash _))
+            {
+                gameObject.AddComponent<HitFlash>();
+            }
         }
 
         private void OnDestroy()
@@ -66,7 +93,13 @@ namespace Sol.Minigames
             if (health != null)
             {
                 health.OnDied.RemoveListener(HandleDied);
+                health.OnDamaged.RemoveListener(HandleDamaged);
             }
+        }
+
+        private void HandleDamaged(float amount)
+        {
+            DamagePopup.Spawn(transform.position + Vector3.up * 1.1f, amount);
         }
 
         public void Initialize(LabyrinthCrawlerGame owningGame)
@@ -86,8 +119,17 @@ namespace Sol.Minigames
                 return;
             }
 
+            // Knockback overrides everything until it bleeds off (crowd control).
+            if (knockbackVelocity.sqrMagnitude > 0.04f)
+            {
+                characterController.Move((knockbackVelocity + Physics.gravity * 0.5f) * Time.deltaTime);
+                knockbackVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, knockbackRecovery * Time.deltaTime);
+                return;
+            }
+
             if (!TryGetPlayer(out Transform target))
             {
+                Wander();
                 return;
             }
 
@@ -98,6 +140,7 @@ namespace Sol.Minigames
 
             if (distance > detectionRange || !HasLineOfSight(eyePosition, targetPoint, target))
             {
+                Wander();
                 return;
             }
 
@@ -126,6 +169,44 @@ namespace Sol.Minigames
                 };
 
                 caster.TryCast(0, castContext);
+            }
+        }
+
+        /// <summary>Shoves the enemy (pulse crowd control); movement resumes once it decays.</summary>
+        public void ApplyKnockback(Vector3 impulse)
+        {
+            knockbackVelocity = impulse;
+        }
+
+        private void Wander()
+        {
+            if (Time.time >= wanderPhaseEndTime)
+            {
+                wanderMoving = !wanderMoving;
+                if (wanderMoving)
+                {
+                    wanderDirection = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward;
+                    wanderPhaseEndTime = Time.time + Random.Range(wanderMoveSecondsRange.x, wanderMoveSecondsRange.y);
+                }
+                else
+                {
+                    wanderPhaseEndTime = Time.time + Random.Range(wanderPauseSecondsRange.x, wanderPauseSecondsRange.y);
+                }
+            }
+
+            if (!wanderMoving || wanderSpeed <= 0f)
+            {
+                characterController.SimpleMove(Vector3.zero); // keep gravity applied
+                return;
+            }
+
+            FaceToward(transform.position + wanderDirection);
+            characterController.SimpleMove(wanderDirection * wanderSpeed);
+
+            // Bounce off walls instead of grinding against them.
+            if ((characterController.collisionFlags & CollisionFlags.Sides) != 0)
+            {
+                wanderDirection = Quaternion.Euler(0f, Random.Range(90f, 270f), 0f) * wanderDirection;
             }
         }
 
@@ -182,6 +263,12 @@ namespace Sol.Minigames
             }
 
             reportedDeath = true;
+
+            if (deathBurstColor.a > 0f)
+            {
+                SpellBurstVisual.Spawn(transform.position + Vector3.up * 0.9f, deathBurstRadius, deathBurstColor, 0.35f);
+            }
+
             game?.NotifyEnemyDied(this);
             Destroy(gameObject);
         }

@@ -110,6 +110,7 @@ namespace Player
         {
             UpdateCameraMode();
             UpdateMovement();
+            UpdateHeadBob();
         }
     }
 }

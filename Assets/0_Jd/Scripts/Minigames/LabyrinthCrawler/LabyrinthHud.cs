@@ -52,6 +52,15 @@ namespace Sol.Minigames
         [SerializeField] private GameObject runOverGroup;
         [SerializeField] private Text runOverText;
 
+        [Header("Feedback")]
+        [Tooltip("Mana bar tint when a cast fails for lack of mana.")]
+        [SerializeField] private Color manaFailFlashColor = new Color(1f, 0.25f, 0.2f, 1f);
+
+        [SerializeField, Min(0.05f)] private float manaFailFlashSeconds = 0.3f;
+
+        private Color manaFillBaseColor;
+        private bool manaFillBaseColorCaptured;
+
         private void Awake()
         {
             if (game == null)
@@ -105,6 +114,17 @@ namespace Sol.Minigames
             if (manaFill != null)
             {
                 manaFill.fillAmount = mana != null ? mana.Normalized : 0f;
+
+                if (!manaFillBaseColorCaptured)
+                {
+                    manaFillBaseColor = manaFill.color;
+                    manaFillBaseColorCaptured = true;
+                }
+
+                // Red flash when a cast just failed for lack of mana.
+                float sinceFail = mana != null ? Time.time - mana.LastFailedSpendTime : float.MaxValue;
+                float flash = sinceFail <= manaFailFlashSeconds ? 1f - sinceFail / manaFailFlashSeconds : 0f;
+                manaFill.color = Color.Lerp(manaFillBaseColor, manaFailFlashColor, flash);
             }
 
             SetText(manaText, mana != null ? $"MP {mana.Current:0}/{mana.Max:0}" : "MP --");

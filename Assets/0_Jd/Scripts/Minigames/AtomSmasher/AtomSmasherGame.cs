@@ -13,7 +13,8 @@ namespace Sol.Minigames
         private enum QuantumModifier
         {
             SpeedBoost,
-            SplitBall
+            SplitBall,
+            Restock
         }
 
         [Serializable]
@@ -54,6 +55,18 @@ namespace Sol.Minigames
             [SerializeField, Min(1)] private int spawnWeight = 1;
             [SerializeField, Min(1)] private int minimumWave = 1;
 
+            public QuantumEffectOption()
+            {
+            }
+
+            public QuantumEffectOption(QuantumModifier modifier, string displayName, int spawnWeight, int minimumWave)
+            {
+                this.modifier = modifier;
+                this.displayName = displayName;
+                this.spawnWeight = spawnWeight;
+                this.minimumWave = minimumWave;
+            }
+
             public QuantumModifier Modifier => modifier;
             public string DisplayName => string.IsNullOrWhiteSpace(displayName) ? modifier.ToString() : displayName;
             public int SpawnWeight => Mathf.Max(0, spawnWeight);
@@ -64,7 +77,15 @@ namespace Sol.Minigames
         private const string GameTitle = "Atom Smasher";
 
         [Header("Rules")]
-        [SerializeField] private int roundShots = 10;
+        [Tooltip("Balls in the rack at the start of a run.")]
+        [SerializeField, Min(1)] private int startingShots = 5;
+
+        [Tooltip("Balls awarded on every wave clear. Shots accumulate — there is no cap.")]
+        [SerializeField, Min(0)] private int shotsPerWaveClear = 3;
+
+        [Tooltip("Bonus per ball still alive at wave clear (times that ball's chain multiplier).")]
+        [SerializeField, Min(0)] private int ballClearBonus = 250;
+
         [SerializeField] private bool startOnAwake = true;
         [SerializeField] private int scoreMultiplierStep = 1;
         [SerializeField] private string minigameId = "AtomSmasher";
@@ -75,9 +96,11 @@ namespace Sol.Minigames
         [SerializeField] private Rect shuffleArea = new Rect(-9.75f, -0.4f, 19.7f, 4.85f);
         [SerializeField] private float shuffleMinTargetDistance = 1f;
         [SerializeField] private int maxShufflePlacementAttemptsPerTarget = 40;
+
+        [Tooltip("Physics clearance radius around every spawn/shuffle spot; keeps atoms out of walls, bumpers, and covers.")]
+        [SerializeField, Min(0.1f)] private float spawnClearRadius = 0.6f;
         [SerializeField] private bool useTimerMode;
         [SerializeField] private float roundTimeSeconds = 60f;
-        [SerializeField] private bool resetShotsOnWaveClear = true;
 
         [Header("Board")]
         [SerializeField] private AtomSmasherLauncher launcher;
@@ -117,13 +140,60 @@ namespace Sol.Minigames
         [SerializeField] private int maxQuantumPlacementAttempts = 40;
         [SerializeField] private float quantumSpeedMultiplier = 1.6f;
         [SerializeField] private float quantumMaxSpeed = 24f;
-        [SerializeField] private int maxActiveBalls = 3;
+        [SerializeField] private int maxActiveBalls = 9;
         [SerializeField] private float splitAngleDegrees = 18f;
         [SerializeField] private float splitSpeedMultiplier = 0.95f;
+        [Tooltip("Balls restored by the quantum Restock effect (also re-charges another atom).")]
+        [SerializeField, Min(0)] private int restockShots = 3;
+
         [SerializeField] private Color quantumBoostColor = new Color(0.25f, 1f, 0.45f, 1f);
         [SerializeField] private float quantumVisualSeconds = 0.85f;
         [SerializeField] private float statusMessageSeconds = 2f;
         [SerializeField] private List<QuantumEffectOption> quantumEffectOptions = new List<QuantumEffectOption>();
+
+        [Header("Quantum Atoms")]
+        [Tooltip("Chance for each regular atom to spawn quantum-charged.")]
+        [SerializeField, Range(0f, 1f)] private float quantumAtomChance = 0.06f;
+
+        [Tooltip("Quantum atoms guaranteed on wave 1.")]
+        [SerializeField, Min(0)] private int quantumAtomsGuaranteedBase = 1;
+
+        [Tooltip("One more guaranteed quantum atom every N waves.")]
+        [SerializeField, Min(1)] private int wavesPerExtraQuantumAtom = 2;
+
+        [SerializeField, Min(0)] private int quantumAtomsGuaranteedMax = 4;
+
+        [Header("Special Atoms")]
+        [Tooltip("Vibrating atom that must be hit off a rebound.")]
+        [SerializeField] private AtomSmasherTarget unstableTargetPrefab;
+
+        [SerializeField, Min(1)] private int unstableFromWave = 2;
+        [SerializeField, Min(1)] private int maxUnstablePerWave = 3;
+
+        [Tooltip("Atom that detonates the area and consumes the ball.")]
+        [SerializeField] private AtomSmasherTarget explosiveTargetPrefab;
+
+        [SerializeField, Min(1)] private int explosiveFromWave = 3;
+        [SerializeField, Min(1)] private int maxExplosivePerWave = 2;
+        [SerializeField] private Rect specialAtomSpawnArea = new Rect(-8.75f, 0f, 17.5f, 4.5f);
+        [SerializeField, Min(0.1f)] private float specialAtomMinDistance = 1.1f;
+
+        [Header("Obstruction Scaling")]
+        [Tooltip("One extra obstruction piece every N waves beyond the base pair.")]
+        [SerializeField, Min(1)] private int extraObstructionEveryNWaves = 2;
+
+        [SerializeField, Min(0)] private int maxExtraObstructions = 3;
+
+        [Header("Electron Sparks")]
+        [Tooltip("Visual sparks released when an atom is smashed; they bounce off walls, not atoms.")]
+        [SerializeField, Min(0)] private int electronsPerTargetHit = 4;
+
+        [SerializeField, Min(0)] private int electronMaxBounces = 2;
+        [SerializeField, Min(0.2f)] private float electronLifeSeconds = 1.1f;
+        [SerializeField, Min(0.5f)] private float electronMinSpeed = 7f;
+        [SerializeField, Min(0.5f)] private float electronMaxSpeed = 13f;
+        [SerializeField, Min(0.02f)] private float electronScale = 0.09f;
+        [SerializeField] private Color electronColor = new Color(0.4f, 0.9f, 1f, 1f);
 
         [Header("Feedback")]
         [SerializeField] private AudioSource feedbackAudioSource;
@@ -138,6 +208,34 @@ namespace Sol.Minigames
         [SerializeField] private Transform feedbackOrigin;
         [SerializeField] private float defaultParticleLifetime = 1.25f;
 
+        [Header("Feel")]
+        [Tooltip("Realtime seconds of micro slow-mo when an atom is smashed. 0 disables hitstop.")]
+        [SerializeField, Min(0f)] private float hitstopSeconds = 0.05f;
+
+        [Tooltip("How deep the hitstop slows time.")]
+        [SerializeField, Range(0.01f, 1f)] private float hitstopTimeScale = 0.2f;
+
+        [Tooltip("Show floating score numbers where atoms are smashed.")]
+        [SerializeField] private bool showScorePopups = true;
+
+        [Tooltip("Pause before the next wave builds, so the clear lands as a beat.")]
+        [SerializeField, Min(0f)] private float waveClearDelaySeconds = 1.2f;
+
+        [SerializeField] private Color popupBaseColor = new Color(1f, 0.9f, 0.35f, 1f);
+        [SerializeField] private Color popupHotColor = new Color(1f, 0.35f, 0.2f, 1f);
+
+        [Tooltip("Chain multiplier at which popup color reaches full heat.")]
+        [SerializeField, Min(2)] private int popupHotMultiplier = 8;
+
+        [Header("Camera Fx")]
+        [Tooltip("Shake/FOV effects on the standalone board camera. Auto-attached when missing.")]
+        [SerializeField] private AtomSmasherCameraFx cameraFx;
+
+        [SerializeField, Range(0f, 1f)] private float shakeOnLaunch = 0.12f;
+        [SerializeField, Range(0f, 1f)] private float shakeOnTargetHit = 0.3f;
+        [SerializeField, Range(0f, 1f)] private float shakeOnWaveClear = 0.45f;
+        [SerializeField, Range(0f, 1f)] private float shakeOnFail = 0.5f;
+
         [Header("Scene Flow")]
         [SerializeField] private bool returnToSceneOnFinish = true;
         [SerializeField] private string returnSceneName = "Sc_ArcadeHub";
@@ -148,6 +246,9 @@ namespace Sol.Minigames
         private readonly List<GameObject> activeObstructions = new List<GameObject>();
         private readonly List<AtomSmasherTarget> activeQuantumTargets = new List<AtomSmasherTarget>();
         private readonly List<AtomSmasherTarget> activeMovingTargets = new List<AtomSmasherTarget>();
+        private readonly List<AtomSmasherTarget> activeSpecialTargets = new List<AtomSmasherTarget>();
+        private readonly List<(AtomSmasherQuantumTarget marker, AtomSmasherTarget target, Color originalColor)> quantumMarkedAtoms =
+            new List<(AtomSmasherQuantumTarget, AtomSmasherTarget, Color)>();
         private int shotsRemaining;
         private int score;
         private int requiredTargetsRemaining;
@@ -163,6 +264,8 @@ namespace Sol.Minigames
         private bool isComplete;
         private bool hasFailed;
         private bool waveClearPending;
+        private float waveClearReadyTime;
+        private float hitstopEndRealtime = -1f;
 
         public AtomSmasherBall BallPrefab => ballPrefab;
         public float PhysicsPlaneZ => physicsPlaneZ;
@@ -178,7 +281,7 @@ namespace Sol.Minigames
         public bool UseTimerMode => useTimerMode;
         public bool IsComplete => isComplete;
         public bool HasFailed => hasFailed;
-        public int RoundShots => roundShots;
+        public int StartingShots => startingShots;
         public int BestRecordedScore => bestRecordedScore;
         public int TicketsAwarded => ticketsAwarded;
         public int TotalTickets => totalTickets;
@@ -217,6 +320,15 @@ namespace Sol.Minigames
                 feedbackAudioSource = GetComponent<AudioSource>();
             }
 
+            ResolveCameraFx();
+
+            // Restock is always in the quantum pool, even on boards whose
+            // authored effect list predates it.
+            if (!quantumEffectOptions.Exists(option => option != null && option.Modifier == QuantumModifier.Restock))
+            {
+                quantumEffectOptions.Add(new QuantumEffectOption(QuantumModifier.Restock, "Restock", 1, 1));
+            }
+
             ResolveScoreCarrier();
             PlayerScoreCarrier.ScoreRecord scoreRecord = ReadScoreRecord();
             bestRecordedScore = scoreRecord.BestScore;
@@ -230,6 +342,8 @@ namespace Sol.Minigames
 
         private void Update()
         {
+            TickHitstop();
+
             if (isRunning)
             {
                 PruneMissingBalls();
@@ -245,7 +359,11 @@ namespace Sol.Minigames
 
                 if (waveClearPending)
                 {
-                    StartNextWave();
+                    if (Time.time >= waveClearReadyTime)
+                    {
+                        StartNextWave();
+                    }
+
                     return;
                 }
 
@@ -265,7 +383,9 @@ namespace Sol.Minigames
 
         private void OnValidate()
         {
-            roundShots = Mathf.Max(1, roundShots);
+            startingShots = Mathf.Max(1, startingShots);
+            shotsPerWaveClear = Mathf.Max(0, shotsPerWaveClear);
+            ballClearBonus = Mathf.Max(0, ballClearBonus);
             scoreMultiplierStep = Mathf.Max(1, scoreMultiplierStep);
             ticketsPerPoint = Mathf.Max(0f, ticketsPerPoint);
             NormalizeRect(ref shuffleArea);
@@ -296,6 +416,9 @@ namespace Sol.Minigames
             quantumVisualSeconds = Mathf.Max(0f, quantumVisualSeconds);
             statusMessageSeconds = Mathf.Max(0f, statusMessageSeconds);
             defaultParticleLifetime = Mathf.Max(0.1f, defaultParticleLifetime);
+            hitstopSeconds = Mathf.Max(0f, hitstopSeconds);
+            waveClearDelaySeconds = Mathf.Max(0f, waveClearDelaySeconds);
+            popupHotMultiplier = Mathf.Max(2, popupHotMultiplier);
         }
 
         public void StartGame()
@@ -311,7 +434,7 @@ namespace Sol.Minigames
             activeBalls.Clear();
             ballScoreMultipliers.Clear();
             ClearWaveObjects();
-            shotsRemaining = Mathf.Max(1, roundShots);
+            shotsRemaining = Mathf.Max(1, startingShots);
             score = 0;
             ticketsAwarded = 0;
             waveNumber = 1;
@@ -351,6 +474,7 @@ namespace Sol.Minigames
             RegisterBall(ball);
             shotsRemaining = Mathf.Max(0, shotsRemaining - 1);
             ball.Launch(direction.normalized * launchSpeed);
+            cameraFx?.AddTrauma(shakeOnLaunch);
             return true;
         }
 
@@ -375,11 +499,22 @@ namespace Sol.Minigames
 
             Vector3 feedbackPosition = target.transform.position;
             PlayFeedback(targetHitClip, targetHitParticles, feedbackPosition, new Color(1f, 0.9f, 0.35f, 1f));
+            SpawnElectronBurst(feedbackPosition);
 
             int targetScore = Mathf.Max(0, target.ScoreValue);
             int multiplier = GetBallScoreMultiplier(ball);
-            score = AddClamped(score, MultiplyClamped(targetScore, multiplier));
+            int earned = MultiplyClamped(targetScore, multiplier);
+            score = AddClamped(score, earned);
             AdvanceBallScoreMultiplier(ball, multiplier);
+
+            if (showScorePopups && earned > 0)
+            {
+                float heat = Mathf.Clamp01((multiplier - 1f) / Mathf.Max(1f, popupHotMultiplier - 1f));
+                DamagePopup.Spawn(feedbackPosition, earned, Color.Lerp(popupBaseColor, popupHotColor, heat));
+            }
+
+            TriggerHitstop();
+            cameraFx?.AddTrauma(shakeOnTargetHit);
 
             AtomSmasherQuantumTarget quantumTarget = target.GetComponent<AtomSmasherQuantumTarget>();
             if (quantumTarget != null)
@@ -395,15 +530,51 @@ namespace Sol.Minigames
             if (requiredTargetsRemaining <= 0 && !waveClearPending)
             {
                 PlayFeedback(waveClearClip, waveClearParticles, GetBoardFeedbackPosition(), new Color(0.35f, 0.85f, 1f, 1f));
+                cameraFx?.AddTrauma(shakeOnWaveClear);
 
                 if (replayOnClear)
                 {
                     waveClearPending = true;
+                    waveClearReadyTime = Time.time + waveClearDelaySeconds;
+                    ShowStatusMessage($"Wave {waveNumber} cleared!");
                 }
-                else
+
+                SmashRemainingBalls();
+
+                if (!replayOnClear)
                 {
                     FinishGame(true);
                 }
+            }
+        }
+
+        // Balls still flying when the wave clears go out with a bang and pay
+        // their chain multiplier as a bonus (Peggle-style ball reward).
+        private void SmashRemainingBalls()
+        {
+            PruneMissingBalls();
+
+            for (int i = activeBalls.Count - 1; i >= 0; i--)
+            {
+                AtomSmasherBall ball = activeBalls[i];
+                if (ball == null)
+                {
+                    continue;
+                }
+
+                int bonus = MultiplyClamped(ballClearBonus, GetBallScoreMultiplier(ball));
+                score = AddClamped(score, bonus);
+
+                Vector3 position = ball.transform.position;
+                SpawnElectronBurst(position);
+                if (showScorePopups && bonus > 0)
+                {
+                    DamagePopup.Spawn(position, bonus, popupBaseColor);
+                }
+
+                activeBalls.RemoveAt(i);
+                ballScoreMultipliers.Remove(ball);
+                Destroy(ball.gameObject);
             }
         }
 
@@ -421,7 +592,9 @@ namespace Sol.Minigames
 
             PruneMissingBalls();
 
-            if (!isRunning || isComplete || hasFailed || activeBalls.Count > 0)
+            // waveClearPending guard: a ball draining during the wave-clear
+            // beat must not fail a round that was just won.
+            if (!isRunning || isComplete || hasFailed || waveClearPending || activeBalls.Count > 0)
             {
                 return;
             }
@@ -503,10 +676,7 @@ namespace Sol.Minigames
             waveNumber = waveNumber == int.MaxValue ? int.MaxValue : waveNumber + 1;
             ClearWaveObjects();
 
-            if (resetShotsOnWaveClear)
-            {
-                shotsRemaining = Mathf.Max(1, roundShots);
-            }
+            shotsRemaining += Mathf.Max(0, shotsPerWaveClear); // overflow allowed
 
             if (shuffleTargetsOnClear)
             {
@@ -536,20 +706,65 @@ namespace Sol.Minigames
                     continue;
                 }
 
-                Vector2 chosenPosition = RandomPointInArea(shuffleArea);
+                bool placed = false;
                 for (int attempt = 0; attempt < maxShufflePlacementAttemptsPerTarget; attempt++)
                 {
                     Vector2 candidatePosition = RandomPointInArea(shuffleArea);
-                    if (IsFarEnoughFromPositions(candidatePosition, placedPositions, minDistanceSquared))
+                    if (IsAtomSpotClear(candidatePosition, placedPositions, minDistanceSquared))
                     {
-                        chosenPosition = candidatePosition;
+                        SetTargetGameLocalPosition(target, candidatePosition);
+                        placedPositions.Add(candidatePosition);
+                        placed = true;
                         break;
                     }
                 }
 
-                SetTargetGameLocalPosition(target, chosenPosition);
-                placedPositions.Add(chosenPosition);
+                if (!placed)
+                {
+                    // Board too crowded for this atom: keep its current spot
+                    // rather than forcing an overlap.
+                    placedPositions.Add(GetGameLocalPosition(target.transform));
+                }
             }
+        }
+
+        // Shuffle candidates must stay out of the reserved launch/drain zones,
+        // keep spacing from already-placed atoms, and clear static fixtures
+        // (walls, bumpers, pit covers). Other atoms/balls are ignored — every
+        // atom is being re-placed during a shuffle anyway.
+        private bool IsAtomSpotClear(Vector2 candidatePosition, List<Vector2> placedPositions, float minDistanceSquared)
+        {
+            if (obstructionReservedLaunchArea.Contains(candidatePosition) ||
+                obstructionReservedDrainArea.Contains(candidatePosition))
+            {
+                return false;
+            }
+
+            if (!IsFarEnoughFromPositions(candidatePosition, placedPositions, minDistanceSquared))
+            {
+                return false;
+            }
+
+            return IsClearOfStaticFixtures(candidatePosition);
+        }
+
+        private bool IsClearOfStaticFixtures(Vector2 gameLocalPosition)
+        {
+            Vector3 worldPosition = transform.TransformPoint(
+                new Vector3(gameLocalPosition.x, gameLocalPosition.y, physicsPlaneZ));
+
+            foreach (Collider overlap in Physics.OverlapSphere(worldPosition, spawnClearRadius, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (overlap.GetComponentInParent<AtomSmasherTarget>() != null ||
+                    overlap.GetComponentInParent<AtomSmasherBall>() != null)
+                {
+                    continue; // spacing between atoms is handled positionally
+                }
+
+                return false;
+            }
+
+            return true;
         }
 
         private void SpawnWaveObjects()
@@ -557,6 +772,129 @@ namespace Sol.Minigames
             SpawnObstructionForWave();
             SpawnMovingTargetsForWave();
             SpawnQuantumTargetForWave();
+            SpawnSpecialAtomsForWave();
+            RollQuantumAtoms();
+        }
+
+        private void SpawnSpecialAtomsForWave()
+        {
+            if (waveNumber >= unstableFromWave)
+            {
+                int count = Mathf.Min(1 + (waveNumber - unstableFromWave) / 3, maxUnstablePerWave);
+                SpawnSpecialAtoms(unstableTargetPrefab, count);
+            }
+
+            if (waveNumber >= explosiveFromWave)
+            {
+                int count = Mathf.Min(1 + (waveNumber - explosiveFromWave) / 3, maxExplosivePerWave);
+                SpawnSpecialAtoms(explosiveTargetPrefab, count);
+            }
+        }
+
+        private void SpawnSpecialAtoms(AtomSmasherTarget prefab, int count)
+        {
+            if (prefab == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                if (!TryChooseSpawnPoint(specialAtomSpawnArea, specialAtomMinDistance, maxMovingTargetPlacementAttempts, out Vector2 localPosition))
+                {
+                    continue;
+                }
+
+                Transform parent = movingTargetParent != null ? movingTargetParent : transform;
+                AtomSmasherTarget specialTarget = Instantiate(prefab, parent);
+                SetObjectGameLocalPosition(specialTarget.transform, localPosition);
+                specialTarget.AssignGame(this);
+                specialTarget.ResetTarget();
+                activeSpecialTargets.Add(specialTarget);
+
+                if (specialTarget.RequiredTarget)
+                {
+                    requiredTargetsRemaining++;
+                }
+            }
+        }
+
+        private List<AtomSmasherTarget> CollectQuantumCandidates()
+        {
+            List<AtomSmasherTarget> candidates = new List<AtomSmasherTarget>();
+            foreach (AtomSmasherTarget target in targets)
+            {
+                if (target != null && !target.HasBeenHit && target.GetComponent<AtomSmasherQuantumTarget>() == null)
+                {
+                    candidates.Add(target);
+                }
+            }
+
+            return candidates;
+        }
+
+        // Any regular atom can spawn quantum-charged; later waves guarantee more.
+        private void RollQuantumAtoms()
+        {
+            List<AtomSmasherTarget> candidates = CollectQuantumCandidates();
+
+            for (int i = candidates.Count - 1; i > 0; i--)
+            {
+                int j = Random.Range(0, i + 1);
+                (candidates[i], candidates[j]) = (candidates[j], candidates[i]);
+            }
+
+            int guaranteed = Mathf.Min(
+                quantumAtomsGuaranteedBase + (waveNumber - 1) / Mathf.Max(1, wavesPerExtraQuantumAtom),
+                Mathf.Min(quantumAtomsGuaranteedMax, candidates.Count));
+
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                if (i < guaranteed || Random.value < quantumAtomChance)
+                {
+                    MakeAtomQuantum(candidates[i]);
+                }
+            }
+        }
+
+        private void MakeAtomQuantum(AtomSmasherTarget target)
+        {
+            AtomSmasherQuantumTarget marker = target.gameObject.AddComponent<AtomSmasherQuantumTarget>();
+            quantumMarkedAtoms.Add((marker, target, target.ActiveColor));
+            target.SetActiveColorOverride(quantumBoostColor);
+        }
+
+        private void ClearQuantumMarkers()
+        {
+            foreach ((AtomSmasherQuantumTarget marker, AtomSmasherTarget target, Color originalColor) in quantumMarkedAtoms)
+            {
+                if (target != null)
+                {
+                    target.SetActiveColorOverride(originalColor);
+                }
+
+                if (marker != null)
+                {
+                    Destroy(marker);
+                }
+            }
+
+            quantumMarkedAtoms.Clear();
+        }
+
+        private void SpawnElectronBurst(Vector3 position)
+        {
+            for (int i = 0; i < electronsPerTargetHit; i++)
+            {
+                Vector2 direction = Random.insideUnitCircle.normalized;
+                if (direction.sqrMagnitude < 0.01f)
+                {
+                    direction = Vector2.up;
+                }
+
+                Vector3 velocity = new Vector3(direction.x, direction.y, 0f) * Random.Range(electronMinSpeed, electronMaxSpeed);
+                AtomSmasherElectron.Spawn(position, velocity, electronColor, electronLifeSeconds, electronMaxBounces, electronScale, physicsPlaneZ);
+            }
         }
 
         private void ClearWaveObjects()
@@ -590,6 +928,17 @@ namespace Sol.Minigames
             }
 
             activeMovingTargets.Clear();
+
+            for (int i = activeSpecialTargets.Count - 1; i >= 0; i--)
+            {
+                if (activeSpecialTargets[i] != null)
+                {
+                    Destroy(activeSpecialTargets[i].gameObject);
+                }
+            }
+
+            activeSpecialTargets.Clear();
+            ClearQuantumMarkers();
         }
 
         private void SpawnObstructionForWave()
@@ -634,6 +983,21 @@ namespace Sol.Minigames
 
             float rightRotation = rightOption == leftOption ? -leftRotation : (rightOption.RandomizeRotation ? Random.Range(0f, 180f) : 0f);
             SpawnObstacleInstance(rightOption, rightPosition, rightRotation);
+
+            // Later waves grow denser: extra unpaired pieces anywhere in the area.
+            int extraPieces = Mathf.Min((waveNumber - 1) / Mathf.Max(1, extraObstructionEveryNWaves), maxExtraObstructions);
+            for (int i = 0; i < extraPieces; i++)
+            {
+                ObstacleSpawnOption extraOption = PickWeightedObstacleOption();
+                if (extraOption == null ||
+                    !TryChooseSpawnPoint(obstructionSpawnArea, obstructionMinTargetDistance, maxObstructionPlacementAttempts, out Vector2 extraPosition))
+                {
+                    continue;
+                }
+
+                float extraRotation = extraOption.RandomizeRotation ? Random.Range(0f, 180f) : 0f;
+                SpawnObstacleInstance(extraOption, extraPosition, extraRotation);
+            }
         }
 
         private GameObject SpawnObstacleInstance(ObstacleSpawnOption option, Vector2 localPosition, float zRotation)
@@ -747,7 +1111,9 @@ namespace Sol.Minigames
                 return false;
             }
 
-            return true;
+            // Spawned obstructions/atoms also clear walls, bumpers, and the
+            // rotated colliders of pieces the distance check under-represents.
+            return IsClearOfStaticFixtures(candidatePosition);
         }
 
         private List<Vector2> GetOccupiedGameLocalPositions()
@@ -775,6 +1141,14 @@ namespace Sol.Minigames
                 if (movingTarget != null)
                 {
                     occupiedPositions.Add(GetGameLocalPosition(movingTarget.transform));
+                }
+            }
+
+            foreach (AtomSmasherTarget specialTarget in activeSpecialTargets)
+            {
+                if (specialTarget != null)
+                {
+                    occupiedPositions.Add(GetGameLocalPosition(specialTarget.transform));
                 }
             }
 
@@ -929,6 +1303,10 @@ namespace Sol.Minigames
                     ApplySpeedBoost(ball);
                     ShowStatusMessage("Quantum: Speed Boost");
                     return;
+                case QuantumModifier.Restock:
+                    ApplyRestock();
+                    ShowStatusMessage($"Quantum: {effectName} (+{restockShots} balls)");
+                    return;
                 default:
                     ApplySpeedBoost(ball);
                     ShowStatusMessage("Quantum: Speed Boost");
@@ -936,19 +1314,41 @@ namespace Sol.Minigames
             }
         }
 
+        // Refills the rack and passes the charge on to another random atom.
+        private void ApplyRestock()
+        {
+            shotsRemaining += Mathf.Max(0, restockShots); // overflow allowed
+
+            List<AtomSmasherTarget> candidates = CollectQuantumCandidates();
+            if (candidates.Count > 0)
+            {
+                MakeAtomQuantum(candidates[Random.Range(0, candidates.Count)]);
+            }
+        }
+
         private QuantumModifier ChooseFallbackQuantumModifier()
         {
             if (ActiveBallCount >= maxActiveBalls || ballPrefab == null)
             {
-                return QuantumModifier.SpeedBoost;
+                return Random.value < 0.5f ? QuantumModifier.SpeedBoost : QuantumModifier.Restock;
             }
 
-            return Random.value < 0.5f ? QuantumModifier.SpeedBoost : QuantumModifier.SplitBall;
+            switch (Random.Range(0, 3))
+            {
+                case 0: return QuantumModifier.SpeedBoost;
+                case 1: return QuantumModifier.SplitBall;
+                default: return QuantumModifier.Restock;
+            }
         }
 
         private static string GetDefaultQuantumEffectName(QuantumModifier modifier)
         {
-            return modifier == QuantumModifier.SplitBall ? "Split" : "Speed Boost";
+            switch (modifier)
+            {
+                case QuantumModifier.SplitBall: return "Split";
+                case QuantumModifier.Restock: return "Restock";
+                default: return "Speed Boost";
+            }
         }
 
         private void ApplySpeedBoost(AtomSmasherBall ball)
@@ -1023,6 +1423,64 @@ namespace Sol.Minigames
             if (timeRemaining <= 0f)
             {
                 FinishGame(false);
+            }
+        }
+
+        // The board camera is the scene camera that does not belong to the
+        // player rig, so effects never fight the shared controller.
+        private void ResolveCameraFx()
+        {
+            if (cameraFx != null)
+            {
+                return;
+            }
+
+            cameraFx = FindFirstObjectByType<AtomSmasherCameraFx>();
+            if (cameraFx != null)
+            {
+                return;
+            }
+
+            foreach (Camera sceneCamera in FindObjectsByType<Camera>(FindObjectsSortMode.None))
+            {
+                if (sceneCamera != null && sceneCamera.GetComponentInParent<Player.Controller>() == null)
+                {
+                    cameraFx = sceneCamera.gameObject.AddComponent<AtomSmasherCameraFx>();
+                    return;
+                }
+            }
+        }
+
+        // Micro slow-mo on impact; restored by realtime so it can't stick.
+        private void TriggerHitstop()
+        {
+            if (hitstopSeconds <= 0f)
+            {
+                return;
+            }
+
+            Time.timeScale = hitstopTimeScale;
+            hitstopEndRealtime = Time.unscaledTime + hitstopSeconds;
+        }
+
+        private void TickHitstop()
+        {
+            // Only restore when the timescale is still ours; if the pause menu
+            // froze time mid-hitstop, keep the flag and finish after resume.
+            if (hitstopEndRealtime > 0f &&
+                Time.unscaledTime >= hitstopEndRealtime &&
+                Mathf.Approximately(Time.timeScale, hitstopTimeScale))
+            {
+                hitstopEndRealtime = -1f;
+                Time.timeScale = 1f;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (hitstopEndRealtime > 0f)
+            {
+                Time.timeScale = 1f;
             }
         }
 
@@ -1101,6 +1559,7 @@ namespace Sol.Minigames
             if (!won)
             {
                 PlayFeedback(failedRoundClip, failedRoundParticles, GetBoardFeedbackPosition(), new Color(1f, 0.2f, 0.2f, 1f));
+                cameraFx?.AddTrauma(shakeOnFail);
             }
 
             RecordScore();

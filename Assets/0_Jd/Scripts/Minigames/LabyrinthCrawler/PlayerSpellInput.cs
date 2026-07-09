@@ -23,6 +23,7 @@ namespace Sol.Minigames
         [Tooltip("Layers spells may hit. Player layer is excluded by default.")]
         [SerializeField] private LayerMask hitMask = Physics.DefaultRaycastLayers & ~(1 << PlayerLayer);
 
+        private readonly bool[] heldSlots = new bool[3];
         private SpellCaster caster;
         private LabyrinthCrawlerGame game;
         private InputSystem_Actions inputActions;
@@ -58,16 +59,19 @@ namespace Sol.Minigames
             if (attackAction != null)
             {
                 attackAction.started += OnAttackStarted;
+                attackAction.canceled += OnAttackCanceled;
             }
 
             if (castAction != null)
             {
                 castAction.started += OnCastStarted;
+                castAction.canceled += OnCastCanceled;
             }
 
             if (pulseAction != null)
             {
                 pulseAction.started += OnPulseStarted;
+                pulseAction.canceled += OnPulseCanceled;
             }
 
             crawlerMap?.Enable();
@@ -78,16 +82,19 @@ namespace Sol.Minigames
             if (attackAction != null)
             {
                 attackAction.started -= OnAttackStarted;
+                attackAction.canceled -= OnAttackCanceled;
             }
 
             if (castAction != null)
             {
                 castAction.started -= OnCastStarted;
+                castAction.canceled -= OnCastCanceled;
             }
 
             if (pulseAction != null)
             {
                 pulseAction.started -= OnPulseStarted;
+                pulseAction.canceled -= OnPulseCanceled;
             }
 
             crawlerMap?.Disable();
@@ -95,6 +102,11 @@ namespace Sol.Minigames
             castAction = null;
             pulseAction = null;
             crawlerMap = null;
+
+            for (int i = 0; i < heldSlots.Length; i++)
+            {
+                heldSlots[i] = false;
+            }
         }
 
         private void OnDestroy()
@@ -105,6 +117,16 @@ namespace Sol.Minigames
 
         private void Update()
         {
+            // Sustained spells (ContinuousWhileHeld) re-cast while the input is
+            // held; the slot cooldown sets the tick rate.
+            for (int i = 0; i < heldSlots.Length; i++)
+            {
+                if (heldSlots[i])
+                {
+                    TryCastSlot(i);
+                }
+            }
+
             // Fallback while the generated input wrapper predates the Pulse action.
             if (pulseAction != null)
             {
@@ -121,9 +143,23 @@ namespace Sol.Minigames
             }
         }
 
-        private void OnAttackStarted(InputAction.CallbackContext context) => TryCastSlot(0);
-        private void OnCastStarted(InputAction.CallbackContext context) => TryCastSlot(1);
-        private void OnPulseStarted(InputAction.CallbackContext context) => TryCastSlot(2);
+        private void OnAttackStarted(InputAction.CallbackContext context) => BeginCast(0);
+        private void OnCastStarted(InputAction.CallbackContext context) => BeginCast(1);
+        private void OnPulseStarted(InputAction.CallbackContext context) => BeginCast(2);
+        private void OnAttackCanceled(InputAction.CallbackContext context) => heldSlots[0] = false;
+        private void OnCastCanceled(InputAction.CallbackContext context) => heldSlots[1] = false;
+        private void OnPulseCanceled(InputAction.CallbackContext context) => heldSlots[2] = false;
+
+        private void BeginCast(int slot)
+        {
+            TryCastSlot(slot);
+
+            SpellDefinition definition = caster.GetDefinition(slot);
+            if (definition != null && definition.ContinuousWhileHeld)
+            {
+                heldSlots[slot] = true;
+            }
+        }
 
         private void TryCastSlot(int slot)
         {

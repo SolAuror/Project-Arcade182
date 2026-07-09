@@ -20,10 +20,22 @@ namespace Sol.Minigames
         [Tooltip("Seconds the player must stand here while enemies are alive.")]
         [SerializeField, Min(0f)] private float clearDwellSeconds = 1.5f;
 
+        [Header("Feel")]
+        [Tooltip("Idle breathing amplitude of the pad visual.")]
+        [SerializeField, Min(0f)] private float idlePulseScale = 0.04f;
+
+        [Tooltip("Pulse amplitude while channeling the dwell or when the stage is clearable.")]
+        [SerializeField, Min(0f)] private float activePulseScale = 0.09f;
+
         private LabyrinthCrawlerGame game;
         private Transform player;
         private float dwell;
         private bool cleared;
+        private Renderer padRenderer;
+        private Transform padVisual;
+        private Vector3 padVisualBaseScale;
+        private Color padBaseColor;
+        private bool visualCaptured;
 
         public bool PlayerInside { get; private set; }
         public float DwellProgress => clearDwellSeconds > 0f ? Mathf.Clamp01(dwell / clearDwellSeconds) : 1f;
@@ -45,6 +57,8 @@ namespace Sol.Minigames
             }
 
             PlayerInside = IsPlayerInside();
+            AnimateVisual();
+
             if (!PlayerInside)
             {
                 dwell = 0f; // stepping off resets the channel
@@ -62,6 +76,61 @@ namespace Sol.Minigames
             {
                 Clear();
             }
+        }
+
+        // Pad reads as alive: breathes when idle, beckons when the stage is
+        // clearable, and ramps to white while the dwell channels.
+        private void AnimateVisual()
+        {
+            if (!visualCaptured && !TryCaptureVisual())
+            {
+                return;
+            }
+
+            float pulseRate;
+            float pulseAmplitude;
+            float colorLift;
+
+            if (PlayerInside)
+            {
+                pulseRate = 9f;
+                pulseAmplitude = activePulseScale;
+                colorLift = game.EnemiesRemaining > 0 ? DwellProgress : 1f;
+            }
+            else if (game.EnemiesRemaining == 0)
+            {
+                pulseRate = 4f;
+                pulseAmplitude = activePulseScale;
+                colorLift = 0.3f + 0.2f * Mathf.Sin(Time.time * 4f);
+            }
+            else
+            {
+                pulseRate = 2f;
+                pulseAmplitude = idlePulseScale;
+                colorLift = 0f;
+            }
+
+            float pulse = 1f + Mathf.Sin(Time.time * pulseRate) * pulseAmplitude;
+            padVisual.localScale = new Vector3(
+                padVisualBaseScale.x * pulse,
+                padVisualBaseScale.y,
+                padVisualBaseScale.z * pulse);
+            padRenderer.material.color = Color.Lerp(padBaseColor, Color.white, Mathf.Clamp01(colorLift));
+        }
+
+        private bool TryCaptureVisual()
+        {
+            padRenderer = GetComponentInChildren<Renderer>();
+            if (padRenderer == null)
+            {
+                return false;
+            }
+
+            padVisual = padRenderer.transform;
+            padVisualBaseScale = padVisual.localScale;
+            padBaseColor = padRenderer.material.color;
+            visualCaptured = true;
+            return true;
         }
 
         private bool IsPlayerInside()

@@ -25,10 +25,31 @@ namespace Sol.Minigames
         [SerializeField] private Renderer[] ballRenderers;
         [SerializeField] private TrailRenderer boostTrail;
 
+        [Header("Feel")]
+        [Tooltip("Scale punch applied on impacts; eases back each frame. 1 disables.")]
+        [SerializeField, Min(1f)] private float impactPunchScale = 1.25f;
+
+        [Tooltip("How fast punched/spawned scale settles back to normal.")]
+        [SerializeField, Min(1f)] private float scaleSettleSpeed = 12f;
+
+        [Tooltip("Scale the ball pops in from when launched. 1 disables.")]
+        [SerializeField, Range(0.1f, 1f)] private float spawnScale = 0.55f;
+
+        [Header("Trail Look")]
+        [Tooltip("Trail width while no effect is active.")]
+        [SerializeField, Min(0f)] private float baseTrailWidth = 0.07f;
+
+        [Tooltip("Trail color while no effect is active.")]
+        [SerializeField] private Color baseTrailColor = new Color(0.75f, 0.85f, 1f, 0.45f);
+
+        [Tooltip("Trail width while a temporary effect is active.")]
+        [SerializeField, Min(0f)] private float boostTrailWidth = 0.24f;
+
         private AtomSmasherGame game;
         private Rigidbody rb;
         private PhysicsMaterial runtimePhysicsMaterial;
         private MaterialPropertyBlock propertyBlock;
+        private Vector3 baseScale;
         private float launchTime;
         private float settledSince = -1f;
         private float visualEffectEndTime = -1f;
@@ -37,12 +58,17 @@ namespace Sol.Minigames
         public Rigidbody Rigidbody => rb;
         public Vector3 PlanarVelocity => rb != null ? new Vector3(rb.linearVelocity.x, rb.linearVelocity.y, 0f) : Vector3.zero;
 
+        /// <summary>Rebounds off walls/obstructions since the last launch.</summary>
+        public int BounceCount { get; private set; }
+
         private void Awake()
         {
             rb = GetComponent<Rigidbody>();
+            baseScale = transform.localScale;
             ResolveRenderers();
             ConfigureRigidbody();
             ConfigureCollider();
+            ApplyBaseTrail();
             LockToPlane();
         }
 
@@ -51,6 +77,12 @@ namespace Sol.Minigames
             if (visualEffectEndTime > 0f && Time.time >= visualEffectEndTime)
             {
                 ClearTemporaryVisualState();
+            }
+
+            // Ease spawn pops and impact punches back to normal size.
+            if (transform.localScale != baseScale)
+            {
+                transform.localScale = Vector3.Lerp(transform.localScale, baseScale, Time.deltaTime * scaleSettleSpeed);
             }
         }
 
@@ -116,10 +148,19 @@ namespace Sol.Minigames
                 return;
             }
 
+            if (impactPunchScale > 1f)
+            {
+                transform.localScale = baseScale * impactPunchScale;
+            }
+
             AtomSmasherTarget target = collision.collider.GetComponentInParent<AtomSmasherTarget>();
             if (target != null)
             {
                 target.TryHit(this);
+            }
+            else
+            {
+                BounceCount++; // walls and obstructions count as rebounds
             }
         }
 
@@ -157,6 +198,15 @@ namespace Sol.Minigames
             launchTime = Time.time;
             isFinished = false;
             settledSince = -1f;
+            BounceCount = 0;
+
+            if (baseScale == Vector3.zero)
+            {
+                baseScale = transform.localScale;
+            }
+
+            transform.localScale = baseScale * spawnScale; // pop-in on launch
+
             rb.linearVelocity = new Vector3(velocity.x, velocity.y, 0f);
             rb.angularVelocity = Vector3.zero;
             LockToPlane();
@@ -226,7 +276,12 @@ namespace Sol.Minigames
 
             if (boostTrail != null)
             {
+                // The trail always emits; effects make it wider and tinted.
                 boostTrail.emitting = true;
+                boostTrail.startWidth = boostTrailWidth;
+                boostTrail.endWidth = 0f;
+                boostTrail.startColor = new Color(color.r, color.g, color.b, 0.9f);
+                boostTrail.endColor = new Color(color.r, color.g, color.b, 0f);
             }
 
             visualEffectEndTime = Time.time + seconds;
@@ -255,10 +310,27 @@ namespace Sol.Minigames
                 }
             }
 
-            if (boostTrail != null)
+            ApplyBaseTrail();
+        }
+
+        private void ApplyBaseTrail()
+        {
+            if (boostTrail == null)
             {
-                boostTrail.emitting = false;
+                return;
             }
+
+            boostTrail.emitting = true;
+            boostTrail.startWidth = baseTrailWidth;
+            boostTrail.endWidth = 0f;
+            boostTrail.startColor = baseTrailColor;
+            boostTrail.endColor = new Color(baseTrailColor.r, baseTrailColor.g, baseTrailColor.b, 0f);
+        }
+
+        /// <summary>Ends the ball immediately (pit traps, hazards) as if it drained.</summary>
+        public void ForceFinish()
+        {
+            FinishBall();
         }
 
         private void ConfigureRigidbody()

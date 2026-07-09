@@ -6,7 +6,10 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Shared/Sc_ArcadeHub.unity
+    path: Assets/Shared/Scenes/Sc_MainMenu.unity
+    guid: c976460fc70716a49b9c4dc8cd2a45e4
+  - enabled: 1
+    path: Assets/Shared/Scenes/Sc_ArcadeHub.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
     path: Assets/0_Jd/Scenes/Sc_LabyrinthCrawler.unity

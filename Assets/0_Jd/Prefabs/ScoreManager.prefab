@@ -45,3 +45,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultTicketsPerPoint: 0.1
+  persistAcrossScenes: 1

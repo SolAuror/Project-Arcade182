@@ -99,8 +99,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55667c35ef974b10bc6b04d4a60e9cfc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  roundSeconds: 75
-  targetScore: 10
+  roundSeconds: 60
   startOnAwake: 1
   onlyOneActiveHoop: 1
   hoops: []

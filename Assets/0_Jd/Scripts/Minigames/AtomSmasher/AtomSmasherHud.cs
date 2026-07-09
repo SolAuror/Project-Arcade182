@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -25,12 +26,21 @@ namespace Sol.Minigames
         [SerializeField] private GameObject timerRow;
         [SerializeField] private Text timerText;
 
+        [Header("Ball Rack")]
+        [Tooltip("Authored ball icons (Peggle-style tube), one toggled on per remaining ball.")]
+        [SerializeField] private List<Image> ballIcons = new List<Image>();
+
+        [Tooltip("Shows +N when the rack overflows past the authored icons.")]
+        [SerializeField] private Text ballOverflowText;
+
         [Header("Status")]
         [SerializeField] private Text statusText;
 
         [Header("Result")]
         [SerializeField] private GameObject resultGroup;
         [SerializeField] private Text resultText;
+
+        private int lastShownShots = -1;
 
         private void Awake()
         {
@@ -49,9 +59,10 @@ namespace Sol.Minigames
 
             SetText(scoreText, $"Score {game.Score}");
             SetText(waveText, $"Wave {game.WaveNumber}");
-            SetText(shotsText, $"Shots {game.ShotsRemaining}/{game.RoundShots}");
+            SetText(shotsText, $"Shots {game.ShotsRemaining}");
             SetText(targetsText, $"Targets left {game.RequiredTargetsRemaining}");
             SetText(multiplierText, $"Chain x{game.CurrentShotMultiplier}");
+            UpdateBallRack();
 
             if (timerRow != null && timerRow.activeSelf != game.UseTimerMode)
             {
@@ -65,6 +76,34 @@ namespace Sol.Minigames
 
             UpdateStatus();
             UpdateResult();
+        }
+
+        // Peggle-style rack: the icons are authored in the HUD prefab; this
+        // only toggles them, overflowing past the last icon into a +N label.
+        private void UpdateBallRack()
+        {
+            if (ballIcons.Count == 0)
+            {
+                return;
+            }
+
+            int shots = Mathf.Max(0, game.ShotsRemaining);
+            if (shots == lastShownShots)
+            {
+                return;
+            }
+
+            lastShownShots = shots;
+
+            for (int i = 0; i < ballIcons.Count; i++)
+            {
+                if (ballIcons[i] != null)
+                {
+                    ballIcons[i].gameObject.SetActive(i < shots);
+                }
+            }
+
+            SetText(ballOverflowText, shots > ballIcons.Count ? $"+{shots - ballIcons.Count}" : string.Empty);
         }
 
         private void UpdateStatus()
