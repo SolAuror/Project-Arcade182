@@ -1081,6 +1081,76 @@
                                   ]
                  },
                  {
+                     "name":  "FungusPachinko",
+                     "id":  "03538fac-c260-4991-bd11-891bb03e5278",
+                     "actions":  [
+                                     {
+                                         "name":  "Move",
+                                         "type":  "Value",
+                                         "id":  "a6342025-70ee-4b2c-815c-f69671c2bdf8",
+                                         "expectedControlType":  "Axis",
+                                         "processors":  "",
+                                         "interactions":  "",
+                                         "initialStateCheck":  true
+                                     },
+                                     {
+                                         "name":  "Drop",
+                                         "type":  "Button",
+                                         "id":  "d6a53d89-a294-4f4e-b920-adee5afc26ef",
+                                         "expectedControlType":  "Button",
+                                         "processors":  "",
+                                         "interactions":  "",
+                                         "initialStateCheck":  false
+                                     }
+                                 ],
+                     "bindings":  [
+                                      {
+                                          "name":  "AD",
+                                          "id":  "2aecaddb-d07e-4ada-b017-d54a179008f5",
+                                          "path":  "1DAxis",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "",
+                                          "action":  "Move",
+                                          "isComposite":  true,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "negative",
+                                          "id":  "09fef134-1d72-4e3c-a6df-55e21884982c",
+                                          "path":  "<Keyboard>/a",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Keyboard&Mouse",
+                                          "action":  "Move",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  true
+                                      },
+                                      {
+                                          "name":  "positive",
+                                          "id":  "25c8803d-62e3-4c8a-83ec-5f7c50feb3a9",
+                                          "path":  "<Keyboard>/d",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Keyboard&Mouse",
+                                          "action":  "Move",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  true
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "6bafb03e-ae94-4b83-ae55-4e7093b27fed",
+                                          "path":  "<Keyboard>/space",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Keyboard&Mouse",
+                                          "action":  "Drop",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      }
+                                  ]
+                 },
+                 {
                      "name":  "LabyrinthCrawler",
                      "id":  "aae55720-6c88-434c-b746-23a8b3ed6dd8",
                      "actions":  [

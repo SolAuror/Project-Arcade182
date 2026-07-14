@@ -20,6 +20,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/0_Jd/Scenes/Sc_AtomSmasher.unity
     guid: aabf95a1e1f92954195063c24304eeda
+  - enabled: 1
+    path: Assets/0_Finn/Scenes/Sc_FungusPachinko.unity
+    guid: 6dd2af5325c599342afbc37ea5718471
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

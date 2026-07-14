@@ -2,7 +2,7 @@
 
 Master index of every gameplay script in the project, what it does, and where it runs.
 
-**Scope legend** — `SYSTEM`: integral, runs in every (or nearly every) scene · `HUB`: arcade hub / meta loop · `LAB`: Labyrinth Crawler · `HOOPS`: Hoops · `ATOM`: Atom Smasher · `MENU`: main/pause menus · `EDITOR`: editor-only tooling.
+**Scope legend** — `SYSTEM`: integral, runs in every (or nearly every) scene · `HUB`: arcade hub / meta loop · `LAB`: Labyrinth Crawler · `HOOPS`: Hoops · `ATOM`: Atom Smasher · `FUNGUS`: Fungus Pachinko · `MENU`: main/pause menus · `EDITOR`: editor-only tooling.
 
 All paths are relative to `Assets/0_Jd/Scripts/` unless noted.
 
@@ -24,7 +24,7 @@ All paths are relative to `Assets/0_Jd/Scripts/` unless noted.
 | `UI/PauseMenuController.cs` | SYSTEM/MENU | Esc pause menu (persistent singleton, prefab-authored via `Resources/UI/PauseMenu`). Minigames: Resume / Quit to Hub (+ Atom Smasher 2D-3D view toggle). Hub: Resume / Volume / Quit to Menu / Quit Game. |
 | `UI/SimpleUiBuilder.cs` | SYSTEM/MENU | UGUI construction helpers used by the editor UI setup to build the menu prefabs, plus the runtime `EnsureEventSystem` helper. |
 | `UI/ArcadeOptions.cs` | SYSTEM/MENU | Persisted options store (master volume) shared by main and pause menus. |
-| `Assets/Shared/Input/InputSystem_Actions.cs` | SYSTEM | Generated Input System actions asset wrapper (Player, AtomSmasher, Hoops, LabyrinthCrawler maps). Do not hand-edit. |
+| `Assets/Shared/Input/InputSystem_Actions.cs` | SYSTEM | Generated Input System actions asset wrapper (Player, AtomSmasher, FungusPachinko, Hoops, LabyrinthCrawler maps). Do not hand-edit. |
 
 ## Hub & overarching loop
 
@@ -105,6 +105,18 @@ All paths are relative to `Assets/0_Jd/Scripts/` unless noted.
 | `AtomSmasherCameraFx.cs` | Trauma shake + FOV kick on the standalone board camera (never the player rig). |
 | `AtomSmasherHud.cs` | Board HUD: score, wave, targets, chain, timer, status, results, and the Peggle-style ball rack (icon per remaining ball, +N overflow). |
 
+## Fungus Pachinko (`Assets/0_Finn/Scripts/FungusPachinko/`, namespace `Finn.Minigames`)
+
+| Script | Purpose |
+|---|---|
+| `FungusGameController.cs` | Round orchestrator: five balls, one point per light, all-lights-out +50 bonus (folded into the recorded score), 1:1 ticket recording, delayed hub return. |
+| `FungusDropper.cs` | Player-controlled dropper on a rail across the board top; the game's only input reader (dedicated `FungusPachinko` action map: A/D move, Space drop). |
+| `FungusBall.cs` | Plane-locked physics ball with settle and lifetime timeouts; reports when finished, never scores itself. |
+| `FungusLight.cs` | Trigger-based board light: turns off once when a ball passes through, worth one point. |
+| `FungusLightBank.cs` | Aggregates all lights under the machine: remaining count, any-light-off re-broadcast, all-lights-out event. |
+| `FungusDrain.cs` | Bottom-of-board trigger that retires any ball reaching it. |
+| `FungusHud.cs` | Event-driven HUD: score, balls, lights remaining, status line, result panel. |
+
 ## Editor tooling (`Scripts/Editor/`, editor-only)
 
 | Script | Purpose |
@@ -113,3 +125,4 @@ All paths are relative to `Assets/0_Jd/Scripts/` unless noted.
 | `GameplayTweaksSetup.cs` | One-shot wiring: laser beam retune, pit-cover wave settings in Sc_AtomSmasher, and the ball rack widget in the AtomSmasherHud prefab. |
 | `BlackHoleTrapSetup.cs` | Builds the black hole prefab/materials and registers it as an obstacle option in Sc_AtomSmasher. |
 | `MainMenuSetup.cs` | Builds the MainMenu + PauseMenu canvas prefabs, bakes the damage overlay into the player prefab, creates Sc_MainMenu, and registers it first in Build Settings. Run via `Sol → Setup → Menus And UI Prefabs`. |
+| `FungusPachinkoBuilder.cs` (`0_Finn/Editor/`) | Generates the Fungus Pachinko materials, ball + machine prefabs, Sc_FungusPachinko scene, and Build Settings entry. Run via `Tools → Finn → Build Fungus Pachinko` (overwrites the generated assets). |
