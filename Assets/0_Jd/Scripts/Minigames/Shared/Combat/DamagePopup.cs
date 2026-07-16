@@ -19,13 +19,13 @@ namespace Sol.Minigames
         private Color baseColor = DefaultColor;
         private float dieTime;
 
-        public static DamagePopup Spawn(Vector3 position, float amount, Color? color = null)
+        public static DamagePopup Spawn(Vector3 position, float amount, Color? color = null, float sizeScale = 1f)
         {
-            return SpawnText(position, Mathf.Max(1f, Mathf.Round(amount)).ToString("0"), color);
+            return SpawnText(position, Mathf.Max(1f, Mathf.Round(amount)).ToString("0"), color, 0f, sizeScale);
         }
 
         /// <summary>Floating world-space message (clerk dialogue, pickup notices, etc.).</summary>
-        public static DamagePopup SpawnText(Vector3 position, string message, Color? color = null, float lifeSeconds = 0f)
+        public static DamagePopup SpawnText(Vector3 position, string message, Color? color = null, float lifeSeconds = 0f, float sizeScale = 1f)
         {
             Vector2 jitter = Random.insideUnitCircle * 0.2f;
             GameObject popupObject = new GameObject("DamagePopup");
@@ -36,7 +36,7 @@ namespace Sol.Minigames
             text.anchor = TextAnchor.MiddleCenter;
             text.alignment = TextAlignment.Center;
             text.fontSize = 46;
-            text.characterSize = 0.035f;
+            text.characterSize = 0.035f * Mathf.Max(0.1f, sizeScale);
             text.fontStyle = FontStyle.Bold;
 
             Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");

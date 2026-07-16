@@ -9,7 +9,7 @@ namespace Sol.Minigames
     public class AtomSmasherTarget : MonoBehaviour
     {
         [SerializeField] private AtomSmasherGame game;
-        [SerializeField] private int scoreValue = 100;
+        [SerializeField] private int scoreValue = 10;
         [SerializeField] private bool requiredTarget = true;
         [SerializeField] private bool deactivateOnHit = true;
         [SerializeField] private Renderer[] targetRenderers;

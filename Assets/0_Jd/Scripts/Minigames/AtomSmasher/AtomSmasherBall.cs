@@ -11,7 +11,8 @@ namespace Sol.Minigames
         [SerializeField] private float physicsPlaneZ = 0f;
 
         [Header("Bounce")]
-        [SerializeField, Range(0f, 1f)] private float bounciness = 0.95f;
+        [Tooltip("Kept under 1 so wall rallies bleed energy; atom hits re-arm the ball's life instead.")]
+        [SerializeField, Range(0f, 1f)] private float bounciness = 0.85f;
         [SerializeField, Range(0f, 1f)] private float friction = 0f;
 
         [Header("Round End")]
@@ -19,7 +20,7 @@ namespace Sol.Minigames
         [SerializeField] private float settleSpeed = 0.15f;
         [SerializeField] private float settleSeconds = 1.25f;
         [SerializeField] private float minimumLifeSeconds = 0.5f;
-        [SerializeField] private float maxLifeSeconds = 14f;
+        [SerializeField] private float maxLifeSeconds = 8f;
 
         [Header("Feedback")]
         [SerializeField] private Renderer[] ballRenderers;
@@ -37,13 +38,33 @@ namespace Sol.Minigames
 
         [Header("Trail Look")]
         [Tooltip("Trail width while no effect is active.")]
-        [SerializeField, Min(0f)] private float baseTrailWidth = 0.07f;
+        [SerializeField, Min(0f)] private float baseTrailWidth = 0.16f;
 
         [Tooltip("Trail color while no effect is active.")]
-        [SerializeField] private Color baseTrailColor = new Color(0.75f, 0.85f, 1f, 0.45f);
+        [SerializeField] private Color baseTrailColor = new Color(1f, 0.95f, 0.78f, 0.85f);
 
         [Tooltip("Trail width while a temporary effect is active.")]
         [SerializeField, Min(0f)] private float boostTrailWidth = 0.24f;
+
+        [Tooltip("Seconds of streak the trail leaves; longer helps eyes catch up to fast shots.")]
+        [SerializeField, Min(0.05f)] private float trailSeconds = 0.4f;
+
+        [Header("Visibility")]
+        [Tooltip("Warm high-contrast tint on the uncharged ball so it pops against the board's blues and purples. Alpha 0 keeps the raw material look.")]
+        [SerializeField] private Color neutralBallColor = new Color(1f, 0.93f, 0.6f, 1f);
+
+        [Header("Polarity")]
+        [Tooltip("Persistent outline/trail color while positively charged (polarizer gates set this).")]
+        [SerializeField] private Color positiveChargeColor = new Color(1f, 0.32f, 0.25f, 1f);
+
+        [Tooltip("Persistent outline/trail color while negatively charged.")]
+        [SerializeField] private Color negativeChargeColor = new Color(0.3f, 0.55f, 1f, 1f);
+
+        [Tooltip("Outline color while neutral; polarity swaps it for the charge color. Uses the project's Sol.Outline glow.")]
+        [SerializeField] private Color neutralOutlineColor = Color.white;
+
+        [Tooltip("Optional explicit outline; found on this object when left empty.")]
+        [SerializeField] private Sol.Outline.OutlineComponent outline;
 
         private AtomSmasherGame game;
         private Rigidbody rb;
@@ -61,6 +82,19 @@ namespace Sol.Minigames
         /// <summary>Rebounds off walls/obstructions since the last launch.</summary>
         public int BounceCount { get; private set; }
 
+        /// <summary>Electric charge state, driven by polarizer gates.</summary>
+        public enum Polarity
+        {
+            Neutral,
+            Positive,
+            Negative
+        }
+
+        public Polarity Charge { get; private set; } = Polarity.Neutral;
+
+        /// <summary>+1/-1, or 0 while neutral; polarized bodies scale their field force by this.</summary>
+        public float ChargeSign => Charge == Polarity.Positive ? 1f : Charge == Polarity.Negative ? -1f : 0f;
+
         private void Awake()
         {
             rb = GetComponent<Rigidbody>();
@@ -69,6 +103,13 @@ namespace Sol.Minigames
             ConfigureRigidbody();
             ConfigureCollider();
             ApplyBaseTrail();
+
+            if (outline == null)
+            {
+                outline = GetComponent<Sol.Outline.OutlineComponent>();
+            }
+
+            ApplyOutlineColor(neutralOutlineColor);
             LockToPlane();
         }
 
@@ -248,6 +289,25 @@ namespace Sol.Minigames
             settledSince = -1f;
         }
 
+        /// <summary>Sets the charge (polarizer gates) with a flip flash; the outline glow persists until changed.</summary>
+        public void SetPolarity(Polarity polarity)
+        {
+            Charge = polarity;
+            Color flashColor = polarity == Polarity.Positive ? positiveChargeColor
+                : polarity == Polarity.Negative ? negativeChargeColor
+                : baseTrailColor;
+            ApplyOutlineColor(polarity == Polarity.Neutral ? neutralOutlineColor : flashColor);
+            ApplyTemporaryVisualState(flashColor, 0.3f);
+        }
+
+        private void ApplyOutlineColor(Color color)
+        {
+            if (outline != null)
+            {
+                outline.outlineColor = color;
+            }
+        }
+
         public void ApplyTemporaryVisualState(Color color, float seconds)
         {
             if (seconds <= 0f)
@@ -298,19 +358,58 @@ namespace Sol.Minigames
         private void ClearTemporaryVisualState()
         {
             visualEffectEndTime = -1f;
+            ApplyPersistentVisuals();
+        }
+
+        // The ball's resting look depends on its charge. The body always
+        // wears the neutral warm tint — polarity reads from the outline glow
+        // and the trail, not a body repaint. Temporary effects (quantum
+        // flashes, deflections, flip flashes) always settle here.
+        private void ApplyPersistentVisuals()
+        {
+            ResolveRenderers();
 
             if (ballRenderers != null)
             {
                 foreach (Renderer ballRenderer in ballRenderers)
                 {
-                    if (ballRenderer != null)
+                    if (ballRenderer == null)
+                    {
+                        continue;
+                    }
+
+                    if (neutralBallColor.a <= 0f)
                     {
                         ballRenderer.SetPropertyBlock(null);
+                        continue;
                     }
+
+                    propertyBlock ??= new MaterialPropertyBlock();
+                    ballRenderer.GetPropertyBlock(propertyBlock);
+                    propertyBlock.SetColor("_BaseColor", neutralBallColor);
+                    propertyBlock.SetColor("_Color", neutralBallColor);
+                    ballRenderer.SetPropertyBlock(propertyBlock);
                 }
             }
 
-            ApplyBaseTrail();
+            if (Charge == Polarity.Neutral)
+            {
+                ApplyOutlineColor(neutralOutlineColor);
+                ApplyBaseTrail();
+                return;
+            }
+
+            Color chargeColor = Charge == Polarity.Positive ? positiveChargeColor : negativeChargeColor;
+            ApplyOutlineColor(chargeColor);
+
+            if (boostTrail != null)
+            {
+                boostTrail.emitting = true;
+                boostTrail.startWidth = baseTrailWidth;
+                boostTrail.endWidth = 0f;
+                boostTrail.startColor = new Color(chargeColor.r, chargeColor.g, chargeColor.b, 0.75f);
+                boostTrail.endColor = new Color(chargeColor.r, chargeColor.g, chargeColor.b, 0f);
+            }
         }
 
         private void ApplyBaseTrail()
@@ -320,6 +419,7 @@ namespace Sol.Minigames
                 return;
             }
 
+            boostTrail.time = trailSeconds;
             boostTrail.emitting = true;
             boostTrail.startWidth = baseTrailWidth;
             boostTrail.endWidth = 0f;

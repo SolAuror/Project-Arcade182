@@ -19,8 +19,8 @@ namespace Sol.Minigames
         [SerializeField] private Transform bumperPivot;
         [SerializeField] private float restAngle;
         [SerializeField] private float pressedAngle = 42f;
-        [SerializeField] private float pressDegreesPerSecond = 720f;
-        [SerializeField] private float releaseDegreesPerSecond = 420f;
+        [SerializeField] private float pressDegreesPerSecond = 600f;
+        [SerializeField] private float releaseDegreesPerSecond = 360f;
         [SerializeField] private float reboundImpulse = 9f;
         [SerializeField] private float reboundCooldownSeconds = 0.08f;
         [SerializeField] private float impactBounceDegrees = 6f;
@@ -28,22 +28,51 @@ namespace Sol.Minigames
         [SerializeField] private LayerMask ballHitLayers = ~0;
         [SerializeField] private float overlapPadding = 0.06f;
 
+        [Header("Charge")]
+        [Tooltip("Seconds after a press during which the paddle kicks balls; time it as the ball arrives.")]
+        [SerializeField, Min(0.02f)] private float hotWindowSeconds = 0.18f;
+
+        [Tooltip("Recharge after the hot window before the paddle can kick again; blocks hold/mash juggling.")]
+        [SerializeField, Min(0f)] private float rechargeSeconds = 1.2f;
+
+        [Tooltip("Tint while discharged; eases back to the authored look as charge returns.")]
+        [SerializeField] private Color rechargeTint = new Color(0.4f, 0.4f, 0.45f, 1f);
+
+        [Tooltip("Flash while the kick window is live.")]
+        [SerializeField] private Color hotFlashColor = new Color(1.4f, 1.25f, 0.7f, 1f);
+
+        [Tooltip("Renderers tinted by charge state; auto-resolved from children when empty.")]
+        [SerializeField] private Renderer[] chargeRenderers;
+
         private readonly Dictionary<AtomSmasherBall, float> lastReboundTimes = new Dictionary<AtomSmasherBall, float>();
+        private readonly HashSet<AtomSmasherBall> ballsKickedThisPress = new HashSet<AtomSmasherBall>();
         private readonly Collider[] overlapBuffer = new Collider[16];
         private InputSystem_Actions actions;
         private InputAction bumperAction;
         private InputActionMap atomSmasherMap;
         private Rigidbody pivotRigidbody;
         private Collider bumperCollider;
+        private MaterialPropertyBlock chargePropertyBlock;
         private Quaternion pivotBaseRotation;
         private float currentAngle;
         private float targetAngle;
         private float impactAngleOffset;
+        private float hotUntilTime = -1f;
+        private float chargeReadyTime;
+        private bool wasPressedLastTick;
+        private bool isArmedPress;
+        private bool chargeTintApplied;
         private bool hasBaseRotation;
 
         private void Awake()
         {
             bumperCollider = GetComponent<Collider>();
+
+            if (chargeRenderers == null || chargeRenderers.Length == 0)
+            {
+                chargeRenderers = GetComponentsInChildren<Renderer>();
+            }
+
             ResolvePivot();
             ResolvePivotRigidbody();
             CaptureBaseRotation();
@@ -79,8 +108,15 @@ namespace Sol.Minigames
             actions = null;
         }
 
+        private void Update()
+        {
+            UpdateChargeTint();
+        }
+
         private void OnValidate()
         {
+            hotWindowSeconds = Mathf.Max(0.02f, hotWindowSeconds);
+            rechargeSeconds = Mathf.Max(0f, rechargeSeconds);
             pressDegreesPerSecond = Mathf.Max(0f, pressDegreesPerSecond);
             releaseDegreesPerSecond = Mathf.Max(0f, releaseDegreesPerSecond);
             reboundImpulse = Mathf.Max(0f, reboundImpulse);
@@ -96,7 +132,22 @@ namespace Sol.Minigames
             ResolvePivotRigidbody();
             CaptureBaseRotation();
 
-            targetAngle = bumperAction != null && bumperAction.IsPressed() ? pressedAngle : restAngle;
+            // The whole paddle needs charge: a discharged press neither
+            // swings nor kicks, since the swing alone can juggle the ball
+            // through the kinematic collision.
+            bool pressed = IsPressed();
+            if (pressed && !wasPressedLastTick)
+            {
+                isArmedPress = TryArmHotWindow();
+            }
+            else if (!pressed)
+            {
+                isArmedPress = false;
+            }
+
+            wasPressedLastTick = pressed;
+
+            targetAngle = pressed && isArmedPress ? pressedAngle : restAngle;
             float speed = Mathf.Abs(targetAngle - currentAngle) > 0.01f && targetAngle != restAngle
                 ? pressDegreesPerSecond
                 : releaseDegreesPerSecond;
@@ -203,7 +254,7 @@ namespace Sol.Minigames
 
         private void ScanOverlappingBalls()
         {
-            if (!IsPressed() || bumperCollider == null || !bumperCollider.enabled)
+            if (!IsHot || bumperCollider == null || !bumperCollider.enabled)
             {
                 return;
             }
@@ -245,12 +296,19 @@ namespace Sol.Minigames
 
         private void TryApplyRebound(AtomSmasherBall ball)
         {
-            if (!IsPressed())
+            if (!IsHot)
             {
                 return;
             }
 
             if (ball == null || ball.Rigidbody == null)
+            {
+                return;
+            }
+
+            // One kick per ball per press: contact-hold can't machine-gun
+            // impulses or life refreshes inside a single hot window.
+            if (ballsKickedThisPress.Contains(ball))
             {
                 return;
             }
@@ -261,6 +319,7 @@ namespace Sol.Minigames
                 return;
             }
 
+            ballsKickedThisPress.Add(ball);
             lastReboundTimes[ball] = Time.time;
             ball.ResetDecayTimer();
             TriggerImpactBounce();
@@ -281,6 +340,86 @@ namespace Sol.Minigames
         private bool IsPressed()
         {
             return bumperAction != null && bumperAction.IsPressed();
+        }
+
+        private bool IsHot => Time.time < hotUntilTime;
+
+        // A press only fires when the capacitor is charged; discharged
+        // presses are swallowed entirely until the recharge completes.
+        private bool TryArmHotWindow()
+        {
+            if (Time.time < chargeReadyTime)
+            {
+                return false;
+            }
+
+            hotUntilTime = Time.time + hotWindowSeconds;
+            chargeReadyTime = hotUntilTime + rechargeSeconds;
+            ballsKickedThisPress.Clear();
+            return true;
+        }
+
+        // The paddle mesh is its own charge gauge: flash while hot, dimmed
+        // while discharged, easing back to the authored look as it refills.
+        private void UpdateChargeTint()
+        {
+            if (chargeRenderers == null || chargeRenderers.Length == 0)
+            {
+                return;
+            }
+
+            if (IsHot)
+            {
+                ApplyChargeTint(hotFlashColor);
+                return;
+            }
+
+            if (Time.time >= chargeReadyTime)
+            {
+                if (chargeTintApplied)
+                {
+                    ClearChargeTint();
+                }
+
+                return;
+            }
+
+            float progress = rechargeSeconds <= 0f
+                ? 1f
+                : 1f - Mathf.Clamp01((chargeReadyTime - Time.time) / rechargeSeconds);
+            ApplyChargeTint(Color.Lerp(rechargeTint, Color.white, progress));
+        }
+
+        private void ApplyChargeTint(Color color)
+        {
+            chargePropertyBlock ??= new MaterialPropertyBlock();
+            chargeTintApplied = true;
+
+            foreach (Renderer chargeRenderer in chargeRenderers)
+            {
+                if (chargeRenderer == null)
+                {
+                    continue;
+                }
+
+                chargeRenderer.GetPropertyBlock(chargePropertyBlock);
+                chargePropertyBlock.SetColor("_BaseColor", color);
+                chargePropertyBlock.SetColor("_Color", color);
+                chargeRenderer.SetPropertyBlock(chargePropertyBlock);
+            }
+        }
+
+        private void ClearChargeTint()
+        {
+            chargeTintApplied = false;
+
+            foreach (Renderer chargeRenderer in chargeRenderers)
+            {
+                if (chargeRenderer != null)
+                {
+                    chargeRenderer.SetPropertyBlock(null);
+                }
+            }
         }
 
         private void TriggerImpactBounce()

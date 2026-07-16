@@ -21,12 +21,17 @@ namespace Sol.Outline
         [Tooltip("Outline renders on top of everything, ignoring depth")]
         public bool priority = false;
 
+        [Tooltip("Only these renderers get outlined; leave empty to outline every child renderer (e.g. skip a TrailRenderer)")]
+        public Renderer[] explicitRenderers;
+
         private Renderer[] _renderers;
         private bool _outlineActive;
 
         private void Awake()
         {
-            _renderers = GetComponentsInChildren<Renderer>();
+            _renderers = explicitRenderers != null && explicitRenderers.Length > 0
+                ? explicitRenderers
+                : GetComponentsInChildren<Renderer>();
         }
 
         private void OnEnable()

@@ -38,6 +38,16 @@ namespace Sol.Minigames
             noiseSeed = Random.value * 100f;
         }
 
+        /// <summary>
+        /// Re-anchors the vibration around the current position. Must be called
+        /// after moving the atom — OnEnable fires during Instantiate, before
+        /// spawn placement, so the stale anchor would snap it back.
+        /// </summary>
+        public void Rebase()
+        {
+            baseLocalPosition = transform.localPosition;
+        }
+
         private void OnDisable()
         {
             transform.localPosition = baseLocalPosition;

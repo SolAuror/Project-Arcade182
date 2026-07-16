@@ -17,6 +17,13 @@ namespace Sol.Minigames
 
         private float direction = 1f;
 
+        /// <summary>Spin rate in deg/s; cluster variants retune this at spawn.</summary>
+        public float DegreesPerSecond
+        {
+            get => degreesPerSecond;
+            set => degreesPerSecond = value;
+        }
+
         private void OnEnable()
         {
             direction = randomizeDirection && Random.value < 0.5f ? -1f : 1f;

@@ -123,8 +123,8 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier:
   game: {fileID: 0}
-  scoreValue: 200
-  requiredTarget: 0
+  scoreValue: 20
+  requiredTarget: 1
   deactivateOnHit: 1
   targetRenderers: []
   activeColor: {r: 1, g: 0.45, b: 0.15, a: 1}

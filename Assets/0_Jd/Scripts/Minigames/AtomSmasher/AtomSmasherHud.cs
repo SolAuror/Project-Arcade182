@@ -108,10 +108,21 @@ namespace Sol.Minigames
 
         private void UpdateStatus()
         {
+            // Reserved for important events; onboarding hints only surface
+            // before the first shot and while wave 1 teaches re-fire pops.
+            // Moment-to-moment state lives on the board itself (arc gauge,
+            // bumper charge tint).
             string status = game.StatusMessage;
             if (string.IsNullOrEmpty(status) && game.CanLaunch)
             {
-                status = "Aim and release to launch.";
+                if (!game.HasLaunchedThisRun)
+                {
+                    status = "Aim and release to launch.";
+                }
+                else if (game.WaveNumber == 1 && game.HasBallInFlight)
+                {
+                    status = "Fire again to collapse your ball and cash its chain.";
+                }
             }
 
             SetText(statusText, status ?? string.Empty);

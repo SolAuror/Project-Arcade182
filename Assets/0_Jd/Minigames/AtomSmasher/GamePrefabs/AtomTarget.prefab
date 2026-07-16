@@ -122,7 +122,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   game: {fileID: 0}
-  scoreValue: 100
+  scoreValue: 10
   requiredTarget: 1
   deactivateOnHit: 1
   targetRenderers: []

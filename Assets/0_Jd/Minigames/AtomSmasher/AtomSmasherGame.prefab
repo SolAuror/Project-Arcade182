@@ -333,8 +333,8 @@ MonoBehaviour:
   bumperPivot: {fileID: 4177607521113090595}
   restAngle: 0
   pressedAngle: 42
-  pressDegreesPerSecond: 720
-  releaseDegreesPerSecond: 420
+  pressDegreesPerSecond: 600
+  releaseDegreesPerSecond: 360
   reboundImpulse: 9
   reboundCooldownSeconds: 0.08
   impactBounceDegrees: 6
@@ -586,6 +586,7 @@ GameObject:
   - component: {fileID: 1026760281673052111}
   - component: {fileID: 2517474787287003245}
   - component: {fileID: 7726353433288915837}
+  - component: {fileID: 8551373069968302000}
   m_Layer: 0
   m_Name: Bounce Camera
   m_TagString: MainCamera
@@ -602,7 +603,7 @@ Transform:
   m_GameObject: {fileID: 3272339603337777546}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.6, z: -14}
+  m_LocalPosition: {x: 0, y: -0.56, z: -13.28}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -641,8 +642,8 @@ Camera:
     height: 1
   near clip plane: 0.01
   far clip plane: 50
-  field of view: 60
-  orthographic: 1
+  field of view: 53.6
+  orthographic: 0
   orthographic size: 6.6
   m_Depth: 0
   m_CullingMask:
@@ -703,6 +704,14 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+--- !u!81 &8551373069968302000
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3272339603337777546}
+  m_Enabled: 1
 --- !u!1 &3335592759706902509
 GameObject:
   m_ObjectHideFlags: 0
@@ -889,8 +898,8 @@ MonoBehaviour:
   bumperPivot: {fileID: 8994103385726651506}
   restAngle: 0
   pressedAngle: -42
-  pressDegreesPerSecond: 720
-  releaseDegreesPerSecond: 420
+  pressDegreesPerSecond: 600
+  releaseDegreesPerSecond: 360
   reboundImpulse: 9
   reboundCooldownSeconds: 0.08
   impactBounceDegrees: 6
@@ -1436,8 +1445,8 @@ Transform:
   m_GameObject: {fileID: 5826632263930281837}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.024, y: -6.5, z: 0.6125}
-  m_LocalScale: {x: 23.063978, y: 0.45, z: 0.22491612}
+  m_LocalPosition: {x: 0.024, y: -7.1669, z: 0.6125}
+  m_LocalScale: {x: 23.063978, y: 1.8717761, z: 0.22491612}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8702223519107469620}
@@ -2050,11 +2059,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   startingShots: 5
   shotsPerWaveClear: 3
-  ballClearBonus: 250
+  ballClearBonus: 25
   startOnAwake: 1
   scoreMultiplierStep: 1
   minigameId: AtomSmasher
-  ticketsPerPoint: 0.1
+  ticketsPerPoint: 1
   scoreCarrier: {fileID: 0}
   replayOnClear: 1
   shuffleTargetsOnClear: 1
@@ -2069,6 +2078,8 @@ MonoBehaviour:
   spawnClearRadius: 0.6
   useTimerMode: 0
   roundTimeSeconds: 60
+  challengeMode: 0
+  challengeStartWave: 10
   launcher: {fileID: 704978193693218801}
   ballPrefab: {fileID: 11400000, guid: 0bcfdb8ed9774e84283a71d784227e41, type: 3}
   targets:
@@ -2105,7 +2116,7 @@ MonoBehaviour:
   drainY: -6.45
   ballSettleSpeed: 0.15
   ballSettleSeconds: 1.25
-  maxBallLifeSeconds: 15
+  maxBallLifeSeconds: 8
   spawnObstructionOnEachWave: 1
   obstacleOptions:
   - prefab: {fileID: 100000, guid: d91aa4a4a5a54b2fb3c4b118d3064a18, type: 3}
@@ -2113,21 +2124,50 @@ MonoBehaviour:
     minimumWave: 1
     symmetryChance: 0.45
     randomizeRotation: 1
+    placementRadius: 2
+    isFieldMechanic: 0
   - prefab: {fileID: 100000, guid: 7f3c4a0cc38c4d6d8d06a2c1c97e6471, type: 3}
     spawnWeight: 2
     minimumWave: 2
     symmetryChance: 0.25
     randomizeRotation: 1
+    placementRadius: 3
+    isFieldMechanic: 0
   - prefab: {fileID: 100000, guid: 89e53efdcf3244418f989f107dec4770, type: 3}
     spawnWeight: 2
     minimumWave: 3
     symmetryChance: 0.2
     randomizeRotation: 1
+    placementRadius: 1.8
+    isFieldMechanic: 0
   - prefab: {fileID: 770021312038681188, guid: 58f7289f9e7744c4490528fae03ecb41, type: 3}
     spawnWeight: 2
-    minimumWave: 3
+    minimumWave: 4
     symmetryChance: 0
     randomizeRotation: 0
+    placementRadius: 1.8
+    isFieldMechanic: 1
+  - prefab: {fileID: 100000, guid: 7be04d92c1354f6f8a2e5b39d4c8a102, type: 3}
+    spawnWeight: 2
+    minimumWave: 6
+    symmetryChance: 0
+    randomizeRotation: 1
+    placementRadius: 2.7
+    isFieldMechanic: 1
+  - prefab: {fileID: 100000, guid: 9dc16e83b2464a519c3f7a28e5d9b203, type: 3}
+    spawnWeight: 2
+    minimumWave: 5
+    symmetryChance: 0
+    randomizeRotation: 0
+    placementRadius: 2.2
+    isFieldMechanic: 0
+  - prefab: {fileID: 100000, guid: 2fa9d0c47e1b4368a5c29f74b8e0d906, type: 3}
+    spawnWeight: 2
+    minimumWave: 10
+    symmetryChance: 0
+    randomizeRotation: 1
+    placementRadius: 2.5
+    isFieldMechanic: 1
   obstructionParent: {fileID: 0}
   obstructionSpawnArea:
     serializedVersion: 2
@@ -2153,7 +2193,7 @@ MonoBehaviour:
   movingTargetOptions:
   - prefab: {fileID: 11400000, guid: 321df2e1d0f14905b0cb8f798432864d, type: 3}
     spawnWeight: 3
-    minimumWave: 3
+    minimumWave: 2
   movingTargetParent: {fileID: 0}
   movingTargetsPerWave: 1
   movingTargetSpawnArea:
@@ -2198,11 +2238,16 @@ MonoBehaviour:
   wavesPerExtraQuantumAtom: 3
   quantumAtomsGuaranteedMax: 2
   unstableTargetPrefab: {fileID: 11400000, guid: a1156c163aa14621853650dc0930f0d4, type: 3}
-  unstableFromWave: 2
+  unstableFromWave: 3
   maxUnstablePerWave: 3
   explosiveTargetPrefab: {fileID: 11400000, guid: 51268d21597347db80fcd0435cdda86e, type: 3}
-  explosiveFromWave: 3
+  explosiveFromWave: 5
   maxExplosivePerWave: 5
+  clusterAtomPrefab: {fileID: 100000, guid: 9dc16e83b2464a519c3f7a28e5d9b203, type: 3}
+  clusterFromWave: 5
+  clusterReplaceChance: 0.35
+  maxClustersPerWave: 1
+  minimumRegularAtoms: 6
   specialAtomSpawnArea:
     serializedVersion: 2
     x: -8.75
@@ -2210,8 +2255,8 @@ MonoBehaviour:
     width: 17.5
     height: 4.5
   specialAtomMinDistance: 1.1
-  extraObstructionEveryNWaves: 2
-  maxExtraObstructions: 3
+  extraObstructionEveryNWaves: 3
+  maxExtraObstructions: 2
   electronsPerTargetHit: 7
   electronMaxBounces: 3
   electronLifeSeconds: 10
@@ -2220,7 +2265,7 @@ MonoBehaviour:
   electronScale: 0.09
   electronColor: {r: 0.4, g: 0.9, b: 1, a: 1}
   feedbackAudioSource: {fileID: 0}
-  targetHitClip: {fileID: 0}
+  targetHitClip: {fileID: 8300000, guid: 5112e32108a20de4d80766446bff1244, type: 3}
   quantumTriggerClip: {fileID: 0}
   waveClearClip: {fileID: 0}
   failedRoundClip: {fileID: 0}

@@ -30,6 +30,8 @@ namespace Sol.Minigames
         private InputActionMap atomSmasherMap;
         private bool isAiming;
         private int lastLaunchFrame = -1;
+        private Color arcBaseStartColor = Color.white;
+        private Color arcBaseEndColor = Color.white;
 
         private void Awake()
         {
@@ -50,6 +52,11 @@ namespace Sol.Minigames
             if (aimArc == null)
             {
                 Debug.LogWarning($"{name} needs an authored LineRenderer child for the Atom Smasher aim arc.", this);
+            }
+            else
+            {
+                arcBaseStartColor = aimArc.startColor;
+                arcBaseEndColor = aimArc.endColor;
             }
         }
 
@@ -227,14 +234,25 @@ namespace Sol.Minigames
                 return;
             }
 
-            aimArc.enabled = game == null || game.CanLaunch || isAiming;
-            aimArc.positionCount = arcSegments;
+            // The arc doubles as the reload gauge: it regrows from the muzzle
+            // and brightens back to its authored color as the shot recharges.
+            float reloadProgress = game != null ? game.ShotReloadProgress : 1f;
+            bool reloading = game != null && game.IsRunning && game.ShotsRemaining > 0 && reloadProgress < 1f;
+
+            aimArc.enabled = game == null || game.CanLaunch || isAiming || reloading;
+
+            int visibleSegments = Mathf.Max(2, Mathf.CeilToInt(arcSegments * reloadProgress));
+            aimArc.positionCount = visibleSegments;
+
+            float chargeDim = 0.35f + 0.65f * reloadProgress;
+            aimArc.startColor = arcBaseStartColor * chargeDim;
+            aimArc.endColor = arcBaseEndColor * chargeDim;
 
             Vector3 start = GetFirePosition();
             Vector3 velocity = direction * launchSpeed;
             Vector3 gravity = Physics.gravity;
 
-            for (int i = 0; i < arcSegments; i++)
+            for (int i = 0; i < visibleSegments; i++)
             {
                 float time = i * arcTimeStep;
                 Vector3 point = start + velocity * time + 0.5f * gravity * time * time;
