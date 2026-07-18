@@ -17,6 +17,10 @@ MonoBehaviour:
   baseDamage: 30
   manaCost: 25
   cooldownSeconds: 1.2
+  continuousWhileHeld: 0
+  castClip: {fileID: 8300000, guid: 336eb911f4034c6abd960200e128c177, type: 3}
+  hitClip: {fileID: 8300000, guid: c98330768fb04f08b60fe58bf91489b3, type: 3}
+  sfxVolume: 0.65
   baseRadius: 5
   knockbackForce: 10
   knockbackUpward: 0.25

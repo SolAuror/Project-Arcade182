@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_Labyrinth_Nameplate
+  m_Name: M_LabyrinthCrawler_Nameplate
   m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
   m_Parent: {fileID: 2100000, guid: 8c7d209b549d96d4890f7f59a9bc9838, type: 2}
   m_ModifiedSerializedProperties: 18

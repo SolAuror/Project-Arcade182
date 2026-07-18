@@ -156,6 +156,12 @@ MonoBehaviour:
   lifeSeconds: 5
   hitVfxPrefab: {fileID: 3226480406766837157, guid: 2fc25b685bcf30d468cc079c54e0ad08, type: 3}
   hitVfxLifeSeconds: 2
+  travelClip: {fileID: 8300000, guid: 4b655c0a80ce421d817e64a0221a9f13, type: 3}
+  travelVolume: 0.24
+  loopTravelAudio: 0
+  travelPitchJitter: 0.04
+  travelMinDistance: 2
+  travelMaxDistance: 20
 --- !u!1 &8718718077969483627
 GameObject:
   m_ObjectHideFlags: 0

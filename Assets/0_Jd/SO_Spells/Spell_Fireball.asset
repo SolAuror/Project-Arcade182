@@ -18,6 +18,9 @@ MonoBehaviour:
   manaCost: 15
   cooldownSeconds: 0.5
   continuousWhileHeld: 0
+  castClip: {fileID: 8300000, guid: 4b655c0a80ce421d817e64a0221a9f13, type: 3}
+  hitClip: {fileID: 8300000, guid: bcab687cd72c41c58d3eff1e403ccaa4, type: 3}
+  sfxVolume: 0.65
   projectilePrefab: {fileID: 3813691216217645523, guid: 48f07403ead9f1f459b635b8e91caf58, type: 3}
   speed: 22
   lifeSeconds: 10

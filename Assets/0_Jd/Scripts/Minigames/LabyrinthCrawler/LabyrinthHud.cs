@@ -58,8 +58,17 @@ namespace Sol.Minigames
 
         [SerializeField, Min(0.05f)] private float manaFailFlashSeconds = 0.3f;
 
+        [Tooltip("Score text pulse tint when the score increases (kills, stage bonus).")]
+        [SerializeField] private Color scoreFlashColor = new Color(0.5f, 1f, 0.6f, 1f);
+
+        [SerializeField, Min(0.05f)] private float scoreFlashSeconds = 0.35f;
+
         private Color manaFillBaseColor;
         private bool manaFillBaseColorCaptured;
+        private int lastScoreSeen = -1;
+        private float scoreFlashStrength;
+        private Color scoreTextBaseColor;
+        private bool scoreTextBaseColorCaptured;
 
         private void Awake()
         {
@@ -89,6 +98,7 @@ namespace Sol.Minigames
             SetText(timerText, $"{(int)(seconds / 60f):0}:{seconds % 60f:00.0}");
             SetText(scoreText, $"Score {game.Score}   Stage {game.CurrentStage}   Maze {game.CurrentMazeWidth}x{game.CurrentMazeDepth}");
             SetText(enemiesText, $"Enemies {game.EnemiesRemaining}   Kills {game.EnemiesKilled}");
+            UpdateScoreFlash();
 
             if (statusText != null)
             {
@@ -98,6 +108,37 @@ namespace Sol.Minigames
                         ? "Choose a boon."
                         : "Reach the exit pad. Speed and kills score points.";
             }
+        }
+
+        // Pulses the score line toward the flash tint whenever the score climbs,
+        // reinforcing the world-space "+N" pops. Uses unscaled time so it still
+        // animates while the upgrade screen has the game paused.
+        private void UpdateScoreFlash()
+        {
+            if (scoreText == null)
+            {
+                return;
+            }
+
+            if (!scoreTextBaseColorCaptured)
+            {
+                scoreTextBaseColor = scoreText.color;
+                scoreTextBaseColorCaptured = true;
+            }
+
+            if (lastScoreSeen >= 0 && game.Score > lastScoreSeen)
+            {
+                scoreFlashStrength = 1f;
+            }
+
+            lastScoreSeen = game.Score;
+
+            if (scoreFlashStrength > 0f)
+            {
+                scoreFlashStrength = Mathf.Max(0f, scoreFlashStrength - Time.unscaledDeltaTime / scoreFlashSeconds);
+            }
+
+            scoreText.color = Color.Lerp(scoreTextBaseColor, scoreFlashColor, scoreFlashStrength);
         }
 
         private void UpdateVitals()

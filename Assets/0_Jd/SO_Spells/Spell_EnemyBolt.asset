@@ -17,6 +17,9 @@ MonoBehaviour:
   baseDamage: 8
   manaCost: 0
   cooldownSeconds: 1
+  castClip: {fileID: 8300000, guid: 8546c7600cc542d18a89f789c1a2e712, type: 3}
+  hitClip: {fileID: 8300000, guid: 99e29354b3db449fb4a2fdfec8a21ab5, type: 3}
+  sfxVolume: 0.7
   projectilePrefab: {fileID: 3219157163291331399, guid: 970c6f40ddef36a4f945cdb52300e6c6, type: 3}
   speed: 12
   lifeSeconds: 5

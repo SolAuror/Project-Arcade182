@@ -17,6 +17,9 @@ MonoBehaviour:
   baseDamage: 10
   manaCost: 0
   cooldownSeconds: 0.7
+  castClip: {fileID: 8300000, guid: 8230b170ab5f45d78e6d87bbdb2e9c0b, type: 3}
+  hitClip: {fileID: 8300000, guid: 05e902c8900f41839c91577071fe9239, type: 3}
+  sfxVolume: 0.7
   range: 2.5
   beamColor: {r: 0.4, g: 0.9, b: 1, a: 1}
   beamWidth: 0.05

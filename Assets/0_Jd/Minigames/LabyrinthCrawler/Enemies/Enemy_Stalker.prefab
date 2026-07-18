@@ -496,6 +496,17 @@ MonoBehaviour:
   knockbackRecovery: 14
   deathBurstColor: {r: 0.95, g: 0.3, b: 0.2, a: 1}
   deathBurstRadius: 1.2
+  enemyFootstepsEnabled: 1
+  enemyFootstepClips:
+  - {fileID: 8300000, guid: 1a6c8e2b4d0f47259c3a5e7b9d162044, type: 3}
+  - {fileID: 8300000, guid: 7c2e4a6b8d0f41639e5c7a9b3d284166, type: 3}
+  - {fileID: 8300000, guid: 3e8a0c2b6d4f45871a9c1e5b7d306288, type: 3}
+  enemyFootstepVolume: 0.14
+  enemyFootstepInterval: 0.38
+  enemyFootstepReferenceSpeed: 4.5
+  enemyFootstepPitchJitter: 0.08
+  enemyFootstepMinDistance: 1.5
+  enemyFootstepMaxDistance: 12
 --- !u!1 &3510131519300607191
 GameObject:
   m_ObjectHideFlags: 0

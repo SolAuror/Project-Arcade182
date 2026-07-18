@@ -29,16 +29,37 @@ namespace Sol.Minigames
         [Tooltip("Seconds before spawned hit VFX is destroyed.")]
         [SerializeField, Min(0.1f)] private float hitVfxLifeSeconds = 2f;
 
+        [Header("Travel Audio")]
+        [Tooltip("Optional one-shot or loop played from the projectile while it travels.")]
+        [SerializeField] private AudioClip travelClip;
+
+        [SerializeField, Range(0f, 1f)] private float travelVolume = 0.22f;
+        [SerializeField] private bool loopTravelAudio;
+        [SerializeField, Range(0f, 0.5f)] private float travelPitchJitter = 0.04f;
+        [SerializeField, Min(0f)] private float travelMinDistance = 2f;
+        [SerializeField, Min(0.1f)] private float travelMaxDistance = 18f;
+
         private Rigidbody rb;
+        private AudioSource travelSource;
         private float despawnTime;
         private bool consumed;
+        private AudioClip impactClip;
+        private float impactVolume = 1f;
 
         public Faction Owner => owner;
+
+        /// <summary>Sets the one-shot played when this projectile impacts or is detonated.</summary>
+        public void SetImpactSound(AudioClip clip, float volume)
+        {
+            impactClip = clip;
+            impactVolume = Mathf.Clamp01(volume);
+        }
 
         private void Awake()
         {
             rb = GetComponent<Rigidbody>();
             ConfigureRigidbody();
+            PlayTravelSound();
             despawnTime = Time.time + lifeSeconds;
         }
 
@@ -100,7 +121,10 @@ namespace Sol.Minigames
             }
 
             Vector3 point = collision.contactCount > 0 ? collision.GetContact(0).point : transform.position;
+            Vector3 normal = collision.contactCount > 0 ? collision.GetContact(0).normal : -transform.forward;
+            SpellImpactReceiverUtility.TryNotify(collision.collider, point, normal, owner);
             SpawnHitVfx(point);
+            PlayImpactSound(point);
             Destroy(gameObject);
         }
 
@@ -114,6 +138,7 @@ namespace Sol.Minigames
 
             consumed = true;
             SpawnHitVfx(transform.position);
+            PlayImpactSound(transform.position);
             Destroy(gameObject);
         }
 
@@ -153,6 +178,39 @@ namespace Sol.Minigames
 
             GameObject vfx = Instantiate(hitVfxPrefab, point, Quaternion.identity);
             Destroy(vfx, hitVfxLifeSeconds);
+        }
+
+        private void PlayImpactSound(Vector3 point)
+        {
+            if (impactClip != null)
+            {
+                AudioSource.PlayClipAtPoint(impactClip, point, impactVolume);
+            }
+        }
+
+        private void PlayTravelSound()
+        {
+            if (travelClip == null)
+            {
+                return;
+            }
+
+            if (travelSource == null && !TryGetComponent(out travelSource))
+            {
+                travelSource = gameObject.AddComponent<AudioSource>();
+            }
+
+            travelSource.clip = travelClip;
+            travelSource.volume = travelVolume;
+            travelSource.pitch = 1f + Random.Range(-travelPitchJitter, travelPitchJitter);
+            travelSource.loop = loopTravelAudio;
+            travelSource.playOnAwake = false;
+            travelSource.spatialBlend = 1f;
+            travelSource.rolloffMode = AudioRolloffMode.Linear;
+            travelSource.minDistance = travelMinDistance;
+            travelSource.maxDistance = Mathf.Max(travelMinDistance + 0.1f, travelMaxDistance);
+            travelSource.dopplerLevel = 0.35f;
+            travelSource.Play();
         }
 
         private void IgnoreCollisionsWith(Transform otherRoot)

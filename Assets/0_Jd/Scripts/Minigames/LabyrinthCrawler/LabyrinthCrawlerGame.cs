@@ -37,12 +37,15 @@ namespace Sol.Minigames
         [Tooltip("How many of the player spells start unlocked (progressive unlock).")]
         [SerializeField, Min(0)] private int playerSpellsUnlockedAtStart = 1;
 
+        [Tooltip("Minimum room distance (manhattan) from the start room before an enemy may spawn, so packs never open on top of the player.")]
+        [SerializeField, Min(0)] private int minEnemySpawnRoomDistance = 2;
+
         [Header("Exit")]
         [Tooltip("Seconds standing on the exit pad while enemies are alive.")]
         [SerializeField, Min(0f)] private float clearDwellSeconds = 1.5f;
 
-        [Tooltip("Exit pad footprint as a fraction of the room size.")]
-        [SerializeField, Range(0.1f, 1f)] private float exitPadRoomFraction = 0.6f;
+        [Tooltip("Authored exit pad spawned when the end room does not already contain one (extracted from the DungeonExit room).")]
+        [SerializeField] private LabyrinthExitPad exitPadPrefab;
 
         [Header("Score")]
         [Tooltip("Points per second under par when clearing a stage.")]
@@ -54,8 +57,8 @@ namespace Sol.Minigames
         [Tooltip("Par seconds added per stage (par scales with maze size).")]
         [SerializeField, Min(0f)] private float parPerStageSeconds = 6f;
 
-        [Tooltip("Final score adds kills x stages cleared x this.")]
-        [SerializeField, Min(0)] private int killStageMultiplier = 5;
+        [Tooltip("Base points per kill, multiplied by the current stage score multiplier. Awarded live so kills always score.")]
+        [SerializeField, Min(0)] private int pointsPerKill = 25;
 
         [SerializeField] private string minigameId = "LabyrinthCrawler";
         [SerializeField] private float ticketsPerPoint = 0.1f;
@@ -84,6 +87,13 @@ namespace Sol.Minigames
         [Header("Upgrades")]
         [SerializeField] private LabyrinthUpgradeSystem upgradeSystem = new LabyrinthUpgradeSystem();
 
+        [Header("Secrets")]
+        [Tooltip("Post-carve pass hiding dead-end rooms behind illusory walls. Labyrinth-only; the hub maze never runs this.")]
+        [SerializeField] private LabyrinthSecretPass secretPass = new LabyrinthSecretPass();
+
+        [Tooltip("Base points for uncovering a secret room, multiplied by the stage score multiplier.")]
+        [SerializeField, Min(0)] private int pointsPerSecret = 100;
+
         [Header("Scene Flow")]
         [SerializeField] private bool returnToSceneOnFinish = true;
         [SerializeField] private string returnSceneName = "Sc_ArcadeHub";
@@ -94,6 +104,8 @@ namespace Sol.Minigames
         private LabyrinthUpgradeScreen upgradeScreen;
         private LabyrinthExitPad currentExitPad;
         private Transform enemiesParent;
+        private Transform secretsParent;
+        private int secretsFound;
         private Health playerHealth;
         private Mana playerMana;
         private SpellCaster playerCaster;
@@ -115,6 +127,9 @@ namespace Sol.Minigames
         private bool scoreRecorded;
         private float lastSeenManaFailTime = -999f;
 
+        // Bright green so score gains read differently from the gold damage numbers.
+        private static readonly Color ScorePopColor = new Color(0.45f, 1f, 0.55f, 1f);
+
         public float RunSeconds => runTimer != null ? runTimer.Elapsed : 0f;
         public int CurrentMazeWidth => currentMazeWidth;
         public int CurrentMazeDepth => currentMazeDepth;
@@ -123,6 +138,7 @@ namespace Sol.Minigames
         public int CurrentEnemyCount => labyrinthMazeRules.GetEnemyCount(CurrentStage);
         public int ExitsFound => exitsFound;
         public int EnemiesKilled => enemiesKilled;
+        public int SecretsFound => secretsFound;
         public int Score => score;
         public int LastRecordedScore => lastRecordedScore;
         public int BestRecordedScore => bestRecordedScore;
@@ -131,6 +147,7 @@ namespace Sol.Minigames
         public bool HasFailed => hasFailed;
         public bool IsChoosingUpgrade => isChoosingUpgrade;
         public bool CanPlayerAct => isRunning && !isChoosingUpgrade && !isComplete;
+        public ArcadeGen3D Maze => mazeGenerator;
         public Health PlayerHealth => playerHealth;
         public Mana PlayerMana => playerMana;
         public SpellCaster PlayerCaster => playerCaster;
@@ -273,6 +290,7 @@ namespace Sol.Minigames
             currentMazeDepth = labyrinthMazeRules.StartingMazeDepth;
             exitsFound = 0;
             enemiesKilled = 0;
+            secretsFound = 0;
             score = 0;
             ticketsAwarded = 0;
             isRunning = true;
@@ -306,7 +324,8 @@ namespace Sol.Minigames
             PlayClip(stageClearClip);
 
             float stageClearSeconds = runTimer.Elapsed - stageStartElapsed;
-            float parSeconds = parBaseSeconds + parPerStageSeconds * exitsFound;
+            // exitsFound was just incremented, so stage 1 uses the base par.
+            float parSeconds = parBaseSeconds + parPerStageSeconds * (exitsFound - 1);
             int stageTimeBonus = Mathf.Max(0, Mathf.RoundToInt((parSeconds - stageClearSeconds) * timeBonusPerSecond));
             score += stageTimeBonus;
 
@@ -317,9 +336,35 @@ namespace Sol.Minigames
 
         public void NotifyEnemyDied(EnemyController enemy)
         {
+            Vector3 killPosition = enemy != null ? enemy.transform.position : Vector3.zero;
             enemies.Remove(enemy);
             enemiesKilled++;
+
+            // Kills score live (scaled by stage) so combat always pays off, even
+            // on a run that ends before the first exit.
+            int killScore = pointsPerKill * CurrentStageMultiplier;
+            score += killScore;
+
             PlayClip(enemyKillClip);
+            if (enemy != null && killScore > 0)
+            {
+                DamagePopup.SpawnText(killPosition + Vector3.up * 1.5f, $"+{killScore}", ScorePopColor, 0f, 1.2f);
+            }
+        }
+
+        private void OnSecretRevealed(IllusoryWall wall)
+        {
+            secretsFound++;
+
+            // The wall handles its own reveal juice (jingle + "Secret!" pop);
+            // the game's contribution is the score, scaled like kills are.
+            int gain = pointsPerSecret * CurrentStageMultiplier;
+            score += gain;
+
+            if (wall != null && gain > 0)
+            {
+                DamagePopup.SpawnText(wall.transform.position + Vector3.up * 0.5f, $"+{gain}", ScorePopColor, 0f, 1.2f);
+            }
         }
 
         private void BeginUpgradeChoice()
@@ -369,11 +414,8 @@ namespace Sol.Minigames
             finishTime = Time.unscaledTime;
             PlayClip(runOverClip);
 
-            int killScore = enemiesKilled * exitsFound * killStageMultiplier;
-            score += killScore;
-
             RecordScore();
-            Debug.Log($"Run over. Stages {exitsFound}, kills {enemiesKilled} (+{killScore}). Final score: {score}.", this);
+            Debug.Log($"Run over. Stages {exitsFound}, kills {enemiesKilled}. Final score: {score}.", this);
         }
 
         private void TickReturnDelay()
@@ -412,6 +454,7 @@ namespace Sol.Minigames
             }
 
             DespawnEnemies();
+            secretPass.Clear();
             currentExitPad = null;
 
             ArcadeMazeRules rules = labyrinthMazeRules.CreateArcadeRules(currentMazeWidth, currentMazeDepth);
@@ -430,6 +473,13 @@ namespace Sol.Minigames
             mazeGenerator.RespawnPlayerAtStartRoom();
             ConfigureGeneratedExit();
             SpawnEnemies();
+
+            if (secretsParent == null)
+            {
+                secretsParent = new GameObject("Labyrinth Secrets").transform;
+            }
+
+            secretPass.SpawnSecrets(mazeGenerator, secretsParent, CurrentStage, OnSecretRevealed);
             stageStartElapsed = runTimer.Elapsed;
         }
 
@@ -448,33 +498,23 @@ namespace Sol.Minigames
                 exit.gameObject.SetActive(false);
             }
 
-            float padWidth = Mathf.Max(1f, mazeGenerator.RoomWidth * exitPadRoomFraction);
-            float padLength = Mathf.Max(1f, mazeGenerator.RoomLength * exitPadRoomFraction);
-
-            GameObject padObject = new GameObject("Labyrinth Exit Pad");
-            padObject.transform.SetParent(endRoom.transform, false);
-            padObject.transform.localPosition = Vector3.zero;
-
-            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            visual.name = "Pad Visual";
-            Collider visualCollider = visual.GetComponent<Collider>();
-            if (visualCollider != null)
+            // Prefer the pad authored inside the end room (DungeonExit ships
+            // one); fall back to spawning the extracted prefab so any room can
+            // serve as the exit. Nothing is built from primitives anymore.
+            currentExitPad = endRoom.GetComponentInChildren<LabyrinthExitPad>(true);
+            if (currentExitPad == null && exitPadPrefab != null)
             {
-                Destroy(visualCollider);
+                currentExitPad = Instantiate(exitPadPrefab, endRoom.transform);
             }
 
-            visual.transform.SetParent(padObject.transform, false);
-            visual.transform.localPosition = new Vector3(0f, 0.04f, 0f);
-            visual.transform.localScale = new Vector3(Mathf.Min(padWidth, padLength), 0.03f, Mathf.Min(padWidth, padLength));
-
-            Renderer visualRenderer = visual.GetComponent<Renderer>();
-            if (visualRenderer != null)
+            if (currentExitPad == null)
             {
-                visualRenderer.material.color = new Color(0.2f, 1f, 0.45f, 1f);
+                Debug.LogWarning($"{name} found no LabyrinthExitPad in the end room and has no exit pad prefab assigned; the stage cannot be cleared.", this);
+                return;
             }
 
-            currentExitPad = padObject.AddComponent<LabyrinthExitPad>();
-            currentExitPad.Initialize(this, new Vector3(padWidth * 0.5f, 2f, padLength * 0.5f), clearDwellSeconds);
+            currentExitPad.gameObject.SetActive(true);
+            currentExitPad.Initialize(this, clearDwellSeconds);
         }
 
         private void SpawnEnemies()
@@ -493,17 +533,25 @@ namespace Sol.Minigames
 
             List<Room3D> candidateRooms = new List<Room3D>();
             Vector2Int start = mazeGenerator.StartRoomIndex;
-            for (int x = 0; x < rooms.GetLength(0); x++)
+            int minRoomDistance = minEnemySpawnRoomDistance;
+            while (candidateRooms.Count == 0 && minRoomDistance >= 1)
             {
-                for (int z = 0; z < rooms.GetLength(1); z++)
+                for (int x = 0; x < rooms.GetLength(0); x++)
                 {
-                    if (rooms[x, z] == null || (x == start.x && z == start.y))
+                    for (int z = 0; z < rooms.GetLength(1); z++)
                     {
-                        continue;
-                    }
+                        int distanceFromStart = Mathf.Abs(x - start.x) + Mathf.Abs(z - start.y);
+                        if (rooms[x, z] == null || distanceFromStart < minRoomDistance)
+                        {
+                            continue;
+                        }
 
-                    candidateRooms.Add(rooms[x, z]);
+                        candidateRooms.Add(rooms[x, z]);
+                    }
                 }
+
+                // Tiny mazes may have no rooms far enough out; relax the ring.
+                minRoomDistance--;
             }
 
             if (candidateRooms.Count == 0)

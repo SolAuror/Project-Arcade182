@@ -3,15 +3,22 @@ using UnityEngine;
 namespace Sol.Minigames
 {
     /// <summary>
-    /// Procedural shockwave for burst spells: a translucent sphere that expands
-    /// from the caster to the blast radius while fading out. Built at runtime —
-    /// no prefab required (same approach as <see cref="AtomSmasherElectron"/>).
+    /// Shockwave for burst spells: a translucent sphere that expands from the
+    /// caster to the blast radius while fading out. The sphere is the authored
+    /// Resources/SpellBurstVisual.prefab; <see cref="Spawn"/> instantiates it
+    /// and drives scale plus tint per burst.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Sol/Minigames/Spell Burst Visual")]
     public class SpellBurstVisual : MonoBehaviour
     {
-        private Renderer burstRenderer;
+        private const string PrefabResourcePath = "SpellBurstVisual";
+
+        private static SpellBurstVisual cachedPrefab;
+
+        [Tooltip("Sphere renderer tinted and expanded by the burst. Authored on the prefab.")]
+        [SerializeField] private Renderer burstRenderer;
+
         private Color baseColor;
         private float startTime;
         private float lifeSeconds;
@@ -19,28 +26,18 @@ namespace Sol.Minigames
 
         public static SpellBurstVisual Spawn(Vector3 center, float radius, Color color, float lifeSeconds)
         {
-            GameObject burst = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            burst.name = "Spell Burst";
-            burst.transform.position = center;
-
-            Collider burstCollider = burst.GetComponent<Collider>();
-            if (burstCollider != null)
+            if (cachedPrefab == null)
             {
-                Destroy(burstCollider);
-            }
-
-            Renderer burstRenderer = burst.GetComponent<Renderer>();
-            if (burstRenderer != null)
-            {
-                Shader transparentShader = Shader.Find("Sprites/Default");
-                if (transparentShader != null)
+                cachedPrefab = Resources.Load<SpellBurstVisual>(PrefabResourcePath);
+                if (cachedPrefab == null)
                 {
-                    burstRenderer.material = new Material(transparentShader);
+                    Debug.LogWarning($"SpellBurstVisual prefab missing from a Resources folder ('{PrefabResourcePath}'); burst skipped.");
+                    return null;
                 }
             }
 
-            SpellBurstVisual visual = burst.AddComponent<SpellBurstVisual>();
-            visual.burstRenderer = burstRenderer;
+            SpellBurstVisual visual = Instantiate(cachedPrefab);
+            visual.transform.position = center;
             visual.baseColor = new Color(color.r, color.g, color.b, Mathf.Min(color.a, 0.55f));
             visual.startTime = Time.time;
             visual.lifeSeconds = Mathf.Max(0.05f, lifeSeconds);

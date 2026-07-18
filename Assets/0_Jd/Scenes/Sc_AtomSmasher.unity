@@ -947,6 +947,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 168884008692119593}
     - target: {fileID: 3575101229707718153, guid: a71c5437f26344841b977f38d36a1887, type: 3}
+      propertyPath: challengeMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3575101229707718153, guid: a71c5437f26344841b977f38d36a1887, type: 3}
       propertyPath: feedbackAudioSource
       value: 
       objectReference: {fileID: 658478414}

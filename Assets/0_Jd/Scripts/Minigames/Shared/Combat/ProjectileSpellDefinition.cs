@@ -39,7 +39,9 @@ namespace Sol.Minigames
                 ? Instantiate(projectilePrefab, spawnPosition, Quaternion.LookRotation(direction))
                 : BuildFallbackProjectile(spawnPosition);
 
+            projectile.SetImpactSound(HitClip, SfxVolume);
             projectile.Launch(context.Faction, GetDamage(context), direction * speed, context.Caster, lifeSeconds);
+            PlayCastSound(context);
         }
 
         private Projectile BuildFallbackProjectile(Vector3 position)

@@ -40,6 +40,7 @@ namespace Sol.Minigames
             Collider[] overlaps = Physics.OverlapSphere(center, radius, context.HitMask, QueryTriggerInteraction.Ignore);
             HashSet<Health> damaged = new HashSet<Health>();
             HashSet<Projectile> reflected = new HashSet<Projectile>();
+            HashSet<ISpellImpactReceiver> notified = new HashSet<ISpellImpactReceiver>();
 
             foreach (Collider overlap in overlaps)
             {
@@ -61,6 +62,16 @@ namespace Sol.Minigames
                     continue;
                 }
 
+                // Reactive surfaces caught in the pulse ripple once each.
+                ISpellImpactReceiver receiver = SpellImpactReceiverUtility.Find(overlap);
+                if (receiver != null && notified.Add(receiver))
+                {
+                    Vector3 surfacePoint = overlap.ClosestPoint(center);
+                    Vector3 toCenter = center - surfacePoint;
+                    Vector3 surfaceNormal = toCenter.sqrMagnitude > 0.001f ? toCenter.normalized : Vector3.up;
+                    receiver.OnSpellImpact(surfacePoint, surfaceNormal, context.Faction);
+                }
+
                 Health health = FindHealth(overlap);
                 if (health != null && health.Faction != context.Faction && damaged.Add(health))
                 {
@@ -70,6 +81,11 @@ namespace Sol.Minigames
             }
 
             SpellBurstVisual.Spawn(center, radius, burstColor, burstLifeSeconds);
+            PlayCastSound(context);
+            if (damaged.Count > 0)
+            {
+                PlayHitSound(center);
+            }
         }
 
         private void ApplyKnockback(Vector3 center, Health health)

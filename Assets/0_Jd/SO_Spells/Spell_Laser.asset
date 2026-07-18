@@ -18,7 +18,11 @@ MonoBehaviour:
   manaCost: 2.5
   cooldownSeconds: 0.1
   continuousWhileHeld: 1
+  castClip: {fileID: 8300000, guid: ff45d4254d9b4dc6a602d5eb1771005d, type: 3}
+  hitClip: {fileID: 8300000, guid: 0c5fc0281bf349fd9778a99a880de6ed, type: 3}
+  sfxVolume: 0.45
   range: 30
+  beamPrefab: {fileID: 3528503500465743715, guid: f4fe2f4af0e0aa6469b6b723e93fd5d2, type: 3}
   beamColor: {r: 0.752, g: 0.30079997, b: 0.7465169, a: 1}
   beamWidth: 0.075
   beamLifeSeconds: 0.22
