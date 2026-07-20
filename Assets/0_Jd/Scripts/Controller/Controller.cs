@@ -68,6 +68,18 @@ namespace Player
         private Quaternion cameraMovementFallbackHeading;
         private float verticalSpeed;
         private bool isGrounded;
+        private float externalSpeedMultiplier = 1f;
+
+        /// <summary>
+        /// Run-scoped movement speed scale applied on top of walk/sprint speed
+        /// (minigame buffs and upgrades). The owning game is responsible for
+        /// resetting it; a fresh scene load always starts at 1.
+        /// </summary>
+        public float ExternalSpeedMultiplier
+        {
+            get => externalSpeedMultiplier;
+            set => externalSpeedMultiplier = Mathf.Clamp(value, 0.1f, 3f);
+        }
 
         private void Awake()
         {

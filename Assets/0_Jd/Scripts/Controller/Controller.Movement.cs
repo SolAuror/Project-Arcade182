@@ -25,7 +25,7 @@ namespace Player
 
             GetMovementBasis(out Vector3 movementRight, out Vector3 movementForward); // get movement axes
             Vector3 desiredMovementDirection = GetDesiredMovementDirection(movementInput, movementRight, movementForward); // desired direction
-            Vector3 desiredMovementVelocity = desiredMovementDirection * baseMovementSpeed * GetMovementSpeedMultiplier(); // desired velocity
+            Vector3 desiredMovementVelocity = desiredMovementDirection * baseMovementSpeed * GetMovementSpeedMultiplier() * externalSpeedMultiplier; // desired velocity
 
             if (FacesMovement() && desiredMovementDirection.sqrMagnitude > MeaningfulMovementInputSquared)
             {

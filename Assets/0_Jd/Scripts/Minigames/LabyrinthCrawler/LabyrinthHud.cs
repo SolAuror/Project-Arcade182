@@ -19,6 +19,8 @@ namespace Sol.Minigames
         {
             public Text nameText;
             public Text levelText;
+            [Tooltip("Rune icon pulled from the spell definition's Icon sprite.")]
+            public Image icon;
             [Tooltip("Filled image swept over the slot while the spell cools down.")]
             public Image cooldownOverlay;
             [Tooltip("Enabled while the spell is still locked.")]
@@ -34,6 +36,9 @@ namespace Sol.Minigames
         [SerializeField] private Text scoreText;
         [SerializeField] private Text enemiesText;
         [SerializeField] private Text statusText;
+
+        [Tooltip("Top-centre banner naming the current floor.")]
+        [SerializeField] private Text floorText;
 
         [Header("Vitals")]
         [SerializeField] private Image healthFill;
@@ -62,6 +67,19 @@ namespace Sol.Minigames
         [SerializeField] private Color scoreFlashColor = new Color(0.5f, 1f, 0.6f, 1f);
 
         [SerializeField, Min(0.05f)] private float scoreFlashSeconds = 0.35f;
+
+        // Cycled by stage so every floor gets a name; the bitmap font maps
+        // lowercase to caps, so these render as engraved-style banners.
+        private static readonly string[] FloorNames =
+        {
+            "The Warrens",
+            "The Ossuary",
+            "The Flooded Halls",
+            "The Fungal Deep",
+            "The Iron Crypt",
+            "The Sunken Chapel",
+            "The Hollow Maw"
+        };
 
         private Color manaFillBaseColor;
         private bool manaFillBaseColorCaptured;
@@ -96,8 +114,12 @@ namespace Sol.Minigames
         {
             float seconds = game.RunSeconds;
             SetText(timerText, $"{(int)(seconds / 60f):0}:{seconds % 60f:00.0}");
-            SetText(scoreText, $"Score {game.Score}   Stage {game.CurrentStage}   Maze {game.CurrentMazeWidth}x{game.CurrentMazeDepth}");
-            SetText(enemiesText, $"Enemies {game.EnemiesRemaining}   Kills {game.EnemiesKilled}");
+            SetText(scoreText, $"Score {game.Score}");
+            SetText(enemiesText, $"Foes {game.EnemiesRemaining}   Slain {game.EnemiesKilled}");
+
+            int stage = Mathf.Max(1, game.CurrentStage);
+            SetText(floorText, $"Floor {stage} - {FloorNames[(stage - 1) % FloorNames.Length]}");
+
             UpdateScoreFlash();
 
             if (statusText != null)
@@ -105,8 +127,8 @@ namespace Sol.Minigames
                 statusText.text = game.HasFailed
                     ? "The maze claims another."
                     : game.IsChoosingUpgrade
-                        ? "Choose a boon."
-                        : "Reach the exit pad. Speed and kills score points.";
+                        ? "The maze offers a boon."
+                        : "Seek the waygate. Haste and slaughter are rewarded.";
             }
         }
 
@@ -190,6 +212,22 @@ namespace Sol.Minigames
                 SetText(widget.levelText, state != null ? $"Lv{state.Level}" : string.Empty);
 
                 bool locked = state == null || !state.Unlocked;
+
+                if (widget.icon != null)
+                {
+                    Sprite iconSprite = definition != null ? definition.Icon : null;
+                    if (widget.icon.sprite != iconSprite)
+                    {
+                        widget.icon.sprite = iconSprite;
+                    }
+
+                    bool showIcon = iconSprite != null;
+                    if (widget.icon.enabled != showIcon)
+                    {
+                        widget.icon.enabled = showIcon;
+                    }
+                }
+
                 if (widget.lockedOverlay != null && widget.lockedOverlay.activeSelf != locked)
                 {
                     widget.lockedOverlay.SetActive(locked);
@@ -230,8 +268,10 @@ namespace Sol.Minigames
 
             if (show)
             {
+                // The "Thou Hast Fallen" title is a static display-font Text
+                // authored in the prefab; this line only carries the numbers.
                 SetText(runOverText,
-                    $"YOU FELL\nScore {game.Score}   Best {game.BestRecordedScore}   Tickets +{game.TicketsAwarded}");
+                    $"Score {game.Score}   Best {game.BestRecordedScore}   Tickets +{game.TicketsAwarded}");
             }
         }
 

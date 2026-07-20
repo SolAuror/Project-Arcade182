@@ -7,9 +7,11 @@ namespace Sol.Minigames
 {
     /// <summary>
     /// Builds valid 1-of-N reward choices each stage and applies the pick to the
-    /// player's <see cref="SpellCaster"/>, <see cref="Health"/>, and <see cref="Mana"/>.
-    /// Unlock cards take priority while any spell slot is still locked; empower
-    /// cards are only offered for unlocked spells.
+    /// player's <see cref="SpellCaster"/>, <see cref="Health"/>, <see cref="Mana"/>,
+    /// and <see cref="Player.Controller"/>. Unlock cards take priority while any
+    /// spell slot is still locked; empower cards are only offered for unlocked
+    /// spells. Run-scoped picks (move speed stacks, life on kill, growth skips)
+    /// live here and reset on <see cref="Bind"/>.
     /// </summary>
     [Serializable]
     public class LabyrinthUpgradeSystem
@@ -33,15 +35,52 @@ namespace Sol.Minigames
         [Tooltip("Mana regen per second added per card.")]
         [SerializeField, Min(0f)] private float manaRegenStep = 2f;
 
+        [Tooltip("Move speed added per card as a fraction of base speed (0.08 = +8%). Stacks add, they do not compound.")]
+        [SerializeField, Min(0f)] private float moveSpeedPercentStep = 0.08f;
+
+        [Tooltip("Maximum move speed stacks; the card stops appearing at the cap.")]
+        [SerializeField, Min(1)] private int moveSpeedMaxStacks = 5;
+
+        [Tooltip("Health restored per enemy kill added per card.")]
+        [SerializeField, Min(0f)] private float lifeOnKillStep = 5f;
+
         private SpellCaster caster;
         private Health health;
         private Mana mana;
+        private Player.Controller controller;
+        private int moveSpeedStacks;
+        private float lifeOnKillHeal;
+        private bool skipNextMazeGrowth;
 
-        public void Bind(SpellCaster playerCaster, Health playerHealth, Mana playerMana)
+        /// <summary>Health restored on each enemy kill (0 until Vampiric Pact is picked).</summary>
+        public float LifeOnKillHeal => lifeOnKillHeal;
+
+        public void Bind(SpellCaster playerCaster, Health playerHealth, Mana playerMana, Player.Controller playerController)
         {
             caster = playerCaster;
             health = playerHealth;
             mana = playerMana;
+            controller = playerController;
+
+            // Bind marks a fresh run; clear all run-scoped upgrade state.
+            moveSpeedStacks = 0;
+            lifeOnKillHeal = 0f;
+            skipNextMazeGrowth = false;
+            if (controller != null)
+            {
+                controller.ExternalSpeedMultiplier = 1f;
+            }
+        }
+
+        /// <summary>
+        /// True (once) when a Stasis Sigil pick should cancel the upcoming maze
+        /// growth. The game calls this right before applying growth.
+        /// </summary>
+        public bool ConsumeMazeGrowthSkip()
+        {
+            bool skip = skipNextMazeGrowth;
+            skipNextMazeGrowth = false;
+            return skip;
         }
 
         public List<LabyrinthUpgrade> BuildChoices(int count = 3)
@@ -111,7 +150,31 @@ namespace Sol.Minigames
                     Title = "Fortitude",
                     Description = $"+{maxHealthStep:0} max health (and heal that much)."
                 });
+
+                pool.Add(new LabyrinthUpgrade
+                {
+                    Kind = LabyrinthUpgradeKind.LifeOnKill,
+                    Title = "Vampiric Pact",
+                    Description = $"Restore {lifeOnKillStep:0.#} health on every kill."
+                });
             }
+
+            if (controller != null && moveSpeedStacks < moveSpeedMaxStacks)
+            {
+                pool.Add(new LabyrinthUpgrade
+                {
+                    Kind = LabyrinthUpgradeKind.MoveSpeed,
+                    Title = "Fleet Foot",
+                    Description = $"Move {Mathf.RoundToInt(moveSpeedPercentStep * 100f)}% faster (stack {moveSpeedStacks + 1} of {moveSpeedMaxStacks})."
+                });
+            }
+
+            pool.Add(new LabyrinthUpgrade
+            {
+                Kind = LabyrinthUpgradeKind.StasisSigil,
+                Title = "Stasis Sigil",
+                Description = "The next maze stays the same size (one use)."
+            });
 
             if (mana != null)
             {
@@ -186,6 +249,20 @@ namespace Sol.Minigames
                         mana.RegenPerSecond += manaRegenStep;
                     }
 
+                    break;
+                case LabyrinthUpgradeKind.MoveSpeed:
+                    if (controller != null && moveSpeedStacks < moveSpeedMaxStacks)
+                    {
+                        moveSpeedStacks++;
+                        controller.ExternalSpeedMultiplier = 1f + moveSpeedPercentStep * moveSpeedStacks;
+                    }
+
+                    break;
+                case LabyrinthUpgradeKind.LifeOnKill:
+                    lifeOnKillHeal += lifeOnKillStep;
+                    break;
+                case LabyrinthUpgradeKind.StasisSigil:
+                    skipNextMazeGrowth = true;
                     break;
             }
         }
