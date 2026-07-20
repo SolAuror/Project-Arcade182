@@ -51,11 +51,11 @@ namespace Sol.Minigames
         [Tooltip("Points per second under par when clearing a stage.")]
         [SerializeField, Min(0f)] private float timeBonusPerSecond = 10f;
 
-        [Tooltip("Par seconds for stage 1.")]
+        [Tooltip("Par seconds for the starting maze size.")]
         [SerializeField, Min(0f)] private float parBaseSeconds = 20f;
 
-        [Tooltip("Par seconds added per stage (par scales with maze size).")]
-        [SerializeField, Min(0f)] private float parPerStageSeconds = 6f;
+        [Tooltip("Par seconds added per room beyond the starting maze. Par tracks the actual maze area so growth skips shrink the par along with the walk.")]
+        [SerializeField, Min(0f)] private float parPerRoomSeconds = 0.8f;
 
         [Tooltip("Base points per kill, multiplied by the current stage score multiplier. Awarded live so kills always score.")]
         [SerializeField, Min(0)] private int pointsPerKill = 25;
@@ -99,6 +99,9 @@ namespace Sol.Minigames
         [SerializeField] private string returnSceneName = "Sc_ArcadeHub";
         [SerializeField] private float returnDelaySeconds = 2f;
 
+        [Tooltip("Legacy timed auto-return after death. Off by default now that the run-over screen offers Restart/Quit.")]
+        [SerializeField] private bool autoReturnAfterFail;
+
         private readonly List<EnemyController> enemies = new List<EnemyController>();
 
         private LabyrinthUpgradeScreen upgradeScreen;
@@ -109,6 +112,7 @@ namespace Sol.Minigames
         private Health playerHealth;
         private Mana playerMana;
         private SpellCaster playerCaster;
+        private Player.Controller playerController;
         private float finishTime;
         private float stageStartElapsed;
         private int currentMazeWidth;
@@ -301,7 +305,7 @@ namespace Sol.Minigames
             Time.timeScale = 1f;
 
             EnsurePlayerCombat();
-            upgradeSystem.Bind(playerCaster, playerHealth, playerMana);
+            upgradeSystem.Bind(playerCaster, playerHealth, playerMana, playerController);
 
             runTimer.Begin();
             stageStartElapsed = 0f;
@@ -324,8 +328,12 @@ namespace Sol.Minigames
             PlayClip(stageClearClip);
 
             float stageClearSeconds = runTimer.Elapsed - stageStartElapsed;
-            // exitsFound was just incremented, so stage 1 uses the base par.
-            float parSeconds = parBaseSeconds + parPerStageSeconds * (exitsFound - 1);
+            // Par is anchored to the maze actually walked, not the stage number,
+            // so a Stasis Sigil freezes the par along with the maze instead of
+            // banking an ever-growing time bonus on the same short walk.
+            int startingArea = labyrinthMazeRules.StartingMazeWidth * labyrinthMazeRules.StartingMazeDepth;
+            int extraRooms = Mathf.Max(0, currentMazeWidth * currentMazeDepth - startingArea);
+            float parSeconds = parBaseSeconds + parPerRoomSeconds * extraRooms;
             int stageTimeBonus = Mathf.Max(0, Mathf.RoundToInt((parSeconds - stageClearSeconds) * timeBonusPerSecond));
             score += stageTimeBonus;
 
@@ -344,6 +352,11 @@ namespace Sol.Minigames
             // on a run that ends before the first exit.
             int killScore = pointsPerKill * CurrentStageMultiplier;
             score += killScore;
+
+            if (upgradeSystem.LifeOnKillHeal > 0f && playerHealth != null)
+            {
+                playerHealth.Heal(upgradeSystem.LifeOnKillHeal);
+            }
 
             PlayClip(enemyKillClip);
             if (enemy != null && killScore > 0)
@@ -393,8 +406,16 @@ namespace Sol.Minigames
             Time.timeScale = 1f;
             runTimer.Resume();
 
-            currentMazeWidth += labyrinthMazeRules.MazeGrowthPerStage;
-            currentMazeDepth += labyrinthMazeRules.MazeGrowthPerStage;
+            if (upgradeSystem.ConsumeMazeGrowthSkip())
+            {
+                Debug.Log("Stasis Sigil held: the next maze keeps its current size.", this);
+            }
+            else
+            {
+                currentMazeWidth += labyrinthMazeRules.MazeGrowthPerStage;
+                currentMazeDepth += labyrinthMazeRules.MazeGrowthPerStage;
+            }
+
             RebuildMaze();
         }
 
@@ -418,9 +439,34 @@ namespace Sol.Minigames
             Debug.Log($"Run over. Stages {exitsFound}, kills {enemiesKilled}. Final score: {score}.", this);
         }
 
+        // The run-over screen owns the exit decision after a death; the timed
+        // return only remains for the legacy auto-return opt-in.
+        public void RestartRun()
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name, LoadSceneMode.Single);
+        }
+
+        public void QuitToHub()
+        {
+            if (string.IsNullOrWhiteSpace(returnSceneName) || !Application.CanStreamedLevelBeLoaded(returnSceneName))
+            {
+                Debug.LogWarning($"{name} cannot return to '{returnSceneName}'. Add the scene to Build Settings or update Return Scene Name.", this);
+                return;
+            }
+
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(returnSceneName, LoadSceneMode.Single);
+        }
+
         private void TickReturnDelay()
         {
             if (!returnToSceneOnFinish || (!isComplete && !hasFailed))
+            {
+                return;
+            }
+
+            if (hasFailed && !autoReturnAfterFail)
             {
                 return;
             }
@@ -633,6 +679,12 @@ namespace Sol.Minigames
             {
                 Debug.LogWarning($"{name} could not find a GameObject tagged 'Player' for combat setup.", this);
                 return;
+            }
+
+            playerController = player.GetComponentInParent<Player.Controller>();
+            if (playerController == null)
+            {
+                Debug.LogWarning($"{name} found no Player.Controller on the player; move speed upgrades will not be offered.", this);
             }
 
             if (!player.TryGetComponent(out playerHealth))

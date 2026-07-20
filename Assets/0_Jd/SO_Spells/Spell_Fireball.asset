@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Spell_Fireball
   m_EditorClassIdentifier: 
   displayName: Fireball
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: c5a345bf6a8dda543b738e3780c75262, type: 3}
   baseDamage: 25
   manaCost: 15
   cooldownSeconds: 0.5

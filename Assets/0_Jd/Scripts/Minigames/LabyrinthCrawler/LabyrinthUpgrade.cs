@@ -8,7 +8,10 @@ namespace Sol.Minigames
         SpellRadius,
         MaxHealth,
         MaxMana,
-        ManaRegen
+        ManaRegen,
+        MoveSpeed,
+        LifeOnKill,
+        StasisSigil
     }
 
     /// <summary>
