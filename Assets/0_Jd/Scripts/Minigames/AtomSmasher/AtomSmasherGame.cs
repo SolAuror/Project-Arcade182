@@ -316,6 +316,8 @@ namespace Sol.Minigames
         private readonly List<AtomSmasherTarget> activeSpecialTargets = new List<AtomSmasherTarget>();
         private readonly List<(AtomSmasherQuantumTarget marker, AtomSmasherTarget target, Color originalColor)> quantumMarkedAtoms =
             new List<(AtomSmasherQuantumTarget, AtomSmasherTarget, Color)>();
+        private readonly HashSet<AtomSmasherParticleKind> announcedParticleKinds = new HashSet<AtomSmasherParticleKind>();
+        private readonly Queue<AtomSmasherParticleKind> particleAnnouncementQueue = new Queue<AtomSmasherParticleKind>();
         private int shotsRemaining;
         private int score;
         private int requiredTargetsRemaining;
@@ -365,7 +367,7 @@ namespace Sol.Minigames
         public int TicketsAwarded => ticketsAwarded;
         public int TotalTickets => totalTickets;
         public string StatusMessage => HasStatusMessage ? statusMessage : string.Empty;
-        public string FailReason => useTimerMode && timeRemaining <= 0f ? "Time expired" : "Out of shots";
+        public string FailReason => useTimerMode && timeRemaining <= 0f ? "Beam window closed" : "Probe supply exhausted";
 
         private int ActiveBallCount
         {
@@ -520,6 +522,8 @@ namespace Sol.Minigames
             ClearWaveObjects();
             introducedFieldMechanics.Clear();
             fieldMechanicMasteryWave = -1;
+            announcedParticleKinds.Clear();
+            particleAnnouncementQueue.Clear();
             shotsRemaining = Mathf.Max(1, startingShots);
             score = 0;
             ticketsAwarded = 0;
@@ -828,6 +832,141 @@ namespace Sol.Minigames
                 requiredTargetsRemaining = ResetTargetsForWave();
                 SpawnWaveObjects();
             }
+
+            AnnounceNewBoardParticles();
+        }
+
+        /// <summary>
+        /// Pops the next never-seen-this-run board element, for the HUD's
+        /// spectrometer introduction card.
+        /// </summary>
+        public bool TryDequeueParticleAnnouncement(out AtomSmasherParticleKind kind)
+        {
+            if (particleAnnouncementQueue.Count > 0)
+            {
+                kind = particleAnnouncementQueue.Dequeue();
+                return true;
+            }
+
+            kind = default;
+            return false;
+        }
+
+        // Scans the finished board (rather than hooking each spawn path) so
+        // replacements, cluster children and obstruction rolls are all
+        // covered automatically, and queues an introduction card for every
+        // kind appearing for the first time this run.
+        private void AnnounceNewBoardParticles()
+        {
+            List<AtomSmasherParticleKind> found = new List<AtomSmasherParticleKind>();
+            CollectBoardParticleKinds(found);
+            found.Sort(); // enum order mirrors the wave ladder's reveal order
+
+            foreach (AtomSmasherParticleKind kind in found)
+            {
+                if (announcedParticleKinds.Add(kind))
+                {
+                    particleAnnouncementQueue.Enqueue(kind);
+                }
+            }
+        }
+
+        private void CollectBoardParticleKinds(List<AtomSmasherParticleKind> found)
+        {
+            void Add(AtomSmasherParticleKind kind)
+            {
+                if (!found.Contains(kind))
+                {
+                    found.Add(kind);
+                }
+            }
+
+            foreach (AtomSmasherTarget target in targets)
+            {
+                if (target != null && target.gameObject.activeSelf && !target.HasBeenHit)
+                {
+                    Add(AtomSmasherParticleKind.StableAtom);
+                    break;
+                }
+            }
+
+            if (quantumMarkedAtoms.Count > 0 || HasLiveTarget(activeQuantumTargets))
+            {
+                Add(AtomSmasherParticleKind.QuantumState);
+            }
+
+            if (HasLiveTarget(activeMovingTargets))
+            {
+                Add(AtomSmasherParticleKind.DriftingAtom);
+            }
+
+            foreach (AtomSmasherTarget special in activeSpecialTargets)
+            {
+                if (special == null || !special.gameObject.activeSelf)
+                {
+                    continue;
+                }
+
+                if (special.GetComponent<AtomSmasherUnstableTarget>() != null)
+                {
+                    Add(AtomSmasherParticleKind.UnstableIsotope);
+                }
+                else if (special.GetComponent<AtomSmasherExplosiveTarget>() != null)
+                {
+                    Add(AtomSmasherParticleKind.VolatileNucleus);
+                }
+            }
+
+            foreach (GameObject obstruction in activeObstructions)
+            {
+                if (obstruction == null)
+                {
+                    continue;
+                }
+
+                // Cluster before rotor: the cluster's root is also a rotator.
+                if (obstruction.GetComponentInChildren<AtomSmasherOrbitalCluster>(true) != null)
+                {
+                    Add(AtomSmasherParticleKind.OrbitalCluster);
+                }
+                else if (obstruction.GetComponentInChildren<AtomSmasherWormhole>(true) != null)
+                {
+                    Add(AtomSmasherParticleKind.Wormhole);
+                }
+                else if (obstruction.GetComponentInChildren<AtomSmasherPolarizerGate>(true) != null)
+                {
+                    Add(AtomSmasherParticleKind.PolarityArray);
+                }
+                else if (obstruction.GetComponentInChildren<AtomSmasherBlackHole>(true) != null)
+                {
+                    Add(AtomSmasherParticleKind.Singularity);
+                }
+                else if (obstruction.GetComponentInChildren<AtomSmasherMovingBar>(true) != null)
+                {
+                    Add(AtomSmasherParticleKind.SweepBar);
+                }
+                else if (obstruction.GetComponentInChildren<AtomSmasherRotator>(true) != null)
+                {
+                    Add(AtomSmasherParticleKind.RotorArray);
+                }
+                else if (obstruction.GetComponentInChildren<AtomSmasherStaticBar>(true) != null)
+                {
+                    Add(AtomSmasherParticleKind.ContainmentBar);
+                }
+            }
+        }
+
+        private static bool HasLiveTarget(List<AtomSmasherTarget> list)
+        {
+            foreach (AtomSmasherTarget target in list)
+            {
+                if (target != null && target.gameObject.activeSelf)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void ShuffleTargets()

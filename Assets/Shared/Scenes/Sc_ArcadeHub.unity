@@ -5506,6 +5506,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &37391354
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -6612,6 +6613,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &42410360
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -17350,6 +17352,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &103348959
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -23295,6 +23298,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &143675779
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -25936,6 +25940,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &164361510
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -45025,6 +45030,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!136 &282799577
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -45299,6 +45305,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &284547744
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -51127,6 +51134,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &329291958
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -52960,6 +52968,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &340526325
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59908,6 +59917,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &390709881
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60653,6 +60663,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &396125812
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -68084,114 +68095,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 448932160}
   m_Mesh: {fileID: 7759117366128641274, guid: a883d56599e13d44092ce79fb772f5d0, type: 3}
---- !u!1 &449853482
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 449853483}
-  - component: {fileID: 449853486}
-  - component: {fileID: 449853485}
-  - component: {fileID: 449853484}
-  m_Layer: 0
-  m_Name: Floor
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &449853483
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 449853482}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -3.0746355, y: -4.6, z: -4.8487253}
-  m_LocalScale: {x: 965.2819, y: 3.1187181, z: 983.55853}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1102856274}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &449853484
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 449853482}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &449853485
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 449853482}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 28166e886db40a2459240b3a684dbc5d, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &449853486
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 449853482}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &449909638
 GameObject:
   m_ObjectHideFlags: 0
@@ -73181,6 +73084,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &480687609
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -73521,6 +73425,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &481254100
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -75800,6 +75705,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &499145056
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -80265,6 +80171,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &532051043
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -81860,6 +81767,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &541121551
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -85154,6 +85062,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &557629452
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -99604,6 +99513,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &675478887
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -113136,6 +113046,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &776129245
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -114613,6 +114524,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!136 &788871824
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -119309,6 +119221,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &815139052
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -121841,6 +121754,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &832944978
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -122815,6 +122729,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &839980367
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -127938,6 +127853,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &874589745
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -133452,6 +133368,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &922189889
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -138611,6 +138528,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &952411854
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -146355,6 +146273,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1002095043
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -149929,6 +149848,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!136 &1027442177
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -151789,6 +151709,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1039928753
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -153066,6 +152987,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1048318616
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -159765,8 +159687,7 @@ Transform:
   m_LocalPosition: {x: 3.0746355, y: 3.1166933, z: 4.8487253}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 449853483}
+  m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1103199104
@@ -162076,6 +161997,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1116167630
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -168291,6 +168213,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1154242878
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -171508,6 +171431,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1177517737
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -172043,6 +171967,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1180887428
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -173839,6 +173764,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1193950619
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -176285,6 +176211,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1212828420
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -182349,6 +182276,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1257801689
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -183941,6 +183869,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1267491044
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -185412,6 +185341,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1280301429
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -189548,6 +189478,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1305180058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -190305,6 +190236,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1308886386
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -203959,6 +203891,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1409286521
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -205212,6 +205145,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1418040531
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -205908,6 +205842,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1425186179
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -207421,6 +207356,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1436504096
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -208928,6 +208864,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1448008031
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -209561,6 +209498,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1451176615
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -213751,6 +213689,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1486513167
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -214795,6 +214734,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1492919927
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -216875,6 +216815,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1514364219
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -221560,6 +221501,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1553177753
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -223894,6 +223836,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1572923512
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -225771,6 +225714,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1588861694
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -230650,6 +230594,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1631841486
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -232259,6 +232204,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1643112387
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -234596,6 +234542,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1659062219
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -239572,6 +239519,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!136 &1686431580
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -241010,6 +240958,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1696808503
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -244043,6 +243992,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1719740027
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -245608,6 +245558,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1730121218
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -251898,6 +251849,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1778193930
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -253202,6 +253154,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &1791548209
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -278752,6 +278705,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &1966694955
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -287435,6 +287389,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!114 &2039598456
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -299818,6 +299773,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &2129320877
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -301690,6 +301646,7 @@ MonoBehaviour:
   outlineWidth: 3
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!64 &2145977098
 MeshCollider:
   m_ObjectHideFlags: 0

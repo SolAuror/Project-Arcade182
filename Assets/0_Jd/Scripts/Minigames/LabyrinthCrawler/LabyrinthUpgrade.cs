@@ -11,11 +11,19 @@ namespace Sol.Minigames
         ManaRegen,
         MoveSpeed,
         LifeOnKill,
-        StasisSigil
+        StasisSigil,
+        ManaOnKill,
+        Overcharge,
+        SecondWind,
+        Cartographer
     }
 
     /// <summary>
-    /// One reward card offered after a stage clear.
+    /// One reward card offered after a stage clear. Adding a new card is three
+    /// touches: a <see cref="LabyrinthUpgradeKind"/> value, an offer block in
+    /// <see cref="LabyrinthUpgradeSystem.BuildChoices"/> (set <see cref="Weight"/>
+    /// and any availability gate there), and an apply arm in
+    /// <see cref="LabyrinthUpgradeSystem.Apply"/>.
     /// </summary>
     public class LabyrinthUpgrade
     {
@@ -26,5 +34,12 @@ namespace Sol.Minigames
 
         public string Title;
         public string Description;
+
+        /// <summary>
+        /// Relative draft weight; higher shows more often. 1 is the common
+        /// baseline. Drop below 1 for build-defining or run-swinging cards so a
+        /// growing pool does not bury the staples under rare picks.
+        /// </summary>
+        public float Weight = 1f;
     }
 }

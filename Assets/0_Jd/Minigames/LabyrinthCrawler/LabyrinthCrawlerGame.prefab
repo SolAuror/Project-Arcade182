@@ -1380,8 +1380,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Version: 3
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -1697,8 +1697,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Version: 3
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -20480,11 +20480,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: df05d3b1092695f46898e1cea950727e, type: 2}
   - {fileID: 11400000, guid: a505e139ecfd9fd4e90286764e20c58c, type: 2}
   playerSpellsUnlockedAtStart: 1
+  minEnemySpawnRoomDistance: 2
   clearDwellSeconds: 1.5
   exitPadPrefab: {fileID: 7692551944545144876, guid: b164ad212db6d2642901656bfc6c2ae4, type: 3}
+  exitBeaconPrefab: {fileID: 4674788611505493215, guid: 866169941ae50c04cac1e4a6a55dd28a, type: 3}
   timeBonusPerSecond: 10
   parBaseSeconds: 20
-  parPerStageSeconds: 4
+  parPerRoomSeconds: 0.8
   pointsPerKill: 25
   minigameId: LabyrinthCrawler
   ticketsPerPoint: 0.1
@@ -20498,6 +20500,7 @@ MonoBehaviour:
   stageClearClip: {fileID: 8300000, guid: a9a2a769528645d8b1c672fc04dc080f, type: 3}
   upgradePickedClip: {fileID: 8300000, guid: c82b3efe8491426cb7873591a289e716, type: 3}
   runOverClip: {fileID: 8300000, guid: 372ab7e84f094923a85a1190cac66649, type: 3}
+  reviveClip: {fileID: 0}
   fallRespawnY: -5
   upgradeSystem:
     damagePercentStep: 0.25
@@ -20506,6 +20509,14 @@ MonoBehaviour:
     maxHealthStep: 25
     maxManaStep: 25
     manaRegenStep: 2
+    moveSpeedPercentStep: 0.08
+    moveSpeedMaxStacks: 5
+    lifeOnKillStep: 5
+    manaOnKillStep: 8
+    manaCostPercentStep: 0.15
+    reviveHealthFraction: 0.35
+    maxReviveCharges: 2
+    cartographerRevealSeconds: 30
   secretPass:
     illusoryWallPrefab: {fileID: 5820014733962141005, guid: 3a7d5f9b1e8c46208d4b6a2c9e751966, type: 3}
     secretChance: 1
@@ -20516,10 +20527,22 @@ MonoBehaviour:
     minShortcutPathDistance: 4
     exitPathBlockerEndpointBuffer: 1
     plugHeight: 3
+    treasureRoomsPerStage: 1
+    secretCachePrefab: {fileID: 2321650002536646926, guid: d7fae282895bab044ad4b5b8ad4f4722, type: 3}
+    cacheHeight: 0.6
   pointsPerSecret: 100
+  pointsPerShortcut: 50
+  shrineRewardWeight: 1
+  hoardRewardWeight: 0.8
+  boonRewardWeight: 0.35
+  hoardPoints: 500
+  shrineFullThreshold: 0.9
+  shrineOverflowMaxHealth: 10
+  shrineOverflowMaxMana: 10
   returnToSceneOnFinish: 1
   returnSceneName: Sc_ArcadeHub
   returnDelaySeconds: 2
+  autoReturnAfterFail: 0
 --- !u!114 &2875880940287993093
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -20548,8 +20571,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b9f6e4a8c1d47308e5a3f7c1b920655, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   verticalResolution: 240
   snapScale: 1
   presentMaterial: {fileID: 2100000, guid: 5a1e8d3c7f2b49a0862c4e1b9d305944, type: 2}
@@ -29074,8 +29097,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2e8c4a6f0b9d47e3a1c5f8b2d7640199, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   motes: {fileID: 0}
 --- !u!1 &4755499535261935378
 GameObject:
@@ -34812,10 +34835,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42b6c7712d42ede46b2495691cbc2eb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  halfExtents: {x: 2, y: 2, z: 2}
+  playerTag: Player
+  fallbackTriggerRadius: 0.5
   clearDwellSeconds: 1.5
   idlePulseScale: 0.04
   activePulseScale: 0.09
+  emissionPulse: 0.45
 --- !u!1 &5951047636878473123
 GameObject:
   m_ObjectHideFlags: 0

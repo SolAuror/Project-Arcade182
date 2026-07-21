@@ -47,6 +47,9 @@ namespace Sol.Minigames
         [Tooltip("Authored exit pad spawned when the end room does not already contain one (extracted from the DungeonExit room).")]
         [SerializeField] private LabyrinthExitPad exitPadPrefab;
 
+        [Tooltip("Vertical portal beacon instanced onto the active exit pad each stage. Reveals on room clear (blue) or the Cartographer timer (red while enemies live).")]
+        [SerializeField] private LabyrinthExitBeacon exitBeaconPrefab;
+
         [Header("Score")]
         [Tooltip("Points per second under par when clearing a stage.")]
         [SerializeField, Min(0f)] private float timeBonusPerSecond = 10f;
@@ -80,6 +83,9 @@ namespace Sol.Minigames
         [SerializeField] private AudioClip upgradePickedClip;
         [SerializeField] private AudioClip runOverClip;
 
+        [Tooltip("Cue when a Second Wind charge saves the player from a lethal blow.")]
+        [SerializeField] private AudioClip reviveClip;
+
         [Header("Fall Safety")]
         [Tooltip("Players falling below this world Y are teleported back to the stage start room.")]
         [SerializeField] private float fallRespawnY = -5f;
@@ -93,6 +99,31 @@ namespace Sol.Minigames
 
         [Tooltip("Base points for uncovering a secret room, multiplied by the stage score multiplier.")]
         [SerializeField, Min(0)] private int pointsPerSecret = 100;
+
+        [Tooltip("Base points for uncovering a shortcut, multiplied by the stage multiplier. Lower than a room: a shortcut already pays for itself in saved time. Exit-path blockers pay nothing at all.")]
+        [SerializeField, Min(0)] private int pointsPerShortcut = 50;
+
+        [Header("Secret Cache Rewards")]
+        [Tooltip("Relative chance a cache holds a Shrine (full heal + mana).")]
+        [SerializeField, Min(0f)] private float shrineRewardWeight = 1f;
+
+        [Tooltip("Relative chance a cache holds a Hoard (large score bounty).")]
+        [SerializeField, Min(0f)] private float hoardRewardWeight = 0.8f;
+
+        [Tooltip("Relative chance a cache holds a Boon (a genuine extra upgrade pick). Keep rare: this is the only cache reward that adds power.")]
+        [SerializeField, Min(0f)] private float boonRewardWeight = 0.35f;
+
+        [Tooltip("Base points for a Hoard cache, multiplied by the stage score multiplier.")]
+        [SerializeField, Min(0)] private int hoardPoints = 500;
+
+        [Tooltip("At or above this fill fraction of BOTH pools, a Shrine pays forward as permanent max instead of a wasted restore.")]
+        [SerializeField, Range(0.1f, 1f)] private float shrineFullThreshold = 0.9f;
+
+        [Tooltip("Permanent max health granted when a Shrine is found at full strength.")]
+        [SerializeField, Min(0f)] private float shrineOverflowMaxHealth = 10f;
+
+        [Tooltip("Permanent max mana granted when a Shrine is found at full strength.")]
+        [SerializeField, Min(0f)] private float shrineOverflowMaxMana = 10f;
 
         [Header("Scene Flow")]
         [SerializeField] private bool returnToSceneOnFinish = true;
@@ -109,6 +140,7 @@ namespace Sol.Minigames
         private Transform enemiesParent;
         private Transform secretsParent;
         private int secretsFound;
+        private int pendingBonusPicks;
         private Health playerHealth;
         private Mana playerMana;
         private SpellCaster playerCaster;
@@ -134,7 +166,25 @@ namespace Sol.Minigames
         // Bright green so score gains read differently from the gold damage numbers.
         private static readonly Color ScorePopColor = new Color(0.45f, 1f, 0.55f, 1f);
 
+        // Warm gold-white for the Second Wind save, distinct from score green.
+        private static readonly Color RevivePopColor = new Color(1f, 0.85f, 0.4f, 1f);
+
+        // Cool teal for shrine restores, violet for the rare extra-pick boon.
+        private static readonly Color ShrinePopColor = new Color(0.5f, 0.95f, 0.9f, 1f);
+        private static readonly Color BoonPopColor = new Color(0.8f, 0.6f, 1f, 1f);
+
+        private enum SecretRewardKind
+        {
+            Shrine,
+            Hoard,
+            Boon
+        }
+
         public float RunSeconds => runTimer != null ? runTimer.Elapsed : 0f;
+        public float StageElapsedSeconds => Mathf.Max(0f, RunSeconds - stageStartElapsed);
+
+        /// <summary>Seconds into a stage after which the exit beacon reveals despite live enemies (Cartographer); infinite otherwise.</summary>
+        public float ExitRevealAfterSeconds => upgradeSystem.ExitRevealAfterSeconds;
         public int CurrentMazeWidth => currentMazeWidth;
         public int CurrentMazeDepth => currentMazeDepth;
         public int CurrentStage => exitsFound + 1;
@@ -295,6 +345,7 @@ namespace Sol.Minigames
             exitsFound = 0;
             enemiesKilled = 0;
             secretsFound = 0;
+            pendingBonusPicks = 0;
             score = 0;
             ticketsAwarded = 0;
             isRunning = true;
@@ -358,6 +409,11 @@ namespace Sol.Minigames
                 playerHealth.Heal(upgradeSystem.LifeOnKillHeal);
             }
 
+            if (upgradeSystem.ManaOnKillRestore > 0f && playerMana != null)
+            {
+                playerMana.Restore(upgradeSystem.ManaOnKillRestore);
+            }
+
             PlayClip(enemyKillClip);
             if (enemy != null && killScore > 0)
             {
@@ -365,19 +421,120 @@ namespace Sol.Minigames
             }
         }
 
-        private void OnSecretRevealed(IllusoryWall wall)
+        private void OnSecretRevealed(IllusoryWall wall, LabyrinthSecretPass.SecretSiteKind kind)
         {
+            // A blocker sat in the way to the exit; pushing through it is not a
+            // discovery, so it pays nothing and does not count as a secret.
+            if (kind == LabyrinthSecretPass.SecretSiteKind.ExitPathBlocker)
+            {
+                return;
+            }
+
             secretsFound++;
 
             // The wall handles its own reveal juice (jingle + "Secret!" pop);
-            // the game's contribution is the score, scaled like kills are.
-            int gain = pointsPerSecret * CurrentStageMultiplier;
+            // the game's contribution is the score, scaled like kills are. The
+            // room's real prize is the cache waiting inside it.
+            int basePoints = kind == LabyrinthSecretPass.SecretSiteKind.Room ? pointsPerSecret : pointsPerShortcut;
+            int gain = basePoints * CurrentStageMultiplier;
             score += gain;
 
             if (wall != null && gain > 0)
             {
                 DamagePopup.SpawnText(wall.transform.position + Vector3.up * 0.5f, $"+{gain}", ScorePopColor, 0f, 1.2f);
             }
+        }
+
+        /// <summary>
+        /// Rolls and applies the contents of a secret-room cache. Only the Boon
+        /// outcome adds power, and it is the rarest, so a searching player is
+        /// paid mostly in sustain and score rather than a doubled upgrade curve.
+        /// </summary>
+        private void OnSecretCacheCollected(LabyrinthSecretCache cache)
+        {
+            Vector3 position = (cache != null ? cache.transform.position : Vector3.zero) + Vector3.up * 0.6f;
+
+            switch (RollSecretReward())
+            {
+                case SecretRewardKind.Hoard:
+                    GrantHoard(position);
+                    break;
+                case SecretRewardKind.Boon:
+                    GrantBoon(position);
+                    break;
+                default:
+                    GrantShrine(position);
+                    break;
+            }
+        }
+
+        private SecretRewardKind RollSecretReward()
+        {
+            float shrineWeight = Mathf.Max(0f, shrineRewardWeight);
+            float hoardWeight = Mathf.Max(0f, hoardRewardWeight);
+            float boonWeight = Mathf.Max(0f, boonRewardWeight);
+            float total = shrineWeight + hoardWeight + boonWeight;
+            if (total <= 0f)
+            {
+                return SecretRewardKind.Shrine;
+            }
+
+            float roll = UnityEngine.Random.value * total;
+            if (roll < shrineWeight)
+            {
+                return SecretRewardKind.Shrine;
+            }
+
+            return roll < shrineWeight + hoardWeight ? SecretRewardKind.Hoard : SecretRewardKind.Boon;
+        }
+
+        private void GrantShrine(Vector3 position)
+        {
+            bool healthFull = playerHealth == null || playerHealth.Normalized >= shrineFullThreshold;
+            bool manaFull = playerMana == null || playerMana.Normalized >= shrineFullThreshold;
+
+            // A restore found at full strength would be a dud, which teaches
+            // players to stop detouring; pay it forward as permanent max.
+            if (healthFull && manaFull)
+            {
+                if (playerHealth != null)
+                {
+                    playerHealth.IncreaseMax(shrineOverflowMaxHealth);
+                }
+
+                if (playerMana != null)
+                {
+                    playerMana.IncreaseMax(shrineOverflowMaxMana);
+                }
+
+                DamagePopup.SpawnText(position, "Shrine: Attuned!", ShrinePopColor, 0f, 1.4f);
+                return;
+            }
+
+            if (playerHealth != null)
+            {
+                playerHealth.Heal(playerHealth.Max);
+            }
+
+            if (playerMana != null)
+            {
+                playerMana.ResetToMax();
+            }
+
+            DamagePopup.SpawnText(position, "Shrine: Restored!", ShrinePopColor, 0f, 1.4f);
+        }
+
+        private void GrantHoard(Vector3 position)
+        {
+            int gain = hoardPoints * CurrentStageMultiplier;
+            score += gain;
+            DamagePopup.SpawnText(position, $"Hoard! +{gain}", ScorePopColor, 0f, 1.4f);
+        }
+
+        private void GrantBoon(Vector3 position)
+        {
+            pendingBonusPicks++;
+            DamagePopup.SpawnText(position, "Boon: Extra pick!", BoonPopColor, 0f, 1.4f);
         }
 
         private void BeginUpgradeChoice()
@@ -402,6 +559,16 @@ namespace Sol.Minigames
                 PlayClip(upgradePickedClip);
             }
 
+            // Boon caches bank extra picks; spend them here, while the stage is
+            // already paused, rather than opening a draft mid-run (which would
+            // freeze every enemy and hand the player a panic button).
+            if (pendingBonusPicks > 0 && upgradeScreen != null)
+            {
+                pendingBonusPicks--;
+                upgradeScreen.Show(upgradeSystem.BuildChoices(), OnUpgradePicked);
+                return;
+            }
+
             isChoosingUpgrade = false;
             Time.timeScale = 1f;
             runTimer.Resume();
@@ -423,6 +590,18 @@ namespace Sol.Minigames
         {
             if (!isRunning || isComplete)
             {
+                return;
+            }
+
+            // Second Wind intercepts the killing blow: spend a charge, stand the
+            // player back up mid-run, and let the death event fall through.
+            if (upgradeSystem.TryConsumeReviveCharge() && playerHealth != null)
+            {
+                playerHealth.Revive(playerHealth.Max * upgradeSystem.ReviveHealthFraction);
+                playerMana?.ResetToMax();
+                PlayClip(reviveClip);
+                DamagePopup.SpawnText(playerHealth.transform.position + Vector3.up * 1.5f, "Second Wind!", RevivePopColor, 0f, 1.4f);
+                Debug.Log("Second Wind spent: the run continues.", this);
                 return;
             }
 
@@ -525,7 +704,7 @@ namespace Sol.Minigames
                 secretsParent = new GameObject("Labyrinth Secrets").transform;
             }
 
-            secretPass.SpawnSecrets(mazeGenerator, secretsParent, CurrentStage, OnSecretRevealed);
+            secretPass.SpawnSecrets(mazeGenerator, secretsParent, CurrentStage, OnSecretRevealed, OnSecretCacheCollected);
             stageStartElapsed = runTimer.Elapsed;
         }
 
@@ -561,6 +740,26 @@ namespace Sol.Minigames
 
             currentExitPad.gameObject.SetActive(true);
             currentExitPad.Initialize(this, clearDwellSeconds);
+            ConfigureExitBeacon();
+        }
+
+        // The portal beacon rises from the active pad each stage. It is optional
+        // polish, so a missing prefab is silent; the pad still clears the stage.
+        private void ConfigureExitBeacon()
+        {
+            if (currentExitPad == null || exitBeaconPrefab == null)
+            {
+                return;
+            }
+
+            Transform padTransform = currentExitPad.transform;
+
+            // Parent to the end room, not the pad: the pad's squashed scale would
+            // otherwise distort the beam column. The room is torn down each
+            // rebuild, so the beacon is cleaned up with it.
+            LabyrinthExitBeacon beacon = Instantiate(
+                exitBeaconPrefab, padTransform.position, Quaternion.identity, padTransform.parent);
+            beacon.Bind(this);
         }
 
         private void SpawnEnemies()

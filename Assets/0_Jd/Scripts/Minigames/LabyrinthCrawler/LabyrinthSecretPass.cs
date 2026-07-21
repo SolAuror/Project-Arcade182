@@ -42,9 +42,26 @@ namespace Sol.Minigames
         [Tooltip("Plug center height above the room root (dungeon wall slabs are 6 tall standing on the floor).")]
         [SerializeField] private float plugHeight = 3f;
 
-        private readonly List<IllusoryWall> spawned = new List<IllusoryWall>();
+        [Header("Treasure Rooms")]
+        [Tooltip("Hard cap on dead-end treasure rooms per stage. Illusory walls beyond this become shortcuts, so rewards stay rare while shortcuts keep scaling.")]
+        [SerializeField, Min(0)] private int treasureRoomsPerStage = 1;
 
-        private enum SecretSiteKind
+        [Tooltip("Reward cache placed inside a secret room. Leave empty for score-only secret rooms.")]
+        [SerializeField] private LabyrinthSecretCache secretCachePrefab;
+
+        [Tooltip("Cache spawn height above the room root.")]
+        [SerializeField] private float cacheHeight = 0.6f;
+
+        private readonly List<IllusoryWall> spawned = new List<IllusoryWall>();
+        private readonly List<LabyrinthSecretCache> spawnedCaches = new List<LabyrinthSecretCache>();
+        private Action<LabyrinthSecretCache> cacheCollectedCallback;
+
+        /// <summary>
+        /// What a given illusory wall is hiding. The game scores these very
+        /// differently: a treasure room is a real find, a shortcut pays for
+        /// itself in saved time, and a blocker is an obstacle, not a prize.
+        /// </summary>
+        public enum SecretSiteKind
         {
             Room,
             Shortcut,
@@ -71,7 +88,7 @@ namespace Sol.Minigames
 
         public IReadOnlyList<IllusoryWall> Spawned => spawned;
 
-        /// <summary>Destroys the previous stage's plugs (call when the maze rebuilds).</summary>
+        /// <summary>Destroys the previous stage's plugs and caches (call when the maze rebuilds).</summary>
         public void Clear()
         {
             foreach (IllusoryWall wall in spawned)
@@ -83,6 +100,16 @@ namespace Sol.Minigames
             }
 
             spawned.Clear();
+
+            foreach (LabyrinthSecretCache cache in spawnedCaches)
+            {
+                if (cache != null)
+                {
+                    UnityEngine.Object.Destroy(cache.gameObject);
+                }
+            }
+
+            spawnedCaches.Clear();
         }
 
         /// <summary>
@@ -90,9 +117,15 @@ namespace Sol.Minigames
         /// completes; <paramref name="onRevealed"/> fires per wall the player
         /// walks through.
         /// </summary>
-        public void SpawnSecrets(ArcadeGen3D generator, Transform parent, int stage, Action<IllusoryWall> onRevealed)
+        public void SpawnSecrets(
+            ArcadeGen3D generator,
+            Transform parent,
+            int stage,
+            Action<IllusoryWall, SecretSiteKind> onRevealed,
+            Action<LabyrinthSecretCache> onCacheCollected = null)
         {
             Clear();
+            cacheCollectedCallback = onCacheCollected;
 
             int targetWallCount = GetTargetWallCount(stage);
             if (illusoryWallPrefab == null || generator == null || targetWallCount <= 0)
@@ -117,6 +150,8 @@ namespace Sol.Minigames
                 placed++;
             }
 
+            int roomsPlaced = 0;
+
             while (placed < targetWallCount)
             {
                 if (Random.value > secretChance)
@@ -125,12 +160,35 @@ namespace Sol.Minigames
                     continue;
                 }
 
-                bool preferShortcut = Random.value <= shortcutChance;
-                bool didPlace = preferShortcut
-                    ? TryPlaceNext(shortcutSites, parent, onRevealed, usedEdges) ||
-                      TryPlaceNext(roomSites, parent, onRevealed, usedEdges)
-                    : TryPlaceNext(roomSites, parent, onRevealed, usedEdges) ||
-                      TryPlaceNext(shortcutSites, parent, onRevealed, usedEdges);
+                // Treasure rooms are capped so a searching player meets roughly
+                // one reward per stage; every extra wall this stage falls back
+                // to a shortcut, which pays for itself in saved time.
+                bool roomsAvailable = roomsPlaced < treasureRoomsPerStage;
+                bool preferShortcut = !roomsAvailable || Random.value <= shortcutChance;
+                bool didPlace = false;
+
+                if (preferShortcut)
+                {
+                    didPlace = TryPlaceNext(shortcutSites, parent, onRevealed, usedEdges);
+                    if (!didPlace && roomsAvailable &&
+                        TryPlaceNext(roomSites, parent, onRevealed, usedEdges))
+                    {
+                        didPlace = true;
+                        roomsPlaced++;
+                    }
+                }
+                else
+                {
+                    didPlace = TryPlaceNext(roomSites, parent, onRevealed, usedEdges);
+                    if (didPlace)
+                    {
+                        roomsPlaced++;
+                    }
+                    else
+                    {
+                        didPlace = TryPlaceNext(shortcutSites, parent, onRevealed, usedEdges);
+                    }
+                }
 
                 if (!didPlace)
                 {
@@ -342,7 +400,7 @@ namespace Sol.Minigames
         private bool TryPlaceNext(
             List<SecretSite> sites,
             Transform parent,
-            Action<IllusoryWall> onRevealed,
+            Action<IllusoryWall, SecretSiteKind> onRevealed,
             HashSet<string> usedEdges)
         {
             for (int i = sites.Count - 1; i >= 0; i--)
@@ -397,7 +455,7 @@ namespace Sol.Minigames
             site.To.SetDirFlag(Opposite(site.Direction), false);
         }
 
-        private void PlacePlug(SecretSite site, Transform parent, Action<IllusoryWall> onRevealed)
+        private void PlacePlug(SecretSite site, Transform parent, Action<IllusoryWall, SecretSiteKind> onRevealed)
         {
             Vector3 leafCenter = site.From.transform.position;
             Vector3 neighborCenter = site.To.transform.position;
@@ -418,8 +476,30 @@ namespace Sol.Minigames
 
             if (onRevealed != null)
             {
-                wall.OnRevealed.AddListener(() => onRevealed(wall));
+                SecretSiteKind kind = site.Kind;
+                wall.OnRevealed.AddListener(() => onRevealed(wall, kind));
             }
+
+            // Only a dead-end room has space worth filling; shortcuts and
+            // blockers are passages, not prizes.
+            if (site.Kind == SecretSiteKind.Room)
+            {
+                PlaceCache(site.From, parent);
+            }
+        }
+
+        private void PlaceCache(Room3D room, Transform parent)
+        {
+            if (secretCachePrefab == null || room == null)
+            {
+                return;
+            }
+
+            Vector3 position = room.transform.position + Vector3.up * cacheHeight;
+            LabyrinthSecretCache cache = UnityEngine.Object.Instantiate(
+                secretCachePrefab, position, Quaternion.identity, parent);
+            cache.Initialize(cacheCollectedCallback);
+            spawnedCaches.Add(cache);
         }
 
         private static bool TryGetNeighbor(Room3D[,] rooms, int x, int z, Room3D.Directions direction, out Room3D neighbor)

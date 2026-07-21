@@ -121,6 +121,23 @@ namespace Sol.Minigames
             isDead = false;
         }
 
+        /// <summary>
+        /// Brings a dead pool back to life at the given health (clamped to at
+        /// least 1 so the revive actually sticks). No-op on a living pool.
+        /// Used by cheat-death upgrades that intercept <see cref="OnDied"/>.
+        /// </summary>
+        public void Revive(float reviveHealth)
+        {
+            EnsureInitialized();
+            if (!isDead)
+            {
+                return;
+            }
+
+            isDead = false;
+            current = Mathf.Clamp(reviveHealth, 1f, maxHealth);
+        }
+
         private void EnsureInitialized()
         {
             if (initialized)

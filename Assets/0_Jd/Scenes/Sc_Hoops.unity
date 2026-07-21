@@ -2678,6 +2678,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!1 &480803239
 GameObject:
   m_ObjectHideFlags: 0
@@ -5833,6 +5834,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!1 &1049584581
 GameObject:
   m_ObjectHideFlags: 0
@@ -7570,6 +7572,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!21 &1503196319
 Material:
   serializedVersion: 8
@@ -10315,6 +10318,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!1 &1922855336
 GameObject:
   m_ObjectHideFlags: 0
@@ -11345,6 +11349,7 @@ MonoBehaviour:
   outlineWidth: 2
   alwaysVisible: 0
   priority: 0
+  explicitRenderers: []
 --- !u!1 &2123818785
 GameObject:
   m_ObjectHideFlags: 0
@@ -11594,6 +11599,10 @@ PrefabInstance:
       propertyPath: gameplayCamera
       value: 
       objectReference: {fileID: 1304946330}
+    - target: {fileID: 4375013823933456979, guid: 7d52229406fb6024e8cc2ec2d18043ff, type: 3}
+      propertyPath: roundSeconds
+      value: 120
+      objectReference: {fileID: 0}
     - target: {fileID: 6883299602288689217, guid: 7d52229406fb6024e8cc2ec2d18043ff, type: 3}
       propertyPath: m_Name
       value: HoopsManager
