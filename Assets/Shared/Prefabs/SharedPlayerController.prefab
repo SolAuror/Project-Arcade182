@@ -447,7 +447,7 @@ GameObject:
   m_Icon: {fileID: -5442936267250999957, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &7107744582355222103
 Transform:
   m_ObjectHideFlags: 0
@@ -694,6 +694,9 @@ MonoBehaviour:
   hitMask:
     serializedVersion: 2
     m_Bits: 51
+  castingSources: []
+  castingSourceName: CastingSource
+  aimConvergenceDistance: 100
 --- !u!1 &4840945122254801468
 GameObject:
   m_ObjectHideFlags: 0
@@ -1588,7 +1591,7 @@ Transform:
   m_GameObject: {fileID: 8579771044922679188}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -10.32553, y: -6.7715287, z: 10.030447}
+  m_LocalPosition: {x: 0, y: 1.25, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

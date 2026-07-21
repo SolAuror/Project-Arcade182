@@ -57,11 +57,11 @@ namespace Sol.Minigames
                 return;
             }
 
-            SetText(scoreText, $"Score {game.Score}");
-            SetText(waveText, $"Wave {game.WaveNumber}");
-            SetText(shotsText, $"Shots {game.ShotsRemaining}");
-            SetText(targetsText, $"Targets left {game.RequiredTargetsRemaining}");
-            SetText(multiplierText, $"Chain x{game.CurrentShotMultiplier}");
+            SetText(scoreText, $"ENERGY {game.Score:D6} GEV");
+            SetText(waveText, $"RUN {game.WaveNumber:D2}");
+            SetText(shotsText, $"PROBES {game.ShotsRemaining}");
+            SetText(targetsText, $"SAMPLES {game.RequiredTargetsRemaining:D2}");
+            SetText(multiplierText, $"CHAIN X{game.CurrentShotMultiplier}");
             UpdateBallRack();
 
             if (timerRow != null && timerRow.activeSelf != game.UseTimerMode)
@@ -71,7 +71,7 @@ namespace Sol.Minigames
 
             if (game.UseTimerMode)
             {
-                SetText(timerText, $"Timer {Mathf.CeilToInt(game.TimeRemaining)}s");
+                SetText(timerText, $"BEAM {Mathf.CeilToInt(game.TimeRemaining)}S");
             }
 
             UpdateStatus();
@@ -117,11 +117,11 @@ namespace Sol.Minigames
             {
                 if (!game.HasLaunchedThisRun)
                 {
-                    status = "Aim and release to launch.";
+                    status = "INJECTOR CHARGED - DRAW BACK AND RELEASE TO FIRE";
                 }
                 else if (game.WaveNumber == 1 && game.HasBallInFlight)
                 {
-                    status = "Fire again to collapse your ball and cash its chain.";
+                    status = "FIRE AGAIN TO COLLAPSE YOUR PROBE AND BANK ITS CHAIN";
                 }
             }
 
@@ -141,9 +141,9 @@ namespace Sol.Minigames
                 return;
             }
 
-            string headline = game.IsComplete ? "BOARD CLEARED" : game.FailReason.ToUpperInvariant();
+            string headline = game.IsComplete ? "ALL SAMPLES COLLECTED" : game.FailReason.ToUpperInvariant();
             SetText(resultText,
-                $"{headline}\nScore {game.Score}   Best {game.BestRecordedScore}   Tickets +{game.TicketsAwarded}");
+                $"{headline}\n\nENERGY {game.Score} GEV\nBEST {game.BestRecordedScore} GEV\nTICKETS +{game.TicketsAwarded}");
         }
 
         private static void SetText(Text target, string value)

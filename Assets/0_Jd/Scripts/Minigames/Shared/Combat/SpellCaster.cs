@@ -39,8 +39,15 @@ namespace Sol.Minigames
         private List<SlotState> states;
         private Mana mana;
         private Health health;
+        private float manaCostMultiplier = 1f;
+
+        /// <summary>Lowest the mana-cost multiplier can be driven (75% max total discount).</summary>
+        public const float MinManaCostMultiplier = 0.25f;
 
         public int SlotCount => slots.Count;
+
+        /// <summary>Global mana-cost scale from discount upgrades; 1 = full price.</summary>
+        public float ManaCostMultiplier => manaCostMultiplier;
 
         private void Awake()
         {
@@ -139,6 +146,19 @@ namespace Sol.Minigames
             }
         }
 
+        /// <summary>Cuts every spell's mana cost by <paramref name="percent"/> (0.15 = -15%), clamped to <see cref="MinManaCostMultiplier"/>.</summary>
+        public void ReduceManaCost(float percent)
+        {
+            manaCostMultiplier *= Mathf.Clamp01(1f - percent);
+            manaCostMultiplier = Mathf.Max(MinManaCostMultiplier, manaCostMultiplier);
+        }
+
+        /// <summary>Restores full mana cost; called on a fresh run so discounts never leak between runs.</summary>
+        public void ResetManaCostMultiplier()
+        {
+            manaCostMultiplier = 1f;
+        }
+
         /// <summary>
         /// Casts the slot if it is unlocked, off cooldown, the caster is alive, and
         /// mana (when present) can pay the cost. The context's per-slot runtime
@@ -158,7 +178,7 @@ namespace Sol.Minigames
                 return false;
             }
 
-            if (mana != null && !mana.TrySpend(definition.ManaCost))
+            if (mana != null && !mana.TrySpend(definition.ManaCost * manaCostMultiplier))
             {
                 return false;
             }

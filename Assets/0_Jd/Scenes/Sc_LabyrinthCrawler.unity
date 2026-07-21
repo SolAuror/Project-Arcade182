@@ -45801,6 +45801,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7030571592539760531, guid: ae9f263b7c07f764a80327911d8de7c7, type: 3}
+      propertyPath: possibleRoomPrefabs.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7030571592539760531, guid: ae9f263b7c07f764a80327911d8de7c7, type: 3}
+      propertyPath: 'possibleRoomPrefabs.Array.data[3]'
+      value: 
+      objectReference: {fileID: 3409609871873100581, guid: d8add36955b431d4185d4341edb1b2ea, type: 3}
     - target: {fileID: 7345182960214477321, guid: ae9f263b7c07f764a80327911d8de7c7, type: 3}
       propertyPath: fogColor.b
       value: 0.052222293

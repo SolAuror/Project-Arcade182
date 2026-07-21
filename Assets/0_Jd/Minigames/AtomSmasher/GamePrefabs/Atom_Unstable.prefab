@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2300000}
   - component: {fileID: 11400000}
   - component: {fileID: 11400002}
+  - component: {fileID: 1820618377914778299}
   m_Layer: 0
   m_Name: Atom_Unstable
   m_TagString: Untagged
@@ -43,7 +44,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 100000}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: 1dca951f535b8794c8a17067aa1676e4, type: 2}
 --- !u!135 &13500000
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -120,15 +121,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e30361d3579b06439156fb942b65530, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   game: {fileID: 0}
   scoreValue: 15
   requiredTarget: 1
   deactivateOnHit: 1
-  targetRenderers: []
+  targetRenderers:
+  - {fileID: 2300000}
   activeColor: {r: 1, g: 0.2, b: 0.7, a: 1}
   hitColor: {r: 0, g: 0, b: 0, a: 1}
+  deathPopSeconds: 0.16
+  deathPopScale: 1.35
 --- !u!114 &11400002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -139,8 +143,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b66bb6cb2553426fb7264035313af9c9, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   requiredBounces: 1
   deflectAngleDegrees: 35
   deflectSpeedMultiplier: 1.05
@@ -148,3 +152,16 @@ MonoBehaviour:
   deflectFlashColor: {r: 1, g: 0.25, b: 0.75, a: 1}
   jitterAmplitude: 0.07
   jitterFrequency: 22
+--- !u!114 &1820618377914778299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 616ccb7348f35dd469e996af26c662fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  degreesPerSecond: {x: 28, y: 44, z: 16}
