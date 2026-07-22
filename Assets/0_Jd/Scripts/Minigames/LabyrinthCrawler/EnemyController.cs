@@ -78,6 +78,9 @@ namespace Sol.Minigames
 
         [SerializeField, Min(0.1f)] private float deathBurstRadius = 1.2f;
 
+        [Tooltip("World Y below which a fallen enemy is counted as killed. Without this a foe that walks into a pit falls forever, never reports its death, and the room-clear exit never opens. Sits below the player's fall-respawn line.")]
+        [SerializeField] private float pitKillPlaneY = -8f;
+
         [Header("Audio")]
         [Tooltip("Quiet spatial footsteps while this enemy is actually moving.")]
         [SerializeField] private bool enemyFootstepsEnabled = true;
@@ -155,6 +158,16 @@ namespace Sol.Minigames
         {
             if (health.IsDead)
             {
+                return;
+            }
+
+            // Fell into a pit: there is no floor below a pit, so a foe that
+            // walks in drops forever. Count it dead the moment it clears the
+            // kill plane, routing through the normal death path so the foe
+            // counter resolves and a lure-into-pit still credits the player.
+            if (transform.position.y < pitKillPlaneY)
+            {
+                health.TakeDamage(float.MaxValue, Faction.Neutral);
                 return;
             }
 
@@ -362,7 +375,11 @@ namespace Sol.Minigames
             }
 
             Room3D neighbor = rooms[roomX, roomZ];
-            if (neighbor != null && IsDoorwayClear(current, neighbor))
+
+            // Never volunteer to patrol into a pit - that would be a foe
+            // walking off a ledge for no reason. A chasing enemy still crosses
+            // one going after the player, so pits stay baitable on purpose.
+            if (neighbor != null && !neighbor.IsPit && IsDoorwayClear(current, neighbor))
             {
                 options.Add(neighbor);
             }

@@ -682,7 +682,8 @@ namespace Sol.Minigames
             secretPass.Clear();
             currentExitPad = null;
 
-            ArcadeMazeRules rules = labyrinthMazeRules.CreateArcadeRules(currentMazeWidth, currentMazeDepth);
+            ArcadeMazeRules rules = labyrinthMazeRules.CreateArcadeRules(
+                currentMazeWidth, currentMazeDepth, labyrinthMazeRules.GetPitCount(CurrentStage));
             rules.activateEndRoomExit = false; // the exit pad replaces the interact clerk
 
             if (!mazeGenerator.GenerateWithRules(rules, OnMazeReady))
@@ -786,9 +787,9 @@ namespace Sol.Minigames
                     for (int z = 0; z < rooms.GetLength(1); z++)
                     {
                         int distanceFromStart = Mathf.Abs(x - start.x) + Mathf.Abs(z - start.y);
-                        if (rooms[x, z] == null || distanceFromStart < minRoomDistance)
+                        if (rooms[x, z] == null || rooms[x, z].IsPit || distanceFromStart < minRoomDistance)
                         {
-                            continue;
+                            continue; // never spawn a foe on a floorless pit cell
                         }
 
                         candidateRooms.Add(rooms[x, z]);
@@ -993,6 +994,27 @@ namespace Sol.Minigames
             [SerializeField] private int startingMazeDepth = 3;
             [SerializeField] private int mazeGrowthPerStage = 1;
 
+            [Header("Braiding")]
+            [Tooltip("Fraction of dead-ends opened into loops after the carve. Loops give the player a route around pits so a pit obstructs rather than seals the floor. 0 = classic single-path maze.")]
+            [SerializeField, Range(0f, 1f)] private float braidRate = 0.35f;
+
+            [Header("Pits")]
+            [Tooltip("Void apparatus spawned beneath a designated pit room. Extract it once from DungeonCellPit via Sol/Labyrinth/Build Pit Void Prefab, then assign PitVoid.prefab here. Leave empty to disable pits.")]
+            [SerializeField] private GameObject pitVoidPrefab;
+
+            [Tooltip("Pit cells on the first stage. The maze carves AROUND them, so the exit is always reachable and pits stretch the route.")]
+            [SerializeField, Min(0)] private int startingPitCount = 2;
+
+            [Tooltip("Extra pit cells added per stage as the maze grows.")]
+            [SerializeField, Min(0)] private int pitGrowthPerStage = 1;
+
+            [Header("Footprint")]
+            [Tooltip("Carve inside an organic, non-rectangular blob so the level outline is irregular and pits stretch the journey around it.")]
+            [SerializeField] private bool organicFootprint = true;
+
+            [Tooltip("Fraction of the WxH grid kept active for the organic blob. Lower = more eroded / more irregular.")]
+            [SerializeField, Range(0.35f, 1f)] private float footprintFill = 0.7f;
+
             [Header("Stage Scaling")]
             [SerializeField] private int startingScoreMultiplier = 1;
             [SerializeField] private int scoreMultiplierGrowthPerStage = 1;
@@ -1016,7 +1038,12 @@ namespace Sol.Minigames
             public int StartingMazeDepth => startingMazeDepth;
             public int MazeGrowthPerStage => mazeGrowthPerStage;
 
-            public ArcadeMazeRules CreateArcadeRules(int mazeWidth, int mazeDepth)
+            public int GetPitCount(int stage)
+            {
+                return Mathf.Max(0, startingPitCount + Mathf.Max(0, stage - 1) * pitGrowthPerStage);
+            }
+
+            public ArcadeMazeRules CreateArcadeRules(int mazeWidth, int mazeDepth, int pitCount)
             {
                 return new ArcadeMazeRules
                 {
@@ -1030,6 +1057,11 @@ namespace Sol.Minigames
                     specialRoomPlacementMode = specialRoomPlacementMode,
                     numX = Mathf.Max(1, mazeWidth),
                     numZ = Mathf.Max(1, mazeDepth),
+                    braidRate = braidRate,
+                    pitCount = pitCount,
+                    pitVoidPrefab = pitVoidPrefab,
+                    organicFootprint = organicFootprint,
+                    footprintFill = footprintFill,
                     openStartOuterWall = openStartOuterWall,
                     startOuterWallDirection = startOuterWallDirection,
                     openEndOuterWall = openEndOuterWall,
