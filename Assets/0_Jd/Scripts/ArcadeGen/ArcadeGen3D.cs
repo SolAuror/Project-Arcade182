@@ -22,6 +22,24 @@ namespace Sol
         [Min(1)] public int numX = 10;
         [Min(1)] public int numZ = 10;
 
+        [Header("Braiding")]
+        [Tooltip("Fraction of dead-ends knocked open into loops after the perfect-maze carve. 0 = classic single-path maze (the hub default). Loops give the player a route around obstacles like pits.")]
+        [Range(0f, 1f)] public float braidRate;
+
+        [Header("Pits")]
+        [Tooltip("Number of pit cells the maze carves AROUND (obstacle-first): the walkable graph excludes them, so the exit is always reachable and pits stretch the route rather than block it. 0 = no pits (the hub default).")]
+        [Min(0)] public int pitCount;
+
+        [Tooltip("Void apparatus spawned beneath a designated pit room (retaining shafts, corner pillars and fog). Required for pitCount to take effect.")]
+        public GameObject pitVoidPrefab;
+
+        [Header("Footprint")]
+        [Tooltip("Carve inside an organic, non-rectangular blob of the grid instead of the full rectangle. Rooms stay grid-aligned; the level outline becomes irregular. 0 = classic full rectangle (the hub default).")]
+        public bool organicFootprint;
+
+        [Tooltip("Fraction of the WxH grid kept as active cells when Organic Footprint is on. Lower = more eroded / more irregular. Start and exit are always kept.")]
+        [Range(0.35f, 1f)] public float footprintFill = 0.7f;
+
         [Header("Outer Openings")]
         public bool openStartOuterWall;
         public Room3D.Directions startOuterWallDirection = Room3D.Directions.SOUTH;
@@ -96,6 +114,14 @@ namespace Sol
 
         // Arcade grid and carving state.
         private Room3D[,] rooms;
+
+        // Footprint + obstacle masks (rules lane only). active = this cell is
+        // part of the level (a room is instantiated); pit = this active cell is
+        // an obstacle the walkable graph carves around. On the hub lane every
+        // cell is active and none is a pit, so behaviour is unchanged.
+        private bool[,] active;
+        private bool[,] pit;
+
         private readonly Stack<Room3D> stack = new Stack<Room3D>();
         private readonly List<GameObject> validRoomPrefabs = new List<GameObject>();
 
@@ -125,8 +151,13 @@ namespace Sol
             {
                 CreateArcade();
             }
-            else
+            else if (generatedRoomsParent == null)
             {
+                // Adopt a pre-baked "Generated Rooms" (the designer preview) only
+                // when nothing has generated yet. Guarding on null keeps Start
+                // from clobbering a parent an earlier Awake-time generation
+                // already built - and, on scene reload, from latching onto the
+                // deferred-Destroy baked node before it is torn down.
                 generatedRoomsParent = transform.Find("Generated Rooms");
             }
         }
@@ -213,22 +244,11 @@ namespace Sol
                 return false;
             }
 
-            int generationStepLimit = Mathf.Max(1, CurrentNumX * CurrentNumZ * 4);
-            for (int i = 0; i < generationStepLimit; i++)
-            {
-                if (GenerateStep())
-                {
-                    if (ShouldActivateEndRoomExit())
-                    {
-                        ActivateEndRoomExitClerk();
-                    }
-
-                    return true;
-                }
-            }
-
-            Debug.LogWarning("ArcadeGen3D regeneration hit the safety step limit.", this);
-            return false;
+            // Route through the same completion path as every other lane so the
+            // post-carve passes run here too (inert on this rules-null lane).
+            RunGenerationToCompletion();
+            FinishGeneration();
+            return true;
         }
 
         private bool PrepareGeneration(bool respawnPlayer)
@@ -278,10 +298,229 @@ namespace Sol
             }
 
             SelectSpecialRoomIndices();
+            BuildActiveMask();     // organic footprint (rules lane); hub -> all active, no RNG
+            ChoosePitCells();      // obstacle-first pits (rules lane); hub -> none, no RNG
             CreateGeneratedRoomsParent();
             BuildRoomGrid();
             return true;
         }
+
+        // ---- Footprint mask + obstacle-first pits -----------------------
+        // Both run for every lane but stay inert on the hub: BuildActiveMask
+        // fills a full-rectangle mask and returns before any RNG when
+        // organicFootprint is off, and ChoosePitCells returns before any RNG at
+        // pit count 0. So the hub consumes zero new UnityEngine.Random draws and
+        // its maze is generated exactly as before.
+
+        // Marks which cells are part of the level. Off the organic lane every
+        // cell is active (the classic rectangle). On it, a connected blob is
+        // grown outward from the centre so the outline is irregular; start is
+        // the seed and exit is the farthest active cell from it.
+        private void BuildActiveMask()
+        {
+            active = new bool[CurrentNumX, CurrentNumZ];
+
+            if (!CurrentOrganicFootprint)
+            {
+                for (int x = 0; x < CurrentNumX; x++)
+                {
+                    for (int z = 0; z < CurrentNumZ; z++)
+                    {
+                        active[x, z] = true;
+                    }
+                }
+
+                return;
+            }
+
+            Vector2Int seed = GetCenterRoomIndex();
+            int total = CurrentNumX * CurrentNumZ;
+            int targetActive = Mathf.Clamp(Mathf.RoundToInt(total * CurrentFootprintFill), 1, total);
+
+            active[seed.x, seed.y] = true;
+            int activeCount = 1;
+
+            // Random growth from the seed: pull a random cell off the frontier,
+            // activate it, push its inactive neighbours. Produces a connected,
+            // organic blob rather than a rectangle.
+            List<Vector2Int> frontier = new List<Vector2Int>();
+            AddInactiveNeighborsToFrontier(seed, frontier);
+
+            while (activeCount < targetActive && frontier.Count > 0)
+            {
+                int pick = UnityEngine.Random.Range(0, frontier.Count);
+                Vector2Int cell = frontier[pick];
+                frontier[pick] = frontier[frontier.Count - 1];
+                frontier.RemoveAt(frontier.Count - 1);
+
+                if (active[cell.x, cell.y])
+                {
+                    continue;
+                }
+
+                active[cell.x, cell.y] = true;
+                activeCount++;
+                AddInactiveNeighborsToFrontier(cell, frontier);
+            }
+
+            // Start at the seed; exit is the farthest active cell from it so the
+            // walk spans the blob. Both are guaranteed active.
+            startRoomIndex = seed;
+            endRoomIndex = FarthestActiveCellFrom(seed);
+        }
+
+        private void AddInactiveNeighborsToFrontier(Vector2Int cell, List<Vector2Int> frontier)
+        {
+            foreach (Room3D.Directions dir in CardinalDirections)
+            {
+                if (TryGetNeighbor(cell.x, cell.y, dir, out int nx, out int nz) && !active[nx, nz])
+                {
+                    frontier.Add(new Vector2Int(nx, nz));
+                }
+            }
+        }
+
+        // Grid BFS over active cells (adjacency only, no walls exist yet).
+        private Vector2Int FarthestActiveCellFrom(Vector2Int origin)
+        {
+            bool[,] seen = new bool[CurrentNumX, CurrentNumZ];
+            Queue<Vector2Int> frontier = new Queue<Vector2Int>();
+            seen[origin.x, origin.y] = true;
+            frontier.Enqueue(origin);
+            Vector2Int farthest = origin;
+
+            while (frontier.Count > 0)
+            {
+                Vector2Int cell = frontier.Dequeue();
+                farthest = cell; // BFS dequeues in non-decreasing distance order.
+
+                foreach (Room3D.Directions dir in CardinalDirections)
+                {
+                    if (TryGetNeighbor(cell.x, cell.y, dir, out int nx, out int nz) &&
+                        active[nx, nz] && !seen[nx, nz])
+                    {
+                        seen[nx, nz] = true;
+                        frontier.Enqueue(new Vector2Int(nx, nz));
+                    }
+                }
+            }
+
+            return farthest;
+        }
+
+        // Obstacle-first pit selection: pick pit cells BEFORE the carve so the
+        // walkable graph is built around them and the exit is reachable by
+        // construction. A candidate is kept only if the remaining walkable set
+        // stays one connected region (a pit may never island cells off), so no
+        // amount of RNG can block progression.
+        private void ChoosePitCells()
+        {
+            pit = new bool[CurrentNumX, CurrentNumZ];
+
+            int target = CurrentPitCount;
+            if (target <= 0)
+            {
+                return;
+            }
+
+            if (CurrentPitVoidPrefab == null)
+            {
+                Debug.LogWarning("ArcadeGen3D: pit count is above 0 but no Pit Void Prefab is assigned; skipping pits.", this);
+                return;
+            }
+
+            List<Vector2Int> candidates = new List<Vector2Int>();
+            for (int x = 0; x < CurrentNumX; x++)
+            {
+                for (int z = 0; z < CurrentNumZ; z++)
+                {
+                    Vector2Int cell = new Vector2Int(x, z);
+                    if (!active[x, z] || cell == startRoomIndex || cell == endRoomIndex)
+                    {
+                        continue;
+                    }
+
+                    candidates.Add(cell);
+                }
+            }
+
+            for (int i = candidates.Count - 1; i > 0; i--)
+            {
+                int j = UnityEngine.Random.Range(0, i + 1);
+                (candidates[i], candidates[j]) = (candidates[j], candidates[i]);
+            }
+
+            int placed = 0;
+            foreach (Vector2Int cell in candidates)
+            {
+                if (placed >= target)
+                {
+                    break;
+                }
+
+                pit[cell.x, cell.y] = true;
+                if (WalkableRegionConnected())
+                {
+                    placed++;
+                }
+                else
+                {
+                    pit[cell.x, cell.y] = false;
+                }
+            }
+        }
+
+        // Flood the walkable cells (active and not a pit) from the start over
+        // grid adjacency and confirm the flood covers every walkable cell. If it
+        // does, the pre-carve graph is one piece and a spanning tree will reach
+        // the exit and every other room.
+        private bool WalkableRegionConnected()
+        {
+            int walkableTotal = 0;
+            for (int x = 0; x < CurrentNumX; x++)
+            {
+                for (int z = 0; z < CurrentNumZ; z++)
+                {
+                    if (active[x, z] && !pit[x, z])
+                    {
+                        walkableTotal++;
+                    }
+                }
+            }
+
+            if (walkableTotal == 0 || pit[startRoomIndex.x, startRoomIndex.y] || !active[startRoomIndex.x, startRoomIndex.y])
+            {
+                return false;
+            }
+
+            bool[,] seen = new bool[CurrentNumX, CurrentNumZ];
+            Queue<Vector2Int> frontier = new Queue<Vector2Int>();
+            seen[startRoomIndex.x, startRoomIndex.y] = true;
+            frontier.Enqueue(startRoomIndex);
+            int reached = 1;
+
+            while (frontier.Count > 0)
+            {
+                Vector2Int cell = frontier.Dequeue();
+                foreach (Room3D.Directions dir in CardinalDirections)
+                {
+                    if (TryGetNeighbor(cell.x, cell.y, dir, out int nx, out int nz) &&
+                        active[nx, nz] && !pit[nx, nz] && !seen[nx, nz])
+                    {
+                        seen[nx, nz] = true;
+                        reached++;
+                        frontier.Enqueue(new Vector2Int(nx, nz));
+                    }
+                }
+            }
+
+            return reached == walkableTotal;
+        }
+
+        private bool InBounds(int x, int z) => x >= 0 && x < CurrentNumX && z >= 0 && z < CurrentNumZ;
+        private bool IsActiveCell(int x, int z) => InBounds(x, z) && active != null && active[x, z];
+        private bool IsPitCell(int x, int z) => InBounds(x, z) && pit != null && pit[x, z];
+        private bool IsWalkable(int x, int z) => IsActiveCell(x, z) && !IsPitCell(x, z);
 
         private bool RefreshValidRoomPrefabs()
         {
@@ -385,6 +624,12 @@ namespace Sol
             {
                 for (int z = 0; z < CurrentNumZ; ++z)
                 {
+                    // Cells outside the footprint mask are not part of the level.
+                    if (active != null && !active[x, z])
+                    {
+                        continue;
+                    }
+
                     GameObject selectedPrefab = GetRoomPrefabForCell(x, z);
                     Vector3 roomLocalPosition = GetRoomLocalPosition(x, z);
                     Vector3 roomWorldPosition = generatedRoomsParent.TransformPoint(roomLocalPosition);
@@ -725,70 +970,336 @@ namespace Sol
             }
         }
 
+        // ---- Post-carve passes ------------------------------------------
+        // All three self-disable on the hub lane: BraidMaze returns at rate 0
+        // before consuming any RNG, DesignatePits returns at pit count 0, and
+        // the conjoin pass returns the moment it finds no pit rooms. Order
+        // matters - braid first so pit designation can exploit the new loops
+        // when keeping a route to the exit, then conjoin adjacent pits.
+
+        private static readonly Room3D.Directions[] CardinalDirections =
+        {
+            Room3D.Directions.NORTH,
+            Room3D.Directions.SOUTH,
+            Room3D.Directions.EAST,
+            Room3D.Directions.WEST,
+        };
+
+        private void PostCarveProcessing()
+        {
+            if (rooms == null)
+            {
+                return;
+            }
+
+            BraidMaze();
+            RevealPits();
+            OpenConjoinedPitShafts();
+            VerifyExitReachable();
+        }
+
+        // Structural safety net. The walkable graph is carved to guarantee a
+        // pit-free route to the exit, but if a future change ever broke that,
+        // surface it loudly during development rather than ship an unwinnable
+        // stage. Stripped from release player builds.
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void VerifyExitReachable()
+        {
+            if (rooms == null || startRoomIndex == endRoomIndex)
+            {
+                return;
+            }
+
+            if (!IsReachable(startRoomIndex, endRoomIndex, allowPits: false))
+            {
+                Debug.LogError(
+                    $"ArcadeGen3D: start {startRoomIndex} cannot reach exit {endRoomIndex} on foot after " +
+                    "generation - the stage would be unwinnable. Check the footprint/pit passes.", this);
+            }
+        }
+
+        // Knock open extra walls at dead-ends so the perfect maze grows loops.
+        // Only dead-ends (0 or 1 open doorway) are braided, which is enough to
+        // remove most single-path chokepoints while keeping the maze legible.
+        private void BraidMaze()
+        {
+            float rate = CurrentBraidRate;
+            if (rate <= 0f)
+            {
+                return;
+            }
+
+            for (int x = 0; x < CurrentNumX; x++)
+            {
+                for (int z = 0; z < CurrentNumZ; z++)
+                {
+                    if (!IsWalkable(x, z) || rooms[x, z] == null)
+                    {
+                        continue; // never braid a pit or a masked-out cell
+                    }
+
+                    if (CountOpenDoors(x, z) > 1)
+                    {
+                        continue;
+                    }
+
+                    if (UnityEngine.Random.value > rate)
+                    {
+                        continue;
+                    }
+
+                    List<Room3D.Directions> closed = ClosedInteriorDirections(x, z);
+                    if (closed.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    Room3D.Directions dir = closed[UnityEngine.Random.Range(0, closed.Count)];
+                    RemoveRoomWall(x, z, dir);
+                }
+            }
+        }
+
+        // Turns the cells chosen pre-carve by ChoosePitCells into real pits:
+        // hide the floor, reveal the void underneath, and open the pit's walls
+        // toward any active neighbour so the hole reads as an open drop in the
+        // corridor rather than a sealed box. The carve already routed the
+        // walkable graph around these cells, so the exit stays reachable; the
+        // pit-free route just has to go the long way, stretching the journey.
+        private void RevealPits()
+        {
+            if (pit == null)
+            {
+                return;
+            }
+
+            GameObject voidPrefab = CurrentPitVoidPrefab;
+            if (voidPrefab == null)
+            {
+                return;
+            }
+
+            for (int x = 0; x < CurrentNumX; x++)
+            {
+                for (int z = 0; z < CurrentNumZ; z++)
+                {
+                    if (!pit[x, z] || rooms[x, z] == null)
+                    {
+                        continue;
+                    }
+
+                    rooms[x, z].RevealPit(voidPrefab);
+
+                    // Open the drop toward every active neighbour (walkable or a
+                    // conjoined pit); sides facing the masked-out void keep their
+                    // wall so the level edge stays sealed.
+                    foreach (Room3D.Directions dir in CardinalDirections)
+                    {
+                        if (TryGetNeighbor(x, z, dir, out int nx, out int nz) &&
+                            IsActiveCell(nx, nz) && rooms[nx, nz] != null)
+                        {
+                            RemoveRoomWall(x, z, dir);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Merge neighbouring pits into one continuous shaft: a below-floor
+        // retaining wall is dropped only where an open doorway joins two pits.
+        // Every other pit side keeps its wall so the hole stays a contained
+        // well instead of a floating grid of disconnected squares.
+        private void OpenConjoinedPitShafts()
+        {
+            if (!AnyPitRooms())
+            {
+                return;
+            }
+
+            for (int x = 0; x < CurrentNumX; x++)
+            {
+                for (int z = 0; z < CurrentNumZ; z++)
+                {
+                    Room3D room = rooms[x, z];
+                    if (room == null || !room.IsPit)
+                    {
+                        continue;
+                    }
+
+                    foreach (Room3D.Directions dir in CardinalDirections)
+                    {
+                        bool conjoin =
+                            TryGetNeighbor(x, z, dir, out int nx, out int nz) &&
+                            rooms[nx, nz] != null &&
+                            rooms[nx, nz].IsPit &&
+                            IsDoorOpen(x, z, dir);
+
+                        room.SetShaftOpen(dir, conjoin);
+                    }
+                }
+            }
+        }
+
+        private bool AnyPitRooms()
+        {
+            for (int x = 0; x < CurrentNumX; x++)
+            {
+                for (int z = 0; z < CurrentNumZ; z++)
+                {
+                    if (rooms[x, z] != null && rooms[x, z].IsPit)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private int CountOpenDoors(int x, int z)
+        {
+            int open = 0;
+            foreach (Room3D.Directions dir in CardinalDirections)
+            {
+                if (IsDoorOpen(x, z, dir))
+                {
+                    open++;
+                }
+            }
+
+            return open;
+        }
+
+        private List<Room3D.Directions> ClosedInteriorDirections(int x, int z)
+        {
+            List<Room3D.Directions> closed = new List<Room3D.Directions>(4);
+            foreach (Room3D.Directions dir in CardinalDirections)
+            {
+                // Only braid into a walkable neighbour: opening a loop into a pit
+                // or off the footprint would break the obstacle-around invariant.
+                if (TryGetNeighbor(x, z, dir, out int nx, out int nz) &&
+                    IsWalkable(nx, nz) && rooms[nx, nz] != null &&
+                    !IsDoorOpen(x, z, dir))
+                {
+                    closed.Add(dir);
+                }
+            }
+
+            return closed;
+        }
+
+        private bool IsDoorOpen(int x, int z, Room3D.Directions dir)
+        {
+            return rooms[x, z] != null && !rooms[x, z].IsWallClosed(dir);
+        }
+
+        private bool TryGetNeighbor(int x, int z, Room3D.Directions dir, out int nx, out int nz)
+        {
+            nx = x;
+            nz = z;
+            switch (dir)
+            {
+                case Room3D.Directions.NORTH: nz = z + 1; break;
+                case Room3D.Directions.SOUTH: nz = z - 1; break;
+                case Room3D.Directions.EAST: nx = x + 1; break;
+                case Room3D.Directions.WEST: nx = x - 1; break;
+                default: return false;
+            }
+
+            return nx >= 0 && nx < CurrentNumX && nz >= 0 && nz < CurrentNumZ;
+        }
+
+        private bool IsReachable(Vector2Int start, Vector2Int end, bool allowPits)
+        {
+            return TryFindPath(start, end, allowPits, out List<Vector2Int> _);
+        }
+
+        // Breadth-first over open doorways. A cell is enterable only when it is
+        // in the grid and either not a pit or pits are allowed; the start cell
+        // is never a pit. Returns the path start..end inclusive when found.
+        private bool TryFindPath(Vector2Int start, Vector2Int end, bool allowPits, out List<Vector2Int> path)
+        {
+            path = null;
+            if (rooms == null)
+            {
+                return false;
+            }
+
+            bool[,] visited = new bool[CurrentNumX, CurrentNumZ];
+            Vector2Int[,] cameFrom = new Vector2Int[CurrentNumX, CurrentNumZ];
+            Queue<Vector2Int> frontier = new Queue<Vector2Int>();
+
+            visited[start.x, start.y] = true;
+            frontier.Enqueue(start);
+
+            while (frontier.Count > 0)
+            {
+                Vector2Int cell = frontier.Dequeue();
+                if (cell == end)
+                {
+                    path = ReconstructPath(cameFrom, start, end);
+                    return true;
+                }
+
+                foreach (Room3D.Directions dir in CardinalDirections)
+                {
+                    if (!IsDoorOpen(cell.x, cell.y, dir) ||
+                        !TryGetNeighbor(cell.x, cell.y, dir, out int nx, out int nz) ||
+                        visited[nx, nz])
+                    {
+                        continue;
+                    }
+
+                    if (!allowPits && rooms[nx, nz] != null && rooms[nx, nz].IsPit && new Vector2Int(nx, nz) != end)
+                    {
+                        continue;
+                    }
+
+                    visited[nx, nz] = true;
+                    cameFrom[nx, nz] = cell;
+                    frontier.Enqueue(new Vector2Int(nx, nz));
+                }
+            }
+
+            return false;
+        }
+
+        private static List<Vector2Int> ReconstructPath(Vector2Int[,] cameFrom, Vector2Int start, Vector2Int end)
+        {
+            List<Vector2Int> path = new List<Vector2Int>();
+            Vector2Int cell = end;
+            path.Add(cell);
+            while (cell != start)
+            {
+                cell = cameFrom[cell.x, cell.y];
+                path.Add(cell);
+            }
+
+            path.Reverse();
+            return path;
+        }
+
         public List<Tuple<Room3D.Directions, Room3D>> GetUnvisitedNeighbors(int cx, int cz)
         {
             List<Tuple<Room3D.Directions, Room3D>> neighbours =
                 new List<Tuple<Room3D.Directions, Room3D>>();
 
-            foreach (Room3D.Directions dir in Enum.GetValues(typeof(Room3D.Directions)))
+            foreach (Room3D.Directions dir in CardinalDirections)
             {
-                int x = cx;
-                int z = cz;
-
-                switch (dir)
+                if (!TryGetNeighbor(cx, cz, dir, out int nx, out int nz))
                 {
-                    case Room3D.Directions.NORTH:
-                        if (z < CurrentNumZ - 1)
-                        {
-                            ++z;
-                            if (!rooms[x, z].visited)
-                            {
-                                neighbours.Add(new Tuple<Room3D.Directions, Room3D>(
-                                    Room3D.Directions.NORTH,
-                                    rooms[x, z]));
-                            }
-                        }
-                        break;
-
-                    case Room3D.Directions.EAST:
-                        if (x < CurrentNumX - 1)
-                        {
-                            ++x;
-                            if (!rooms[x, z].visited)
-                            {
-                                neighbours.Add(new Tuple<Room3D.Directions, Room3D>(
-                                    Room3D.Directions.EAST,
-                                    rooms[x, z]));
-                            }
-                        }
-                        break;
-
-                    case Room3D.Directions.SOUTH:
-                        if (z > 0)
-                        {
-                            --z;
-                            if (!rooms[x, z].visited)
-                            {
-                                neighbours.Add(new Tuple<Room3D.Directions, Room3D>(
-                                    Room3D.Directions.SOUTH,
-                                    rooms[x, z]));
-                            }
-                        }
-                        break;
-
-                    case Room3D.Directions.WEST:
-                        if (x > 0)
-                        {
-                            --x;
-                            if (!rooms[x, z].visited)
-                            {
-                                neighbours.Add(new Tuple<Room3D.Directions, Room3D>(
-                                    Room3D.Directions.WEST,
-                                    rooms[x, z]));
-                            }
-                        }
-                        break;
+                    continue;
                 }
+
+                // Only carve into walkable cells: skip masked-out (null) cells
+                // and pit obstacles so the spanning tree spans the walkable set.
+                if (!IsWalkable(nx, nz) || rooms[nx, nz] == null || rooms[nx, nz].visited)
+                {
+                    continue;
+                }
+
+                neighbours.Add(new Tuple<Room3D.Directions, Room3D>(dir, rooms[nx, nz]));
             }
 
             return neighbours;
@@ -900,6 +1411,11 @@ namespace Sol
             {
                 for (int j = 0; j < CurrentNumZ; ++j)
                 {
+                    if (rooms[i, j] == null)
+                    {
+                        continue; // masked-out cell; no room instantiated here
+                    }
+
                     rooms[i, j].visited = false;
                     rooms[i, j].SetDirFlag(Room3D.Directions.NORTH, true);
                     rooms[i, j].SetDirFlag(Room3D.Directions.SOUTH, true);
@@ -933,6 +1449,19 @@ namespace Sol
             return activeRules == null || activeRules.activateEndRoomExit;
         }
 
+        // No serialized hub counterpart: the hub lane (activeRules == null)
+        // always reads 0, so the braid pass early-outs before touching RNG and
+        // the hub maze is generated byte-identically to before this feature.
+        private float CurrentBraidRate => activeRules != null ? Mathf.Clamp01(activeRules.braidRate) : 0f;
+
+        // Pits + footprint are rules-only features: the hub lane reads 0 pits, a
+        // null void prefab, and a full-rectangle footprint, so the mask/pit
+        // passes early-out and the hub is untouched.
+        private int CurrentPitCount => activeRules != null ? Mathf.Max(0, activeRules.pitCount) : 0;
+        private GameObject CurrentPitVoidPrefab => activeRules != null ? activeRules.pitVoidPrefab : null;
+        private bool CurrentOrganicFootprint => activeRules != null && activeRules.organicFootprint;
+        private float CurrentFootprintFill => activeRules != null ? Mathf.Clamp(activeRules.footprintFill, 0.2f, 1f) : 1f;
+
         private void RunGenerationToCompletion()
         {
             generating = true;
@@ -950,6 +1479,11 @@ namespace Sol
 
         private void FinishGeneration()
         {
+            // Post-carve passes run for every lane but self-disable when their
+            // inputs are inert: BraidMaze does nothing at rate 0 (the hub), and
+            // the pit passes do nothing when no pit rooms were placed.
+            PostCarveProcessing();
+
             if (ShouldActivateEndRoomExit())
             {
                 ActivateEndRoomExitClerk();
