@@ -1,16 +1,33 @@
+using TMPro;
 using UnityEngine;
 
 public class ScoreManager : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    [SerializeField] private TMP_Text scoreText;
+
+    private int leftScore;
+    private int rightScore;
+
+    private void Start()
     {
-        
+        UpdateScoreText();
     }
 
-    // Update is called once per frame
-    void Update()
+    public void AddLeftScore()
     {
-        
+        leftScore++;
+        UpdateScoreText();
+    }
+
+    public void AddRightScore()
+    {
+        rightScore++;
+        UpdateScoreText();
+    }
+
+    private void UpdateScoreText()
+    {
+        scoreText.text = leftScore + "  -  " + rightScore;
     }
 }
+
