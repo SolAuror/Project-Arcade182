@@ -11,9 +11,9 @@ namespace Sol.Arcade
     /// Escape-key pause menu. Prefab-authored (Resources/UI/PauseMenu, built
     /// once by Sol/Setup/Menus And UI Prefabs) and instantiated for the whole
     /// session by <see cref="ArcadeMetaBootstrap"/> — no UI is generated at
-    /// runtime. Minigame scenes get Resume / Quit to Hub (Atom Smasher adds a
-    /// 2D-3D camera toggle); the hub gets Resume / Options / Quit to Menu /
-    /// Quit Game. The main menu scene gets nothing.
+    /// runtime. Minigame scenes get Resume / Quit to Hub / Quit to Menu (Atom
+    /// Smasher adds a 2D-3D camera toggle); the hub gets Resume / Options /
+    /// Quit to Menu / Quit Game. The main menu scene gets nothing.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Sol/Arcade/Pause Menu Controller")]
@@ -51,6 +51,16 @@ namespace Sol.Arcade
         private float pausedFromTimeScale = 1f;
         private CursorLockMode pausedFromLockMode;
         private bool isPaused;
+
+        /// <summary>
+        /// True while the pause menu is open. World-interaction scripts
+        /// (arcade cabinets, the exit door, the clerk, the grabber) check this
+        /// so a click on a menu button doesn't also fire the gameplay action
+        /// under the crosshair — e.g. launching a cabinet's minigame instead of
+        /// quitting to the menu. The input action's button-down fires before
+        /// the UI button's click, so the flag is still set when they read it.
+        /// </summary>
+        public static bool IsPaused { get; private set; }
 
         // Authored board-camera projection, captured per Atom Smasher scene so
         // the 2D/3D toggle always frames the play area exactly as authored.
@@ -146,6 +156,10 @@ namespace Sol.Arcade
                 Resume();
             }
 
+            // A freshly configured scene is never paused; clear the global gate
+            // in case a scene change bypassed the normal resume path.
+            IsPaused = false;
+
             atomSmasherGame = FindFirstObjectByType<AtomSmasherGame>();
 
             if (FindFirstObjectByType<MainMenu>() != null)
@@ -164,11 +178,14 @@ namespace Sol.Arcade
             }
 
             bool minigame = context == PauseContext.Minigame;
+            bool hub = context == PauseContext.Hub;
             SetButtonVisible(viewToggleButton, minigame && atomSmasherGame != null);
             SetButtonVisible(quitToHubButton, minigame);
-            SetButtonVisible(volumeButton, context == PauseContext.Hub);
-            SetButtonVisible(quitToMenuButton, context == PauseContext.Hub);
-            SetButtonVisible(quitGameButton, context == PauseContext.Hub);
+            SetButtonVisible(volumeButton, hub);
+            // The hub returns to the menu; a minigame can go back to the hub OR
+            // straight to the menu, so the player picks their exit destination.
+            SetButtonVisible(quitToMenuButton, hub || minigame);
+            SetButtonVisible(quitGameButton, hub);
 
             RefreshVolumeLabel();
 
@@ -214,6 +231,7 @@ namespace Sol.Arcade
         private void Pause()
         {
             isPaused = true;
+            IsPaused = true;
             pausedFromTimeScale = Time.timeScale;
             pausedFromLockMode = Cursor.lockState;
             Time.timeScale = 0f;
@@ -224,6 +242,8 @@ namespace Sol.Arcade
 
         private void Resume()
         {
+            IsPaused = false;
+
             if (!isPaused)
             {
                 if (pauseCanvas != null)
@@ -251,6 +271,7 @@ namespace Sol.Arcade
             }
 
             isPaused = false;
+            IsPaused = false;
             Time.timeScale = 1f;
             AudioListener.pause = false;
             pauseCanvas.SetActive(false);

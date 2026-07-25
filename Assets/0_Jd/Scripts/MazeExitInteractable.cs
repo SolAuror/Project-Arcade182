@@ -68,6 +68,11 @@ namespace Sol.Arcade
 
         public void TryUseExit()
         {
+            // Ignore clicks consumed by the pause menu so a menu press over the
+            // clerk/exit doesn't also trigger it.
+            if (PauseMenuController.IsPaused)
+                return;
+
             if (_isLoading || !IsPlayerAimingAtThisExit())
                 return;
 

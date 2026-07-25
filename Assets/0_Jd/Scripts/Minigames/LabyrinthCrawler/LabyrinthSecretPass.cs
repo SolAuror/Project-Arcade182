@@ -313,7 +313,7 @@ namespace Sol.Minigames
                 for (int z = 0; z < numZ; z++)
                 {
                     Room3D room = rooms[x, z];
-                    if (room == null || room.IsPit)
+                    if (room == null || room.IsPit || room.IsSolidBlock)
                     {
                         continue;
                     }
@@ -534,10 +534,11 @@ namespace Sol.Minigames
             }
 
             neighbor = rooms[x, z];
-            // Pits are floorless obstacles: never treat one as a walkable
-            // neighbour, so secrets and shortcuts route around them like the
-            // maze itself does.
-            return neighbor != null && !neighbor.IsPit;
+            // Pits (floorless) and solid blocks (sealed) are both obstacles: never
+            // treat one as a walkable neighbour, so secrets and shortcuts route
+            // around them like the maze itself does - a shortcut must never tunnel
+            // an illusory wall into a sealed building.
+            return neighbor != null && !neighbor.IsPit && !neighbor.IsSolidBlock;
         }
 
         private static int GetOpenGraphDistance(ArcadeGen3D generator, Vector2Int start, Vector2Int end)

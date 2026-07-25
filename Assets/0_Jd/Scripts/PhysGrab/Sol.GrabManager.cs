@@ -271,6 +271,10 @@ namespace Sol.Grab
 
         private void OnGrabInputStarted(InputAction.CallbackContext context)
         {
+            // Don't grab on a click that's operating the pause menu.
+            if (Sol.Arcade.PauseMenuController.IsPaused)
+                return;
+
             if (!isGrabbingEnabled || isFrozen || _heldObject != null)
                 return;
 
@@ -289,6 +293,13 @@ namespace Sol.Grab
 
         private void PollUtilityInputs()
         {
+            // Freeze grab/throw/lock utility input while the pause menu is open.
+            if (Sol.Arcade.PauseMenuController.IsPaused)
+            {
+                rotationMode = false;
+                return;
+            }
+
             rotationMode = allowKeyboardRotation &&
                 _heldObject != null &&
                 Keyboard.current?.rKey.isPressed == true;

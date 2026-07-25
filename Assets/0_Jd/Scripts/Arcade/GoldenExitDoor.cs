@@ -91,6 +91,13 @@ namespace Sol.Arcade
 
         private void TryUseDoor()
         {
+            // Ignore clicks consumed by the pause menu so a menu press over the
+            // door doesn't also try to use it.
+            if (PauseMenuController.IsPaused)
+            {
+                return;
+            }
+
             if (escapeTriggered || !IsPlayerAimingAtDoor())
             {
                 return;

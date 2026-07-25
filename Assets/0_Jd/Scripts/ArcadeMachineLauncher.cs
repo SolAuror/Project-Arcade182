@@ -49,6 +49,11 @@ namespace Sol.Arcade
 
         public void TryLaunch()
         {
+            // Ignore clicks that belong to the pause menu — otherwise pressing a
+            // menu button over this cabinet would launch the minigame instead.
+            if (PauseMenuController.IsPaused)
+                return;
+
             if (_isLoading || !IsPlayerAimingAtThisMachine())
                 return;
 

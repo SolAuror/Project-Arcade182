@@ -87,8 +87,14 @@ namespace Sol.Minigames
         [SerializeField] private AudioClip reviveClip;
 
         [Header("Fall Safety")]
-        [Tooltip("Players falling below this world Y are teleported back to the stage start room.")]
-        [SerializeField] private float fallRespawnY = -5f;
+        [Tooltip("Players falling below this world Y are caught and returned to the stage start room. With deep pits, set this just BELOW the pit floor (VoidDeep sits at ~-9) so the player falls the whole way and feels the drop before the reset. VoidDeep is a particle effect, not a collider, so the fall is a clean free-fall.")]
+        [SerializeField] private float fallRespawnY = -12f;
+
+        [Tooltip("Damage each pit fall deals, as a fraction of CURRENT health, escalating per fall across the run to punish repeated failure (the last value repeats once the list runs out). 0.99 nearly empties the bar without a guaranteed kill.")]
+        [SerializeField] private float[] pitFallDamageFractions = { 0.25f, 0.25f, 0.5f, 0.99f };
+
+        [Tooltip("Rare chance, on each pit fall, that the fall instead drops the player straight to the next floor - no upgrade pick, no damage. Engineered luck: a lucky escape from a bad fall. 0 disables.")]
+        [SerializeField, Range(0f, 1f)] private float pitFallSkipFloorChance = 0.03f;
 
         [Header("Upgrades")]
         [SerializeField] private LabyrinthUpgradeSystem upgradeSystem = new LabyrinthUpgradeSystem();
@@ -141,6 +147,7 @@ namespace Sol.Minigames
         private Transform secretsParent;
         private int secretsFound;
         private int pendingBonusPicks;
+        private int pitFallCount;
         private Health playerHealth;
         private Mana playerMana;
         private SpellCaster playerCaster;
@@ -172,6 +179,10 @@ namespace Sol.Minigames
         // Cool teal for shrine restores, violet for the rare extra-pick boon.
         private static readonly Color ShrinePopColor = new Color(0.5f, 0.95f, 0.9f, 1f);
         private static readonly Color BoonPopColor = new Color(0.8f, 0.6f, 1f, 1f);
+
+        // Harsh red for pit-fall damage; bright violet-white for the lucky floor skip.
+        private static readonly Color PitFallPopColor = new Color(1f, 0.35f, 0.3f, 1f);
+        private static readonly Color LuckyFallPopColor = new Color(0.85f, 0.7f, 1f, 1f);
 
         private enum SecretRewardKind
         {
@@ -314,8 +325,73 @@ namespace Sol.Minigames
                 return;
             }
 
-            Debug.Log($"Player fell below y {fallRespawnY:0.0}; respawning at the stage start room.", this);
+            HandlePitFall(player);
+        }
+
+        // The player has fallen the full depth of a pit. Get them out first so the
+        // fall cannot re-fire next frame (especially before the async lucky rebuild),
+        // then resolve the consequence: a rare lucky drop to the next floor,
+        // otherwise escalating fall damage.
+        private void HandlePitFall(Transform player)
+        {
+            pitFallCount++;
+            Vector3 popAt = player.position + Vector3.up * 1.5f;
+
+            if (pitFallSkipFloorChance > 0f && UnityEngine.Random.value < pitFallSkipFloorChance)
+            {
+                mazeGenerator.RespawnPlayerAtStartRoom();
+                Debug.Log("Lucky pit fall: dropping to the next floor without an upgrade.", this);
+                DamagePopup.SpawnText(popAt, "Lucky fall!", LuckyFallPopColor, 0f, 1.4f);
+                AdvanceFloorWithoutUpgrade();
+                return;
+            }
+
+            ApplyPitFallDamage(popAt);
             mazeGenerator.RespawnPlayerAtStartRoom();
+        }
+
+        // Escalating pit-fall damage as a fraction of CURRENT health, so the 0.99
+        // step nearly empties the bar but leaves a sliver rather than a guaranteed
+        // kill. The list index tracks total falls this run (last value repeats).
+        private void ApplyPitFallDamage(Vector3 popAt)
+        {
+            if (playerHealth == null || pitFallDamageFractions == null || pitFallDamageFractions.Length == 0)
+            {
+                return;
+            }
+
+            int index = Mathf.Clamp(pitFallCount - 1, 0, pitFallDamageFractions.Length - 1);
+            float fraction = Mathf.Clamp01(pitFallDamageFractions[index]);
+            float damage = playerHealth.Current * fraction;
+            if (damage <= 0f)
+            {
+                return;
+            }
+
+            // Neutral source so the player's own faction never filters out the hit.
+            playerHealth.TakeDamage(damage, Faction.Neutral);
+            DamagePopup.SpawnText(popAt, $"-{Mathf.RoundToInt(fraction * 100f)}%", PitFallPopColor, 0f, 1.2f);
+        }
+
+        // Rare lucky-fall reward: advance a floor like a clear, but skip the upgrade
+        // draft and the time bonus. Mirrors the growth (and Stasis) handling of the
+        // normal stage advance so difficulty scaling stays consistent.
+        private void AdvanceFloorWithoutUpgrade()
+        {
+            exitsFound++;
+            PlayClip(stageClearClip);
+
+            if (upgradeSystem.ConsumeMazeGrowthSkip())
+            {
+                Debug.Log("Stasis Sigil held: the lucky floor keeps its current size.", this);
+            }
+            else
+            {
+                currentMazeWidth += labyrinthMazeRules.MazeGrowthPerStage;
+                currentMazeDepth += labyrinthMazeRules.MazeGrowthPerStage;
+            }
+
+            RebuildMaze();
         }
 
         private void OnValidate()
@@ -346,6 +422,7 @@ namespace Sol.Minigames
             enemiesKilled = 0;
             secretsFound = 0;
             pendingBonusPicks = 0;
+            pitFallCount = 0;
             score = 0;
             ticketsAwarded = 0;
             isRunning = true;
@@ -683,7 +760,11 @@ namespace Sol.Minigames
             currentExitPad = null;
 
             ArcadeMazeRules rules = labyrinthMazeRules.CreateArcadeRules(
-                currentMazeWidth, currentMazeDepth, labyrinthMazeRules.GetPitCount(CurrentStage));
+                currentMazeWidth, currentMazeDepth,
+                labyrinthMazeRules.GetPitCount(CurrentStage),
+                labyrinthMazeRules.GetRoomCount(CurrentStage),
+                labyrinthMazeRules.GetSolidBlockCount(CurrentStage),
+                labyrinthMazeRules.GetAuthoredBuildingCount(CurrentStage));
             rules.activateEndRoomExit = false; // the exit pad replaces the interact clerk
 
             if (!mazeGenerator.GenerateWithRules(rules, OnMazeReady))
@@ -787,9 +868,9 @@ namespace Sol.Minigames
                     for (int z = 0; z < rooms.GetLength(1); z++)
                     {
                         int distanceFromStart = Mathf.Abs(x - start.x) + Mathf.Abs(z - start.y);
-                        if (rooms[x, z] == null || rooms[x, z].IsPit || distanceFromStart < minRoomDistance)
+                        if (rooms[x, z] == null || rooms[x, z].IsPit || rooms[x, z].IsSolidBlock || distanceFromStart < minRoomDistance)
                         {
-                            continue; // never spawn a foe on a floorless pit cell
+                            continue; // never spawn a foe on a floorless pit or sealed inside a block
                         }
 
                         candidateRooms.Add(rooms[x, z]);
@@ -1008,6 +1089,41 @@ namespace Sol.Minigames
             [Tooltip("Extra pit cells added per stage as the maze grows.")]
             [SerializeField, Min(0)] private int pitGrowthPerStage = 1;
 
+            [Header("Buildings")]
+            [Tooltip("Procedural buildings on the first stage - walled masses the maze carves AROUND (obstacle-first, same as pits), each entered through a single carved doorway onto one open hall. Kept low at start since the tiny opening maze also carries pits and a plaza; the connectivity guard drops any that would seal the exit. (Field name kept for prefab compatibility.)")]
+            [SerializeField, Min(0)] private int startingSolidBlockCount = 1;
+
+            [Tooltip("Extra procedural buildings added per stage as the maze grows.")]
+            [SerializeField, Min(0)] private int solidBlockGrowthPerStage = 1;
+
+            [Tooltip("Smallest procedural-building footprint edge in cells (1 = a single-cell hut).")]
+            [SerializeField, Min(1)] private int buildingMinSize = 1;
+
+            [Tooltip("Largest procedural-building footprint edge in cells. Any size is allowed; larger footprints only land where space and connectivity allow.")]
+            [SerializeField, Min(1)] private int buildingMaxSize = 2;
+
+            [Tooltip("Hand-authored building prefabs dropped in obstacle-first alongside the procedural ones. Footprint is read from the prefab's bounds; entrances are the perimeter WallSockets flagged as authored openings. Empty = procedural buildings only.")]
+            [SerializeField] private List<GameObject> authoredBuildings = new List<GameObject>();
+
+            [Tooltip("Authored buildings placed on the first stage, drawn from the Authored Buildings list.")]
+            [SerializeField, Min(0)] private int startingAuthoredBuildingCount;
+
+            [Tooltip("Extra authored buildings added per stage as the maze grows.")]
+            [SerializeField, Min(0)] private int authoredBuildingGrowthPerStage;
+
+            [Header("Plazas (open squares)")]
+            [Tooltip("Rare open-air plazas on the first stage - widened outdoor squares among the narrow streets (interior walls removed). Only removes walls, so the maze stays solvable. Keep low; 0 = all narrow streets. (Field name kept for prefab compatibility.)")]
+            [SerializeField, Min(0)] private int startingRoomCount = 1;
+
+            [Tooltip("Extra plazas added per stage as the maze grows.")]
+            [SerializeField, Min(0)] private int roomGrowthPerStage;
+
+            [Tooltip("Smallest plaza edge in cells.")]
+            [SerializeField, Min(2)] private int roomMinSize = 2;
+
+            [Tooltip("Largest plaza edge in cells. Keep this well under the starting maze size so a plaza never swallows the whole level.")]
+            [SerializeField, Min(2)] private int roomMaxSize = 2;
+
             [Header("Footprint")]
             [Tooltip("Carve inside an organic, non-rectangular blob so the level outline is irregular and pits stretch the journey around it.")]
             [SerializeField] private bool organicFootprint = true;
@@ -1043,10 +1159,35 @@ namespace Sol.Minigames
                 return Mathf.Max(0, startingPitCount + Mathf.Max(0, stage - 1) * pitGrowthPerStage);
             }
 
-            public ArcadeMazeRules CreateArcadeRules(int mazeWidth, int mazeDepth, int pitCount)
+            public int GetRoomCount(int stage)
+            {
+                return Mathf.Max(0, startingRoomCount + Mathf.Max(0, stage - 1) * roomGrowthPerStage);
+            }
+
+            public int GetSolidBlockCount(int stage)
+            {
+                return Mathf.Max(0, startingSolidBlockCount + Mathf.Max(0, stage - 1) * solidBlockGrowthPerStage);
+            }
+
+            public int GetAuthoredBuildingCount(int stage)
+            {
+                return Mathf.Max(0, startingAuthoredBuildingCount + Mathf.Max(0, stage - 1) * authoredBuildingGrowthPerStage);
+            }
+
+            public ArcadeMazeRules CreateArcadeRules(int mazeWidth, int mazeDepth, int pitCount, int roomCount, int solidBlockCount, int authoredBuildingCount)
             {
                 return new ArcadeMazeRules
                 {
+                    plazaCount = roomCount,
+                    plazaMinSize = roomMinSize,
+                    plazaMaxSize = roomMaxSize,
+                    proceduralBuildingCount = solidBlockCount,
+                    buildingMinSize = buildingMinSize,
+                    buildingMaxSize = buildingMaxSize,
+                    authoredBuildingCount = authoredBuildingCount,
+                    authoredBuildings = authoredBuildings != null
+                        ? new List<GameObject>(authoredBuildings)
+                        : new List<GameObject>(),
                     overrideRoomPrefabs = !useGeneratorRoomPrefabs,
                     possibleRoomPrefabs = possibleRoomPrefabs != null
                         ? new List<GameObject>(possibleRoomPrefabs)
@@ -1093,6 +1234,8 @@ namespace Sol.Minigames
                 startingEnemyCount = Mathf.Max(0, startingEnemyCount);
                 enemyGrowthPerStage = Mathf.Max(0, enemyGrowthPerStage);
                 bonusEnemyEveryNStages = Mathf.Max(1, bonusEnemyEveryNStages);
+                buildingMinSize = Mathf.Max(1, buildingMinSize);
+                buildingMaxSize = Mathf.Max(buildingMinSize, buildingMaxSize);
             }
         }
     }

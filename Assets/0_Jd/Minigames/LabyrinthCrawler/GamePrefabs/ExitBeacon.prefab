@@ -344,7 +344,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   coreLine: {fileID: 3594981616172328056}
   glowLine: {fileID: 2317514159359223537}
-  height: 20
+  height: 200
   groundOffset: 0.1
   hostileColor: {r: 1, g: 0.25, b: 0.2, a: 1}
   clearColor: {r: 0.4, g: 0.85, b: 1, a: 1}
