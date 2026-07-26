@@ -1,6 +1,6 @@
 // Illusory-wall variant of Arcade/PS1/Lit for the Labyrinth Crawler.
-// Same three PS1 artifacts (vertex snap, clamped affine UV swim, per-vertex
-// lighting) plus two secrets of its own:
+// Same PS1 artifacts (vertex snap, clamped affine UV swim, and hybrid
+// low-resolution lighting) plus two secrets of its own:
 //   1. Surface ripples - up to 8 expanding damped rings (script-driven via
 //      MaterialPropertyBlock: _RipplePoints xyz = world hit, w = start time;
 //      _RippleAmps = per-ring amplitude). Spell impacts and player touches
@@ -79,7 +79,6 @@ Shader "Arcade/PS1/IllusoryWall"
         // Set globally by RetroPresenter (render-target size * snap scale).
         // Falls back to a coarse grid when nothing set it (editor previews).
         float4 _RetroSnapResolution;
-
         float4 SnapToRetroGrid(float4 positionCS, half strength)
         {
             float2 grid = _RetroSnapResolution.xy;
@@ -125,8 +124,12 @@ Shader "Arcade/PS1/IllusoryWall"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile _ _FORWARD_PLUS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "LabyrinthPS1Lighting.hlsl"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -149,24 +152,8 @@ Shader "Arcade/PS1/IllusoryWall"
                 // rgb = vertex lighting, a = fog factor.
                 half4 lightFog : TEXCOORD2;
                 float3 positionWS : TEXCOORD3;
+                half3 normalWS : TEXCOORD4;
             };
-
-            half3 PS1VertexLighting(float3 positionWS, float3 normalWS)
-            {
-                half3 lighting = SampleSH(normalWS);
-
-                Light mainLight = GetMainLight();
-                lighting += mainLight.color * saturate(dot(normalWS, mainLight.direction));
-
-                uint lightCount = GetAdditionalLightsCount();
-                for (uint li = 0u; li < lightCount; li++)
-                {
-                    Light light = GetAdditionalLight(li, positionWS);
-                    lighting += light.color * light.distanceAttenuation
-                        * saturate(dot(normalWS, light.direction));
-                }
-                return lighting;
-            }
 
             Varyings vert(Attributes IN)
             {
@@ -182,8 +169,9 @@ Shader "Arcade/PS1/IllusoryWall"
                 OUT.uvw = float3(uv * positionCS.w, positionCS.w);
 
                 float3 normalWS = TransformObjectToWorldNormal(IN.normalOS);
-                OUT.lightFog.rgb = PS1VertexLighting(vertexInput.positionWS, normalWS);
+                OUT.lightFog.rgb = LabyrinthPS1VertexLighting(normalWS);
                 OUT.lightFog.a = ComputeFogFactor(positionCS.z);
+                OUT.normalWS = normalWS;
 
                 return OUT;
             }
@@ -257,7 +245,11 @@ Shader "Arcade/PS1/IllusoryWall"
                 uv += rippleUv;
 
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
-                half3 color = albedo.rgb * IN.lightFog.rgb;
+                half3 localLighting = LabyrinthPS1LocalLighting(
+                    IN.positionWS,
+                    normalize(IN.normalWS),
+                    GetNormalizedScreenSpaceUV(IN.positionCS));
+                half3 color = albedo.rgb * (IN.lightFog.rgb + localLighting);
                 color += SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, uv).rgb
                     * _EmissionColor.rgb;
 

@@ -8,11 +8,11 @@ namespace Sol.Minigames
     /// Scene-scoped PS1/boomer-shooter presentation for Labyrinth Crawler.
     /// Renders the gameplay camera into a low-res point-filtered
     /// RenderTexture, draws it to screen through the Arcade/PS1/Present
-    /// posterize+dither material, and applies black exponential fog plus the
-    /// vertex-snap grid used by Arcade/PS1/Lit. Deliberately touches nothing
-    /// global: no URP asset changes, and every camera/RenderSettings value it
-    /// hijacks is restored on disable. Screen Space Overlay UI (HUD, upgrade
-    /// screen) is unaffected and stays native-res on top.
+    /// posterize+dither material, and applies olive exponential fog plus the
+    /// vertex-snap grid used by Arcade/PS1/Lit. It owns scene-scoped camera,
+    /// RenderSettings and shader-global state while active and restores that
+    /// state on disable. Screen Space Overlay UI (HUD, upgrade screen) is
+    /// unaffected and stays native-res on top.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Sol/Minigames/Labyrinth Crawler/Retro Presenter")]
@@ -29,21 +29,34 @@ namespace Sol.Minigames
         [Tooltip("Material using Arcade/PS1/Present. Instantiated at runtime; leave empty for a plain point-filtered upscale.")]
         [SerializeField] private Material presentMaterial;
 
+        [Header("Storm Sky")]
+        [Tooltip("Authored Arcade/PS1/Storm Sky material. Instantiated at runtime so lightning never dirties the asset.")]
+        [SerializeField] private Material stormSkyMaterial;
+
+        [Tooltip("How strongly lightning lifts the dungeon fog toward the flash colour.")]
+        [SerializeField, Range(0f, 1f)] private float stormFogResponse = 0.45f;
+
         [Header("Dungeon Murk")]
         [Tooltip("Drive scene fog while this presenter is active.")]
         [SerializeField] private bool overrideFog = true;
 
-        [Tooltip("Fog and camera background colour. Near-black with a violet hint sells the dungeon.")]
-        [SerializeField] private Color fogColor = new Color(0.02f, 0.016f, 0.032f, 1f);
+        [Tooltip("Fog and camera background colour. Near-black olive keeps the dungeon and storm sky in one palette.")]
+        [SerializeField] private Color fogColor = new Color(0.035f, 0.045f, 0.03f, 1f);
 
-        [Tooltip("Exponential fog density. 0.13 fades to full murk around 20-25m.")]
-        [SerializeField, Range(0f, 0.5f)] private float fogDensity = 0.13f;
+        [Tooltip("Exponential fog density. 0.11 preserves local readability while retaining the dungeon murk.")]
+        [SerializeField, Range(0f, 0.5f)] private float fogDensity = 0.11f;
 
         private static readonly int SnapResolutionId = Shader.PropertyToID("_RetroSnapResolution");
+        private static readonly int StormFlashId = Shader.PropertyToID("_StormFlash");
+        private static readonly int StormFlashDirectionId =
+            Shader.PropertyToID("_StormFlashDirection");
+        private static readonly int EntityPresenceId = Shader.PropertyToID("_EntityPresence");
+        private static readonly int EntityGlowId = Shader.PropertyToID("_EntityGlow");
 
         private Camera _gameCamera;
         private RenderTexture _target;
         private Material _presentInstance;
+        private Material _stormSkyInstance;
         private Canvas _outputCanvas;
         private RawImage _outputImage;
         private Camera _clearCamera;
@@ -58,6 +71,7 @@ namespace Sol.Minigames
         private FogMode _previousFogMode;
         private Color _previousFogColor;
         private float _previousFogDensity;
+        private Material _previousSkybox;
 
         private void OnEnable()
         {
@@ -65,6 +79,7 @@ namespace Sol.Minigames
             _previousFogMode = RenderSettings.fogMode;
             _previousFogColor = RenderSettings.fogColor;
             _previousFogDensity = RenderSettings.fogDensity;
+            _previousSkybox = RenderSettings.skybox;
 
             if (overrideFog)
             {
@@ -72,6 +87,15 @@ namespace Sol.Minigames
                 RenderSettings.fogMode = FogMode.Exponential;
                 RenderSettings.fogColor = fogColor;
                 RenderSettings.fogDensity = fogDensity;
+            }
+
+            if (stormSkyMaterial != null)
+            {
+                _stormSkyInstance = new Material(stormSkyMaterial)
+                {
+                    name = stormSkyMaterial.name + " (Runtime)"
+                };
+                RenderSettings.skybox = _stormSkyInstance;
             }
         }
 
@@ -81,11 +105,61 @@ namespace Sol.Minigames
             RenderSettings.fogMode = _previousFogMode;
             RenderSettings.fogColor = _previousFogColor;
             RenderSettings.fogDensity = _previousFogDensity;
+            RenderSettings.skybox = _previousSkybox;
 
             ReleaseCamera();
             TearDownOutput();
             ReleaseTarget();
+            if (_stormSkyInstance != null)
+            {
+                Destroy(_stormSkyInstance);
+                _stormSkyInstance = null;
+            }
             Shader.SetGlobalVector(SnapResolutionId, Vector4.zero);
+        }
+
+        /// <summary>
+        /// Applies one frame of the storm envelope without exposing or
+        /// mutating the authored sky material. StormDirector is the expected
+        /// caller; keeping fog and the skybox here gives their global state a
+        /// single save/restore owner.
+        /// </summary>
+        public void ApplyStormFlash(
+            float intensity,
+            Color flashColor,
+            Vector3 flashDirection,
+            float entityPresence,
+            float entityGlow)
+        {
+            // Parent/child disable order is not guaranteed. If the presenter
+            // has already restored RenderSettings, a child StormDirector must
+            // not write the dungeon fog back and leak it into the hub.
+            if (!isActiveAndEnabled)
+            {
+                return;
+            }
+
+            intensity = Mathf.Clamp01(intensity);
+
+            if (overrideFog)
+            {
+                float fogLift = intensity * stormFogResponse;
+                RenderSettings.fogColor = Color.Lerp(fogColor, flashColor, fogLift);
+            }
+
+            if (_stormSkyInstance == null)
+            {
+                return;
+            }
+
+            _stormSkyInstance.SetFloat(StormFlashId, intensity);
+            _stormSkyInstance.SetVector(StormFlashDirectionId, new Vector4(
+                flashDirection.x,
+                flashDirection.y,
+                flashDirection.z,
+                0f));
+            _stormSkyInstance.SetFloat(EntityPresenceId, Mathf.Clamp01(entityPresence));
+            _stormSkyInstance.SetFloat(EntityGlowId, Mathf.Max(0f, entityGlow));
         }
 
         // LateUpdate so the bind happens after PlayerSpawn instantiates the
@@ -116,7 +190,9 @@ namespace Sol.Minigames
             _previousBackground = cam.backgroundColor;
             _previousTarget = cam.targetTexture;
 
-            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.clearFlags = _stormSkyInstance != null
+                ? CameraClearFlags.Skybox
+                : CameraClearFlags.SolidColor;
             cam.backgroundColor = overrideFog ? fogColor : Color.black;
 
             RebuildTarget();

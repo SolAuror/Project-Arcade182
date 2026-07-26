@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: M_RetroPresent
-  m_Shader: {fileID: 4800000, guid: 9c4b7a2ef1d84306b7e3a1c9d5f60733, type: 3}
+  m_Name: M_StormBolt
+  m_Shader: {fileID: 4800000, guid: 978cf0cca0ff45f5a6ceecc5180dd263, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -19,22 +19,13 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties:
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
+    m_TexEnvs: []
     m_Ints: []
-    m_Floats:
-    - _ColorLevels: 32
-    - _DitherStrength: 0.6
-    - _GradeStrength: 0.45
-    - _VignetteStrength: 0.5
+    m_Floats: []
     m_Colors:
-    - _HighlightTint: {r: 0.92, g: 1, b: 0.72, a: 1}
-    - _ShadowTint: {r: 0.7, g: 0.85, b: 0.62, a: 1}
+    - _BaseColor: {r: 0.78, g: 1, b: 0.68, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

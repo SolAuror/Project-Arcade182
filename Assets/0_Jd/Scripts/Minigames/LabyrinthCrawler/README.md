@@ -2,7 +2,7 @@
 
 First-person spellcasting roguelike. A stopwatch runs while you fight through regenerating dungeon mazes — reach each stage's exit pad, pick a boon, and dive into a bigger maze. Death ends the run; your score converts to tickets back in the hub.
 
-**Scene:** `Sc_LabyrinthCrawler` · **Manager:** `LabyrinthCrawlerGame` (prefab `Prefabs/Minigames/LabyrinthCrawler/LabyrinthCrawlerGame.prefab`)
+**Scene:** `Sc_LabyrinthCrawler` · **Manager:** `LabyrinthCrawlerGame` (prefab `Assets/0_Jd/Minigames/LabyrinthCrawler/LabyrinthCrawlerGame.prefab`)
 
 ## Run structure
 
@@ -28,9 +28,27 @@ Spells unlock progressively (one at start; upgrades unlock the rest). Casting wi
 - **Run end:** bonus of `kills × stages cleared × 5`.
 - Tickets: 0.1 per point via `PlayerScoreCarrier`.
 
+## Presentation and storm lighting
+
+- `RetroPresenter` renders the gameplay camera to a 240-line, point-filtered target and applies the `Arcade/PS1/Present` posterize/dither pass. Overlay UI remains at native resolution.
+- The canonical sky material is `GameMaterials/M_StormSky.mat`, using `Shaders/StormSky.shader` plus the cloud, skyline, and entity-mask textures in `GameMaterials/Textures/`. The material is cloned at runtime so a lightning pulse never dirties the authored asset.
+- `StormDirector` creates distant, world-space lightning: a short-lived bolt, a directional light, sky illumination, entity reveal, fog lift, and a shared directional flash for the PS1 shaders. The pulse is intentionally a burst of light rather than a hard strobe.
+- The dungeon uses flat olive ambient light so unlit corridors retain readable silhouettes. Lit-room point lights provide local spill; `StormDirector` grants realtime hard shadows only to the nearest two active point lights and refreshes the selection as the player moves. Room prefabs keep point-light shadows disabled in their serialized state.
+- `PS1Lit.shader` and `PS1IllusoryWall.shader` share `Shaders/LabyrinthPS1Lighting.hlsl`: ambient and the main directional light are evaluated per vertex, while local additional lights and their shadows are evaluated per fragment. Both URP Forward and Forward+ paths are supported, so normal and illusory walls receive the same light spill.
+- Additional-light shadows are enabled in the mobile URP asset to keep the lighting model consistent between quality tiers.
+
+`RetroPresenter` owns the scene skybox, fog, camera target, retro shader globals, and their restoration. `StormDirector` owns the storm envelope, flat ambient override, local shadow budget, and their restoration. Keep those responsibilities separate when extending the effect so state does not leak back into the arcade hub.
+
+## Storm authoring workflow
+
+- Run `Sol → Labyrinth Crawler → Author Storm Sky Scaffold` to repair or install the authored assets and prefab wiring. It is safe to rerun: existing textures, material tuning, storm settings, and thunder assignments are preserved.
+- Run `Sol → Labyrinth Crawler → Validate Storm Sky Render` for a quick offscreen sky check. It writes `StormSkyValidation.png` to the parent project folder, outside the repository.
+- `T_EntitySilhouette.png` is blockout art intended to be replaced. The scaffold only generates it when the texture is missing, so replacement art will not be overwritten.
+- Thunder clips and final sky/entity artwork are deferred polish; the visual storm works without assigned audio.
+
 ## Key scripts (this folder)
 
-`LabyrinthCrawlerGame` (orchestrator + audio hooks) · `EnemyController` (wander/chase/cast/knockback) · `PlayerSpellInput` · `LabyrinthExitPad` · `LabyrinthUpgrade` / `LabyrinthUpgradeSystem` / `LabyrinthUpgradeScreen` · `LabyrinthHud`
+`LabyrinthCrawlerGame` (run orchestrator) · `RetroPresenter` (low-resolution presentation, fog, and sky lifecycle) · `StormDirector` (lightning and shadow budget) · `EnemyController` (wander/chase/cast/knockback) · `PlayerSpellInput` · `LabyrinthExitPad` · `LabyrinthUpgrade` / `LabyrinthUpgradeSystem` / `LabyrinthUpgradeScreen` · `LabyrinthHud`
 
 Shared framework: `Health`, `Mana`, `SpellCaster`, spell definitions, `HitFlash`, `DamagePopup`, `SpellBurstVisual`, `PlayerHitFeedback` (red hit flash + low-health heartbeat) — see [SCRIPTS.md](../../../../../SCRIPTS.md).
 
@@ -40,3 +58,6 @@ Shared framework: `Health`, `Mana`, `SpellCaster`, spell definitions, `HitFlash`
 - `fallRespawnY` → fall-out respawn height.
 - Par/score fields under the Score header.
 - Audio clip slots under the Audio header (silent until assigned).
+- `RetroPresenter` → target resolution, vertex-snap scale, fog color/density, and fog response to lightning.
+- `StormDirector` → strike interval and pulse shape, world-space bolt placement, flash intensity, ambient color, and maximum shadowed point lights.
+- `M_StormSky` → cloud motion/contrast, palette, skyline, entity placement, and entity visibility.

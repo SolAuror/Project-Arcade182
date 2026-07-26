@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_StormSky
+  m_Shader: {fileID: 4800000, guid: 9f32f4dbcb5842d5b7b01d23ae9c8542, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _CloudTex:
+        m_Texture: {fileID: 2800000, guid: d1b379dd4a563b44783fc5f885469461, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EntityMask:
+        m_Texture: {fileID: 2800000, guid: a2d89aa28a93a0f4a9f6a261fc17731f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SkylineMask:
+        m_Texture: {fileID: 2800000, guid: ed8f6ee4bb14293458096101cfff9cf3, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _CloudContrast: 2.75
+    - _CloudPlaneScale: 0.2
+    - _CloudScaleA: 1
+    - _CloudScaleB: 2.5
+    - _EntityDarkness: 0.575
+    - _EntityElevation: 31
+    - _EntityGlow: 0.15
+    - _EntityPresence: 0.24
+    - _EntitySize: 0.62
+    - _EntityYaw: -15
+    - _HorizonBias: 0.12
+    - _SkyFogBlend: 0.16
+    - _SkylineBelowHorizon: 0.083
+    - _SkylineHeight: 0.25
+    - _SkylineRepeat: 2
+    - _StormFlash: 0
+    - _SwirlAmount: 3
+    - _WarpScale: 1.5
+    - _WarpStrength: 0.5
+    m_Colors:
+    - _CloudDarkColor: {r: 0.027, g: 0.042, b: 0.027, a: 1}
+    - _CloudLightColor: {r: 0.25, g: 0.35, b: 0.14, a: 1}
+    - _CloudSpeedA: {r: 0.011, g: 0.004, b: 0, a: 0}
+    - _CloudSpeedB: {r: -0.006, g: 0.009, b: 0, a: 0}
+    - _FlashColor: {r: 0.68, g: 1, b: 0.58, a: 1}
+    - _HorizonColor: {r: 0.13, g: 0.18, b: 0.085, a: 1}
+    - _SkylineColor: {r: 0.01, g: 0.014, b: 0.01, a: 1}
+    - _StormFlashDirection: {r: 0, g: 1, b: 0, a: 0}
+    - _ZenithColor: {r: 0.02, g: 0.034, b: 0.024, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

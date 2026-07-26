@@ -73,6 +73,8 @@ All paths are relative to `Assets/0_Jd/Scripts/` unless noted.
 | `LabyrinthUpgrade.cs` / `LabyrinthUpgradeSystem.cs` | Upgrade definitions and the 1-of-3 roll/apply logic between stages. |
 | `LabyrinthUpgradeScreen.cs` | Prefab-authored upgrade choice UI (pauses time while open). |
 | `LabyrinthHud.cs` | Run HUD: timer, score, vitals, spell slots with cooldowns, dwell bar, mana-fail flash, run-over panel. |
+| `RetroPresenter.cs` | Scene-scoped PS1 presentation: low-resolution point-filtered target, posterize/dither pass, vertex snap, storm sky, olive fog, and restoration of camera/render globals on disable. |
+| `StormDirector.cs` | Distant world-space storm pulses: bolt, directional light, sky/entity/fog response, ambient override, thunder hooks, and a nearest-two realtime point-light shadow budget. |
 
 ## Hoops (`Minigames/Hoops/`)
 
@@ -122,6 +124,7 @@ All paths are relative to `Assets/0_Jd/Scripts/` unless noted.
 | Script | Purpose |
 |---|---|
 | `ArcadeGen3DEditor.cs` (`0_Jd/Editor/`) | Inspector conveniences for the maze generator. |
+| `LabyrinthStormAuthoring.cs` (`Minigames/LabyrinthCrawler/Editor/`) | Idempotent storm-sky asset/prefab authoring and offscreen render validation. Run via `Sol → Labyrinth Crawler`. |
 | `GameplayTweaksSetup.cs` | One-shot wiring: laser beam retune, pit-cover wave settings in Sc_AtomSmasher, and the ball rack widget in the AtomSmasherHud prefab. |
 | `BlackHoleTrapSetup.cs` | Builds the black hole prefab/materials and registers it as an obstacle option in Sc_AtomSmasher. |
 | `MainMenuSetup.cs` | Builds the MainMenu + PauseMenu canvas prefabs, bakes the damage overlay into the player prefab, creates Sc_MainMenu, and registers it first in Build Settings. Run via `Sol → Setup → Menus And UI Prefabs`. |

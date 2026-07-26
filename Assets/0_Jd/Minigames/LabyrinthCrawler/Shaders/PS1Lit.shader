@@ -8,9 +8,10 @@
 //      angle. _AffineWarp dials 0 (clean) -> 1 (full PS1 swim); _AffineMaxWarp
 //      clamps the per-pixel deviation so the maze's large unsubdivided
 //      floor/wall quads can't blow out into nausea at grazing angles.
-//   3. Per-vertex lighting - main light + per-object additional lights +
-//      ambient SH evaluated at vertices only (Forward path; Forward+ would
-//      drop the additional-light loop). No shadow receiving, no normal maps.
+//   3. Hybrid low-resolution lighting - ambient and the main directional
+//      light are evaluated at vertices; local lights and their hard shadows
+//      are evaluated per fragment. Supports Forward and Forward+; no normal
+//      maps.
 // Fog uses the standard Unity fog pipeline (RetroPresenter drives
 // RenderSettings), so unconverted materials fade into the same murk.
 Shader "Arcade/PS1/Lit"
@@ -53,7 +54,6 @@ Shader "Arcade/PS1/Lit"
         // Set globally by RetroPresenter (render-target size * snap scale).
         // Falls back to a coarse grid when nothing set it (editor previews).
         float4 _RetroSnapResolution;
-
         float4 SnapToRetroGrid(float4 positionCS, half strength)
         {
             float2 grid = _RetroSnapResolution.xy;
@@ -84,8 +84,14 @@ Shader "Arcade/PS1/Lit"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
+            // Local room lights are evaluated at the low-resolution pixels.
+            // _ADDITIONAL_LIGHTS_VERTEX is intentionally not compiled.
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile _ _FORWARD_PLUS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "LabyrinthPS1Lighting.hlsl"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -107,24 +113,9 @@ Shader "Arcade/PS1/Lit"
                 float2 uv : TEXCOORD1;
                 // rgb = vertex lighting, a = fog factor.
                 half4 lightFog : TEXCOORD2;
+                float3 positionWS : TEXCOORD3;
+                half3 normalWS : TEXCOORD4;
             };
-
-            half3 PS1VertexLighting(float3 positionWS, float3 normalWS)
-            {
-                half3 lighting = SampleSH(normalWS);
-
-                Light mainLight = GetMainLight();
-                lighting += mainLight.color * saturate(dot(normalWS, mainLight.direction));
-
-                uint lightCount = GetAdditionalLightsCount();
-                for (uint li = 0u; li < lightCount; li++)
-                {
-                    Light light = GetAdditionalLight(li, positionWS);
-                    lighting += light.color * light.distanceAttenuation
-                        * saturate(dot(normalWS, light.direction));
-                }
-                return lighting;
-            }
 
             Varyings vert(Attributes IN)
             {
@@ -139,8 +130,10 @@ Shader "Arcade/PS1/Lit"
                 OUT.uvw = float3(uv * positionCS.w, positionCS.w);
 
                 float3 normalWS = TransformObjectToWorldNormal(IN.normalOS);
-                OUT.lightFog.rgb = PS1VertexLighting(vertexInput.positionWS, normalWS);
+                OUT.lightFog.rgb = LabyrinthPS1VertexLighting(normalWS);
                 OUT.lightFog.a = ComputeFogFactor(positionCS.z);
+                OUT.positionWS = vertexInput.positionWS;
+                OUT.normalWS = normalWS;
 
                 return OUT;
             }
@@ -157,7 +150,11 @@ Shader "Arcade/PS1/Lit"
                 float2 uv = IN.uv + warp * _AffineWarp;
 
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
-                half3 color = albedo.rgb * IN.lightFog.rgb;
+                half3 localLighting = LabyrinthPS1LocalLighting(
+                    IN.positionWS,
+                    normalize(IN.normalWS),
+                    GetNormalizedScreenSpaceUV(IN.positionCS));
+                half3 color = albedo.rgb * (IN.lightFog.rgb + localLighting);
                 color += SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, uv).rgb
                     * _EmissionColor.rgb;
                 color = MixFog(color, IN.lightFog.a);
