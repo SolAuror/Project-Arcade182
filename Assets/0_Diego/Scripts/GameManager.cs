@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
@@ -24,7 +25,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (gameOver && Input.GetKeyDown(KeyCode.Space))
+        if (gameOver && Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }

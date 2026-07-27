@@ -9,17 +9,21 @@ public static class CreateAirFootyScene
 {
     private const string SceneFolder = "Assets/0_Diego/Scenes";
     private const string MaterialFolder = "Assets/0_Diego/Resources/Material";
+    private const string TextureFolder = "Assets/0_Diego/Resources/Texture";
 
     [MenuItem("Tools/Create Air Footy Scene")]
     public static void Build()
     {
         EnsureFolder(SceneFolder);
         EnsureFolder(MaterialFolder);
+        EnsureFolder(TextureFolder);
 
         PhysicsMaterial2D ballMaterial = CreateMaterial("BallBounce", 0f, 0.9f);
         PhysicsMaterial2D wallMaterial = CreateMaterial("WallBounce", 0f, 0.9f);
         Sprite square = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
         Sprite circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+        Sprite footballSprite = LoadSprite(TextureFolder + "/Football.png", circle);
+        Sprite playerSprite = LoadSprite(TextureFolder + "/PlayerMarker.png", circle);
 
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         CreateCamera();
@@ -33,13 +37,13 @@ public static class CreateAirFootyScene
         CreateWall("Right Wall Top", new Vector2(8.25f, 2.85f), new Vector2(0.5f, 2.3f), square, wallMaterial);
         CreateWall("Right Wall Bottom", new Vector2(8.25f, -2.85f), new Vector2(0.5f, 2.3f), square, wallMaterial);
 
-        GameObject player = CreatePaddle("Player", new Vector2(-4.5f, 0f), Color.blue, circle);
+        GameObject player = CreatePaddle("Player", new Vector2(-4.5f, 0f), new Color(0.2f, 0.55f, 1f), playerSprite);
         player.AddComponent<PlayerMovement>();
 
-        GameObject ai = CreatePaddle("AI Player", new Vector2(4.5f, 0f), Color.red, circle);
+        GameObject ai = CreatePaddle("AI Player", new Vector2(4.5f, 0f), new Color(1f, 0.3f, 0.3f), playerSprite);
         AIPlayer aiScript = ai.AddComponent<AIPlayer>();
 
-        GameObject ball = CreateSpriteObject("Ball", Vector2.zero, Vector2.one * 0.65f, Color.white, circle, 1);
+        GameObject ball = CreateSpriteObject("Ball", Vector2.zero, Vector2.one * 0.65f, Color.white, footballSprite, 1);
         Rigidbody2D ballBody = ball.AddComponent<Rigidbody2D>();
         ballBody.bodyType = RigidbodyType2D.Dynamic;
         ballBody.gravityScale = 0f;
@@ -126,7 +130,77 @@ public static class CreateAirFootyScene
         SetReference(scoreUI, "playerScoreText", playerText);
         SetReference(scoreUI, "aiScoreText", aiText);
         SetReference(scoreUI, "gameOverText", gameOverText);
+        CreateMenu(canvasObject.transform);
         return scoreUI;
+    }
+
+    private static void CreateMenu(Transform canvas)
+    {
+        GameObject menuController = new GameObject("Main Menu UI");
+        menuController.transform.SetParent(canvas, false);
+        MainMenuUI menu = menuController.AddComponent<MainMenuUI>();
+
+        GameObject mainPanel = CreatePanel("Main Menu Panel", canvas, new Color(0.03f, 0.09f, 0.06f, 0.94f));
+        TMP_Text title = CreateText("Title", mainPanel.transform, "AIR FOOTY", new Vector2(0f, -120f), 64, TextAlignmentOptions.Center);
+        title.rectTransform.sizeDelta = new Vector2(700f, 100f);
+        Button startButton = CreateButton("Start Button", mainPanel.transform, "START GAME", new Vector2(0f, -260f));
+        Button instructionsButton = CreateButton("Instructions Button", mainPanel.transform, "INSTRUCTIONS", new Vector2(0f, -350f));
+
+        GameObject instructionsPanel = CreatePanel("Instructions Panel", canvas, new Color(0.03f, 0.09f, 0.06f, 0.97f));
+        TMP_Text instructions = CreateText("Instructions Text", instructionsPanel.transform,
+            "HOW TO PLAY\n\nUse W A S D to move.\nStay on your half of the field.\nHit the football into the AI goal.\nFirst team to score 5 goals wins!",
+            new Vector2(0f, -210f), 32, TextAlignmentOptions.Center);
+        instructions.rectTransform.sizeDelta = new Vector2(760f, 380f);
+        Button backButton = CreateButton("Back Button", instructionsPanel.transform, "BACK", new Vector2(0f, -450f));
+
+        GameObject rulesPanel = new GameObject("Rule Banner", typeof(RectTransform), typeof(Image));
+        rulesPanel.transform.SetParent(canvas, false);
+        RectTransform rulesRect = rulesPanel.GetComponent<RectTransform>();
+        rulesRect.anchorMin = new Vector2(0.5f, 0f);
+        rulesRect.anchorMax = new Vector2(0.5f, 0f);
+        rulesRect.anchoredPosition = new Vector2(0f, 45f);
+        rulesRect.sizeDelta = new Vector2(620f, 60f);
+        rulesPanel.GetComponent<Image>().color = new Color(0.02f, 0.07f, 0.04f, 0.82f);
+        TMP_Text ruleText = CreateText("Rule Text", rulesPanel.transform, "FIRST TEAM TO SCORE 5 GOALS WINS!", Vector2.zero, 25, TextAlignmentOptions.Center);
+        ruleText.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        ruleText.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+
+        SetReference(menu, "mainMenuPanel", mainPanel);
+        SetReference(menu, "instructionsPanel", instructionsPanel);
+        SetReference(menu, "rulesPanel", rulesPanel);
+        SetReference(menu, "startButton", startButton);
+        SetReference(menu, "instructionsButton", instructionsButton);
+        SetReference(menu, "backButton", backButton);
+    }
+
+    private static GameObject CreatePanel(string name, Transform parent, Color colour)
+    {
+        GameObject panel = new GameObject(name, typeof(RectTransform), typeof(Image));
+        panel.transform.SetParent(parent, false);
+        RectTransform rect = panel.GetComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        panel.GetComponent<Image>().color = colour;
+        return panel;
+    }
+
+    private static Button CreateButton(string name, Transform parent, string labelText, Vector2 position)
+    {
+        GameObject buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+        buttonObject.transform.SetParent(parent, false);
+        RectTransform rect = buttonObject.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 1f);
+        rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = new Vector2(330f, 68f);
+        buttonObject.GetComponent<Image>().color = new Color(0.12f, 0.62f, 0.3f, 1f);
+        Button button = buttonObject.GetComponent<Button>();
+        TMP_Text label = CreateText("Text", buttonObject.transform, labelText, Vector2.zero, 28, TextAlignmentOptions.Center);
+        label.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        label.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+        return button;
     }
 
     private static TMP_Text CreateText(string name, Transform parent, string text, Vector2 position, float size, TextAlignmentOptions alignment)
@@ -155,6 +229,23 @@ public static class CreateAirFootyScene
         renderer.color = colour;
         renderer.sortingOrder = order;
         return gameObject;
+    }
+
+    private static Sprite LoadSprite(string path, Sprite fallback)
+    {
+        TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (importer == null) return fallback;
+
+        if (importer.textureType != TextureImporterType.Sprite)
+        {
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spritePixelsPerUnit = 100f;
+            importer.alphaIsTransparency = true;
+            importer.SaveAndReimport();
+        }
+
+        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        return sprite != null ? sprite : fallback;
     }
 
     private static PhysicsMaterial2D CreateMaterial(string name, float friction, float bounce)
