@@ -1108,7 +1108,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   launchSpeed: 6
-  minimumSpeed: 3
+  minimumSpeed: 6
   maximumSpeed: 12
 --- !u!58 &828809275
 CircleCollider2D:
