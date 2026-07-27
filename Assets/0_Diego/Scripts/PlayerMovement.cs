@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerMovement : MonoBehaviour
@@ -17,8 +18,20 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
+        if (Keyboard.current == null)
+        {
+            movementDirection = Vector2.zero;
+            return;
+        }
+
+        float horizontal = 0f;
+        float vertical = 0f;
+
+        if (Keyboard.current.aKey.isPressed) horizontal -= 1f;
+        if (Keyboard.current.dKey.isPressed) horizontal += 1f;
+        if (Keyboard.current.sKey.isPressed) vertical -= 1f;
+        if (Keyboard.current.wKey.isPressed) vertical += 1f;
+
         // This stops diagonal movement from being faster.
         movementDirection = new Vector2(horizontal, vertical).normalized;
     }
