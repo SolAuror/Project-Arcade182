@@ -26,6 +26,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/0_Diego/Scenes/AirFootyFinal.unity
     guid: c2bf7b77f0b3ed6458eb2ecf9865c282
+  - enabled: 1
+    path: Assets/0_Diego/Scenes/NeonReflex.unity
+    guid: 7364bfa8e7c961b4f9111cdb9318561f
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
