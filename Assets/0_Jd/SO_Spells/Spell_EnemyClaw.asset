@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c3a26156fc8c5c14d8de2e84bbee8861, type: 3}
+  m_Script: {fileID: 11500000, guid: 4cf155a4a0a94bfdb5fcc84ff5811ff3, type: 3}
   m_Name: Spell_EnemyClaw
   m_EditorClassIdentifier: 
   displayName: Claw
@@ -21,6 +21,8 @@ MonoBehaviour:
   hitClip: {fileID: 8300000, guid: 05e902c8900f41839c91577071fe9239, type: 3}
   sfxVolume: 0.7
   range: 2.5
-  beamColor: {r: 0.4, g: 0.9, b: 1, a: 1}
-  beamWidth: 0.05
-  beamLifeSeconds: 0.08
+  arcDegrees: 105
+  slashColor: {r: 1, g: 0.18, b: 0.035, a: 1}
+  slashLifeSeconds: 0.22
+  slashWidth: 0.11
+  slashVerticalOffset: -0.28

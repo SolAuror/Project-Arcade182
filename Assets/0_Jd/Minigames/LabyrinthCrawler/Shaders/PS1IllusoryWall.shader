@@ -117,8 +117,15 @@ Shader "Arcade/PS1/IllusoryWall"
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
 
+            // The player is intentionally allowed to enter this solid-looking
+            // mesh before it reveals. Keep its inner faces visible so the near
+            // plane cannot expose the dark cavity as large clipped triangles.
             ZWrite On
-            Cull Back
+            Cull Off
+            // The authored arch/trim remains behind the disguise so dissolved
+            // cells reveal it progressively. Bias this surface toward the
+            // camera to prevent coplanar depth contention while it is intact.
+            Offset -1, -1
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -153,6 +160,7 @@ Shader "Arcade/PS1/IllusoryWall"
                 half4 lightFog : TEXCOORD2;
                 float3 positionWS : TEXCOORD3;
                 half3 normalWS : TEXCOORD4;
+                half3 backLighting : TEXCOORD5;
             };
 
             Varyings vert(Attributes IN)
@@ -170,13 +178,16 @@ Shader "Arcade/PS1/IllusoryWall"
 
                 float3 normalWS = TransformObjectToWorldNormal(IN.normalOS);
                 OUT.lightFog.rgb = LabyrinthPS1VertexLighting(normalWS);
+                OUT.backLighting = LabyrinthPS1VertexLighting(-normalWS);
                 OUT.lightFog.a = ComputeFogFactor(positionCS.z);
                 OUT.normalWS = normalWS;
 
                 return OUT;
             }
 
-            half4 frag(Varyings IN) : SV_Target
+            half4 frag(
+                Varyings IN,
+                FRONT_FACE_TYPE frontFace : FRONT_FACE_SEMANTIC) : SV_Target
             {
                 float dissolveMargin = DissolveMargin(IN.positionWS);
                 clip(dissolveMargin);
@@ -245,11 +256,20 @@ Shader "Arcade/PS1/IllusoryWall"
                 uv += rippleUv;
 
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+                // With two-sided rendering, flip the interpolated normal on
+                // back faces so the inside shell receives the same lighting as
+                // the outward-facing disguise.
+                half faceSign = IS_FRONT_VFACE(frontFace, 1.0h, -1.0h);
+                half3 surfaceNormalWS = normalize(IN.normalWS) * faceSign;
+                half3 vertexLighting = lerp(
+                    IN.backLighting,
+                    IN.lightFog.rgb,
+                    faceSign * 0.5h + 0.5h);
                 half3 localLighting = LabyrinthPS1LocalLighting(
                     IN.positionWS,
-                    normalize(IN.normalWS),
+                    surfaceNormalWS,
                     GetNormalizedScreenSpaceUV(IN.positionCS));
-                half3 color = albedo.rgb * (IN.lightFog.rgb + localLighting);
+                half3 color = albedo.rgb * (vertexLighting + localLighting);
                 color += SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, uv).rgb
                     * _EmissionColor.rgb;
 
@@ -344,7 +364,9 @@ Shader "Arcade/PS1/IllusoryWall"
 
             ZWrite On
             ColorMask R
-            Cull Back
+            Cull Off
+            // Match ForwardLit's bias whenever URP runs a depth prepass.
+            Offset -1, -1
 
             HLSLPROGRAM
             #pragma vertex vert

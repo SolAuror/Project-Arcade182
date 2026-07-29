@@ -44,8 +44,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c1e5a90b34d42f8a6e9c02d5f8b1a34, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   defaultSolid: {fileID: 4758747801233766910}
   solidVariants:
   - {fileID: 919132149155446097, guid: b36bde07ad282f44ea946a1a460f5578, type: 3}
@@ -77,11 +77,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &63358364272333484
 GameObject:
   m_ObjectHideFlags: 0
@@ -158,11 +162,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &73416747509372085
 GameObject:
   m_ObjectHideFlags: 0
@@ -764,11 +772,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &130680894280716066
 GameObject:
   m_ObjectHideFlags: 0
@@ -1260,11 +1272,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &195605031257511248
 GameObject:
   m_ObjectHideFlags: 0
@@ -1342,11 +1358,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &201991628240762945
 GameObject:
   m_ObjectHideFlags: 0
@@ -1424,11 +1444,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &232677385903007004
 GameObject:
   m_ObjectHideFlags: 0
@@ -1615,11 +1639,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &322978441933696581
 GameObject:
   m_ObjectHideFlags: 0
@@ -1960,11 +1988,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &380989969871230644
 GameObject:
   m_ObjectHideFlags: 0
@@ -2502,11 +2534,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &455379721679833723
 GameObject:
   m_ObjectHideFlags: 0
@@ -3718,11 +3754,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &660141729241551440
 GameObject:
   m_ObjectHideFlags: 0
@@ -4369,11 +4409,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &686832159924489408
 GameObject:
   m_ObjectHideFlags: 0
@@ -4450,11 +4494,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &693574267939193448
 GameObject:
   m_ObjectHideFlags: 0
@@ -4652,11 +4700,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &727210547422233387
 GameObject:
   m_ObjectHideFlags: 0
@@ -5258,11 +5310,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &925960209428414839
 GameObject:
   m_ObjectHideFlags: 0
@@ -6388,11 +6444,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &1131844574854043778
 GameObject:
   m_ObjectHideFlags: 0
@@ -6828,11 +6888,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &1265231849968683011
 GameObject:
   m_ObjectHideFlags: 0
@@ -7214,11 +7278,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &1314235481124986334
 GameObject:
   m_ObjectHideFlags: 0
@@ -8634,11 +8702,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &1533619002543047731
 GameObject:
   m_ObjectHideFlags: 0
@@ -9054,11 +9126,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &1594808884313076077
 GameObject:
   m_ObjectHideFlags: 0
@@ -9857,11 +9933,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &1709597985968004526
 GameObject:
   m_ObjectHideFlags: 0
@@ -9939,11 +10019,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &1721645174759090524
 GameObject:
   m_ObjectHideFlags: 0
@@ -10020,11 +10104,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &1733091003648929689
 GameObject:
   m_ObjectHideFlags: 0
@@ -11222,11 +11310,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &1904102917107069767
 GameObject:
   m_ObjectHideFlags: 0
@@ -13115,11 +13207,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2274366027223895899
 GameObject:
   m_ObjectHideFlags: 0
@@ -13196,11 +13292,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2330686804484935445
 GameObject:
   m_ObjectHideFlags: 0
@@ -14740,11 +14840,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2492889504503568152
 GameObject:
   m_ObjectHideFlags: 0
@@ -15018,11 +15122,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2517985175510474216
 GameObject:
   m_ObjectHideFlags: 0
@@ -15188,11 +15296,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2530674370288462999
 GameObject:
   m_ObjectHideFlags: 0
@@ -16119,11 +16231,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2679952690832639911
 GameObject:
   m_ObjectHideFlags: 0
@@ -16200,11 +16316,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2693315147609979023
 GameObject:
   m_ObjectHideFlags: 0
@@ -16543,11 +16663,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2769904164372618081
 GameObject:
   m_ObjectHideFlags: 0
@@ -17063,11 +17187,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2838464916703815907
 GameObject:
   m_ObjectHideFlags: 0
@@ -17362,11 +17490,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2869814391475238179
 GameObject:
   m_ObjectHideFlags: 0
@@ -17444,11 +17576,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2881194792034975786
 GameObject:
   m_ObjectHideFlags: 0
@@ -17526,11 +17662,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2882267503958990407
 GameObject:
   m_ObjectHideFlags: 0
@@ -17608,11 +17748,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &2899402154499997720
 GameObject:
   m_ObjectHideFlags: 0
@@ -18235,11 +18379,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &3026696839593233946
 GameObject:
   m_ObjectHideFlags: 0
@@ -20114,11 +20262,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &3300494438188386893
 GameObject:
   m_ObjectHideFlags: 0
@@ -23085,11 +23237,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &3848219950906261412
 GameObject:
   m_ObjectHideFlags: 0
@@ -23199,11 +23355,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &3879045840664732784
 GameObject:
   m_ObjectHideFlags: 0
@@ -23369,11 +23529,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &3894714878086724481
 GameObject:
   m_ObjectHideFlags: 0
@@ -24063,6 +24227,16 @@ MonoBehaviour:
     solidBlockGrowthPerStage: 1
     buildingMinSize: 1
     buildingMaxSize: 2
+    buildingHeightLimit: 3
+    buildingEntranceCount: 1
+    buildingExitChance: 0.35
+    optimizeExitPlacement: 1
+    minimumBuildingExitDepth: 1
+    minimumBuildingExitDistanceRatio: 0.75
+    optimizePlayerSpawnPlacement: 1
+    buildingPlayerSpawnChance: 0.35
+    minimumBuildingPlayerSpawnDepth: 1
+    minimumBuildingPlayerSpawnDistanceRatio: 0.75
     authoredBuildings: []
     startingAuthoredBuildingCount: 0
     authoredBuildingGrowthPerStage: 0
@@ -24086,6 +24260,7 @@ MonoBehaviour:
   enemyPrefabs:
   - {fileID: 8582319734249912139, guid: 2f5494ed09e11fa439f8c2c715056f47, type: 3}
   - {fileID: 1788027316492838277, guid: 12f883e02348b2d4db471d361dfb2d01, type: 3}
+  - {fileID: 5347032079814501181, guid: 6ee24e40899b4bdcbe62cfd182ce9b9a, type: 3}
   playerSpells:
   - {fileID: 11400000, guid: dc830ce8af87c6f44bdda218b65715e6, type: 2}
   - {fileID: 11400000, guid: df05d3b1092695f46898e1cea950727e, type: 2}
@@ -24138,7 +24313,9 @@ MonoBehaviour:
     illusoryWallPrefab: {fileID: 5820014733962141005, guid: 3a7d5f9b1e8c46208d4b6a2c9e751966, type: 3}
     secretChance: 1
     maxSecretsPerStage: 1
-    bonusWallEveryStages: 2
+    illusionHardCap: 3
+    bonusWallEveryStages: 3
+    minimumIllusionSpacingCells: 2
     shortcutChance: 0.35
     exitPathBlockerChance: 0.2
     minShortcutPathDistance: 4
@@ -24190,7 +24367,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2b9f6e4a8c1d47308e5a3f7c1b920655, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  verticalResolution: 240
+  verticalResolution: 260
   snapScale: 1
   presentMaterial: {fileID: 2100000, guid: 5a1e8d3c7f2b49a0862c4e1b9d305944, type: 2}
   stormSkyMaterial: {fileID: 2100000, guid: b62b8e77d0d3ef94f97e00dd0163253d, type: 2}
@@ -25082,11 +25259,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &4231836565793649427
 GameObject:
   m_ObjectHideFlags: 0
@@ -25381,11 +25562,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &4246133350725188319
 GameObject:
   m_ObjectHideFlags: 0
@@ -25727,11 +25912,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &4311099317517216175
 GameObject:
   m_ObjectHideFlags: 0
@@ -25985,11 +26174,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &4351511256271050197
 GameObject:
   m_ObjectHideFlags: 0
@@ -26207,11 +26400,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &4483026072308730467
 GameObject:
   m_ObjectHideFlags: 0
@@ -26964,11 +27161,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &4629316163286791720
 GameObject:
   m_ObjectHideFlags: 0
@@ -32645,11 +32846,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &4777729623209593781
 GameObject:
   m_ObjectHideFlags: 0
@@ -32835,11 +33040,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &4818259313480738207
 GameObject:
   m_ObjectHideFlags: 0
@@ -33925,11 +34134,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &5031286953291150975
 GameObject:
   m_ObjectHideFlags: 0
@@ -35010,11 +35223,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &5218220118595963329
 GameObject:
   m_ObjectHideFlags: 0
@@ -35506,11 +35723,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &5320043125002299224
 GameObject:
   m_ObjectHideFlags: 0
@@ -36937,11 +37158,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &5456674150345203806
 GameObject:
   m_ObjectHideFlags: 0
@@ -37325,11 +37550,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &5500062844217433307
 GameObject:
   m_ObjectHideFlags: 0
@@ -37951,11 +38180,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &5597399266882740191
 GameObject:
   m_ObjectHideFlags: 0
@@ -38610,11 +38843,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &5712349085985392888
 GameObject:
   m_ObjectHideFlags: 0
@@ -38801,11 +39038,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &5782967520126574910
 GameObject:
   m_ObjectHideFlags: 0
@@ -39209,11 +39450,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &5797749405674197644
 GameObject:
   m_ObjectHideFlags: 0
@@ -39725,11 +39970,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &5827395418415513110
 GameObject:
   m_ObjectHideFlags: 0
@@ -39806,11 +40055,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &5851298665026537043
 GameObject:
   m_ObjectHideFlags: 0
@@ -41273,11 +41526,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6069084677269059262
 GameObject:
   m_ObjectHideFlags: 0
@@ -42282,11 +42539,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6210097588656207978
 GameObject:
   m_ObjectHideFlags: 0
@@ -42363,11 +42624,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6246830438633916648
 GameObject:
   m_ObjectHideFlags: 0
@@ -42554,11 +42819,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6280536119593633568
 GameObject:
   m_ObjectHideFlags: 0
@@ -42852,11 +43121,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6303508225984752020
 GameObject:
   m_ObjectHideFlags: 0
@@ -43959,8 +44232,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2289c51acca44079f19df3a151474ae, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   presenter: {fileID: 7345182960214477321}
   thunderSource: {fileID: 2594786268752935953}
   thunderClips: []
@@ -44370,11 +44643,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6484117687893790935
 GameObject:
   m_ObjectHideFlags: 0
@@ -44649,11 +44926,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6495616264881894360
 GameObject:
   m_ObjectHideFlags: 0
@@ -45125,11 +45406,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6525270946344281830
 GameObject:
   m_ObjectHideFlags: 0
@@ -45774,11 +46059,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6608807659977649024
 GameObject:
   m_ObjectHideFlags: 0
@@ -46196,13 +46485,8 @@ MonoBehaviour:
   roofFlatHalfBlockPrefab: {fileID: 1505325232067666742, guid: 901ba5ceb54b72b43b62d43b776e860b, type: 3}
   upperFloorHeight: 5.95
   halfFloorHeight: 2.98
-  upperStoryChance: 0.5
-  towerChance: 0.25
   halfStoryChance: 0.3
-  flatTopChance: 0.15
-  curvedRoofChance: 0.4
   roofYawTrim: 0
-  roofConfigurations: []
 --- !u!1 &6660047201519232169
 GameObject:
   m_ObjectHideFlags: 0
@@ -47144,11 +47428,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6777935350316523071
 GameObject:
   m_ObjectHideFlags: 0
@@ -47313,11 +47601,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6796633594396311915
 GameObject:
   m_ObjectHideFlags: 0
@@ -47964,11 +48256,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6914047364239156543
 GameObject:
   m_ObjectHideFlags: 0
@@ -48045,11 +48341,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &6925151577177960199
 GameObject:
   m_ObjectHideFlags: 0
@@ -49841,11 +50141,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7188327314276947712
 GameObject:
   m_ObjectHideFlags: 0
@@ -50153,11 +50457,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7209526151824551655
 GameObject:
   m_ObjectHideFlags: 0
@@ -50234,11 +50542,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7235209217827202648
 GameObject:
   m_ObjectHideFlags: 0
@@ -51338,11 +51650,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7378475954177437907
 GameObject:
   m_ObjectHideFlags: 0
@@ -51528,11 +51844,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7386380916163698310
 GameObject:
   m_ObjectHideFlags: 0
@@ -51969,11 +52289,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7437495106686700960
 GameObject:
   m_ObjectHideFlags: 0
@@ -52544,11 +52868,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7487740724439326821
 GameObject:
   m_ObjectHideFlags: 0
@@ -52626,11 +52954,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7491436605097850024
 GameObject:
   m_ObjectHideFlags: 0
@@ -53954,11 +54286,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7684721185913830778
 GameObject:
   m_ObjectHideFlags: 0
@@ -54157,11 +54493,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7716714390742798367
 GameObject:
   m_ObjectHideFlags: 0
@@ -54524,11 +54864,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7777692532290151580
 GameObject:
   m_ObjectHideFlags: 0
@@ -55942,11 +56286,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8030903389199121412
 GameObject:
   m_ObjectHideFlags: 0
@@ -57425,11 +57773,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8349594093144004259
 GameObject:
   m_ObjectHideFlags: 0
@@ -57507,11 +57859,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8367290970395869933
 GameObject:
   m_ObjectHideFlags: 0
@@ -57589,11 +57945,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8399125628043503005
 GameObject:
   m_ObjectHideFlags: 0
@@ -58077,11 +58437,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8492730307223864562
 GameObject:
   m_ObjectHideFlags: 0
@@ -58565,11 +58929,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8562020860141184562
 GameObject:
   m_ObjectHideFlags: 0
@@ -59169,11 +59537,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8626435763344548228
 GameObject:
   m_ObjectHideFlags: 0
@@ -59250,11 +59622,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8645683314021841993
 GameObject:
   m_ObjectHideFlags: 0
@@ -59658,11 +60034,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8736179694824981495
 GameObject:
   m_ObjectHideFlags: 0
@@ -59828,11 +60208,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8754011699444659036
 GameObject:
   m_ObjectHideFlags: 0
@@ -60237,11 +60621,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8814695496056421358
 GameObject:
   m_ObjectHideFlags: 0
@@ -61039,11 +61427,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8963203033742546826
 GameObject:
   m_ObjectHideFlags: 0
@@ -61327,11 +61719,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &8987383036322213376
 GameObject:
   m_ObjectHideFlags: 0
@@ -61627,11 +62023,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &9002881243885315255
 GameObject:
   m_ObjectHideFlags: 0
@@ -62145,11 +62545,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &9076045346844530778
 GameObject:
   m_ObjectHideFlags: 0
@@ -62226,11 +62630,15 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
   authoredOpening: 0
+  authoredInteriorOpening: 0
   streetArchVariants: []
   pierNameToken: pier
   archNameToken: arch
-  halfPierToken: half
-  streetArchChance: 1
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &9094256803035160207
 GameObject:
   m_ObjectHideFlags: 0

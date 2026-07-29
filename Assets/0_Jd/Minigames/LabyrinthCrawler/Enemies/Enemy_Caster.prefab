@@ -1041,7 +1041,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5ec4bb5b29502a4eb052c436b969dce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  detectionRange: 14
+  detectionRange: 15
   lineOfSightMask:
     serializedVersion: 2
     m_Bits: 59
@@ -1050,10 +1050,16 @@ MonoBehaviour:
   attackRange: 8
   moveSpeed: 4.3
   turnSpeedDegrees: 360
+  locomotionMode: 1
+  minimumRange: 5.5
+  strafeSpeed: 2.4
+  retreatSpeed: 4.8
+  strafeSecondsRange: {x: 1.1, y: 2.4}
   spellHitMask:
     serializedVersion: 2
     m_Bits: 4294967295
   targetHeight: 1.2
+  trackSeconds: 4
   wanderSpeed: 1.7
   wanderMoveSecondsRange: {x: 1.5, y: 3.5}
   wanderPauseSecondsRange: {x: 0.5, y: 2}

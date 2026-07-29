@@ -80,9 +80,7 @@ namespace Player
         {
             SetCameraActive(firstPersonCamera, cameraMode == CameraMode.FirstPerson);
             SetCameraActive(thirdPersonCamera, cameraMode == CameraMode.ThirdPerson);
-            SetCameraActive(topDownCamera, cameraMode == CameraMode.TopDown);
             SetCameraActive(isometricCamera, cameraMode == CameraMode.Isometric);
-            SetCameraActive(platformerCamera, cameraMode == CameraMode.Platformer);
 
             ResetActiveCameraMode();
             UpdatePlayerLayerVisibility();
@@ -148,9 +146,7 @@ namespace Player
             {
                 CameraMode.FirstPerson => FirstPersonUsesLookInput(),
                 CameraMode.ThirdPerson => ThirdPersonUsesLookInput(),
-                CameraMode.TopDown => TopDownUsesLookInput(),
                 CameraMode.Isometric => IsometricUsesLookInput(),
-                CameraMode.Platformer => PlatformerUsesLookInput(),
                 CameraMode.FixedSideOn => false,
                 _ => false
             };
@@ -162,9 +158,7 @@ namespace Player
             {
                 CameraMode.FirstPerson => FirstPersonRendersPlayer(),
                 CameraMode.ThirdPerson => ThirdPersonRendersPlayer(),
-                CameraMode.TopDown => TopDownRendersPlayer(),
                 CameraMode.Isometric => IsometricRendersPlayer(),
-                CameraMode.Platformer => PlatformerRendersPlayer(),
                 CameraMode.FixedSideOn => true,
                 _ => true
             };
@@ -203,8 +197,6 @@ namespace Player
         {
             return cameraMode switch
             {
-                CameraMode.TopDown => true,
-                CameraMode.Platformer => true,
                 CameraMode.FixedSideOn => true,
                 CameraMode.Isometric => IsIsometricPointerModifierActive(),
                 _ => false

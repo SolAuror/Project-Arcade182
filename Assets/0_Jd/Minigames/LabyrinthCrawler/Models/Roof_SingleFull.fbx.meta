@@ -8,7 +8,7 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: M_Labyrinth_Wall.003
-    second: {fileID: 2100000, guid: 28f295ead5417fb41880cc40150ce835, type: 2}
+    second: {fileID: 2100000, guid: b2b6f1462ea614643829f151cd3ee771, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

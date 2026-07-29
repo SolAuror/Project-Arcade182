@@ -67,12 +67,19 @@ All paths are relative to `Assets/0_Jd/Scripts/` unless noted.
 | Script | Purpose |
 |---|---|
 | `LabyrinthCrawlerGame.cs` | Run orchestrator: stage/maze sizing, enemy spawning (scaling packs), scoring & par times, upgrades flow, fall-out respawn, audio hooks, score/ticket recording. |
-| `EnemyController.cs` | Maze enemy: wanders while idle, chases with line-of-sight, casts spells in range, takes pulse knockback, death burst. |
+| `LabyrinthRuntimeUtility.cs` | Shared allocation-free trigger/tag/shuffle helpers used across crawler runtime components. |
+| `EnemyController.cs` | Maze enemy: cached graph patrol, line-of-sight chase/tracking, spell casting, pulse knockback, pit death, and spatial footsteps. |
 | `PlayerSpellInput.cs` | Binds player input to SpellCaster slots (attack / cast / pulse). |
 | `LabyrinthExitPad.cs` | Stand-on stage exit: instant when enemies are dead, interruptible dwell otherwise; animated pad visual. |
+| `LabyrinthExitBeacon.cs` | World-space exit marker revealed by room clear or the Cartographer timer. |
+| `LabyrinthSecretPass.cs` | Post-generation graph analysis and placement for treasure leaves, useful shortcuts, and rare shortest-path blockers. |
+| `IllusoryWall.cs` | Model-aware secret plug with player-only passage, spell/touch ripples, crossing detection, and dissolve reveal. |
+| `LabyrinthSecretCache.cs` | Trigger pickup for weighted shrine, hoard, or banked bonus-upgrade rewards. |
 | `LabyrinthUpgrade.cs` / `LabyrinthUpgradeSystem.cs` | Upgrade definitions and the 1-of-3 roll/apply logic between stages. |
 | `LabyrinthUpgradeScreen.cs` | Prefab-authored upgrade choice UI (pauses time while open). |
 | `LabyrinthHud.cs` | Run HUD: timer, score, vitals, spell slots with cooldowns, dwell bar, mana-fail flash, run-over panel. |
+| `LabyrinthRunOverScreen.cs` | Death-screen restart/quit input, buttons, and cursor ownership. |
+| `DustMotes.cs` | Keeps the authored world-space dust emitter centered on the runtime player camera. |
 | `RetroPresenter.cs` | Scene-scoped PS1 presentation: low-resolution point-filtered target, posterize/dither pass, vertex snap, storm sky, olive fog, and restoration of camera/render globals on disable. |
 | `StormDirector.cs` | Distant world-space storm pulses: bolt, directional light, sky/entity/fog response, ambient override, thunder hooks, and a nearest-two realtime point-light shadow budget. |
 

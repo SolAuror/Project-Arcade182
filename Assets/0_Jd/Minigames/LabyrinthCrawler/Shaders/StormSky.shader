@@ -35,9 +35,15 @@ Shader "Arcade/PS1/Storm Sky"
         _EntityGlow ("Entity Backlight", Range(0, 4)) = 0
 
         [HDR] _SkylineColor ("Skyline Color", Color) = (0.01, 0.014, 0.01, 1)
+        [HDR] _HazeColor ("Horizon Haze Color", Color) = (0.18, 0.24, 0.10, 1)
         _SkylineHeight ("Skyline Angular Height", Range(0.02, 0.5)) = 0.13
         _SkylineBelowHorizon ("Skyline Below Horizon", Range(0, 0.5)) = 0.10
-        _SkylineRepeat ("Skyline Repeat", Range(1, 8)) = 2
+        _SkylineRepeatFar ("Far Skyline Repeat", Range(0.5, 8)) = 1
+        _SkylineRepeatMid ("Mid Skyline Repeat", Range(0.5, 8)) = 1.7
+        _SkylineRepeatNear ("Near Skyline Repeat", Range(0.5, 8)) = 2.9
+        _SkylineAirlightFar ("Far Skyline Airlight", Range(0, 1)) = 0.8
+        _SkylineAirlightMid ("Mid Skyline Airlight", Range(0, 1)) = 0.6
+        _SkylineAirlightNear ("Near Skyline Airlight", Range(0, 1)) = 0.35
         _SkyFogBlend ("Sky Fog Blend", Range(0, 1)) = 0.16
 
         [HideInInspector] _StormFlash ("Storm Flash", Range(0, 1)) = 0
@@ -83,6 +89,7 @@ Shader "Arcade/PS1/Storm Sky"
             half4 _CloudLightColor;
             half4 _FlashColor;
             half4 _SkylineColor;
+            half4 _HazeColor;
             float4 _CloudSpeedA;
             float4 _CloudSpeedB;
             float4 _StormFlashDirection;
@@ -102,7 +109,12 @@ Shader "Arcade/PS1/Storm Sky"
             float _EntityGlow;
             float _SkylineHeight;
             float _SkylineBelowHorizon;
-            float _SkylineRepeat;
+            float _SkylineRepeatFar;
+            float _SkylineRepeatMid;
+            float _SkylineRepeatNear;
+            float _SkylineAirlightFar;
+            float _SkylineAirlightMid;
+            float _SkylineAirlightNear;
             float _SkyFogBlend;
             float _StormFlash;
             CBUFFER_END
@@ -185,18 +197,79 @@ Shader "Arcade/PS1/Storm Sky"
                 return SAMPLE_TEXTURE2D(_EntityMask, sampler_EntityMask, uv).r * inside;
             }
 
+            half3 ApplyHorizonHaze(half3 sky, float3 viewDir)
+            {
+                float hazeTop = max(_SkylineHeight * 0.45, 0.01);
+                float hazeAmount = 1.0 - smoothstep(
+                    -_SkylineBelowHorizon,
+                    hazeTop,
+                    viewDir.y);
+                return lerp(sky, _HazeColor.rgb, hazeAmount);
+            }
+
+            half3 ApplySkylineLayer(
+                half3 composite,
+                half3 localSky,
+                float heading,
+                float viewY,
+                float repeat,
+                float heightScale,
+                float baseOffset,
+                float airlight,
+                half3 channel)
+            {
+                float skylineSpan = max(
+                    _SkylineHeight + _SkylineBelowHorizon,
+                    1e-4);
+                float baseY = lerp(
+                    -_SkylineBelowHorizon,
+                    0.0,
+                    baseOffset);
+                float skylineV = (viewY - baseY)
+                    / max(skylineSpan * heightScale, 1e-4);
+                float band = step(0.0, skylineV) * step(skylineV, 1.0);
+                half3 layerMasks = SAMPLE_TEXTURE2D(
+                    _SkylineMask,
+                    sampler_SkylineMask,
+                    float2(frac(heading * repeat), saturate(skylineV))).rgb;
+                float mask = dot(layerMasks, channel) * band;
+
+                // Airlight is strongest where each structure meets the
+                // horizon haze and falls back to the layer value at its crown.
+                float baseHaze = 1.0 - saturate(skylineV);
+                float verticalAirlight = lerp(
+                    airlight,
+                    1.0,
+                    baseHaze * 0.3);
+                half3 towerColor = lerp(
+                    _SkylineColor.rgb,
+                    localSky,
+                    verticalAirlight);
+                return lerp(composite, towerColor, mask);
+            }
+
             half3 ApplySkyline(half3 sky, float3 viewDir)
             {
                 const float inverseTau = 0.15915494309;
                 float heading = frac(atan2(viewDir.x, viewDir.z) * inverseTau + 0.5);
-                float skylineV = (viewDir.y + _SkylineBelowHorizon)
-                    / max(_SkylineHeight + _SkylineBelowHorizon, 1e-4);
-                float band = step(0.0, skylineV) * step(skylineV, 1.0);
-                float mask = SAMPLE_TEXTURE2D(
-                    _SkylineMask,
-                    sampler_SkylineMask,
-                    float2(frac(heading * _SkylineRepeat), saturate(skylineV))).r * band;
-                return lerp(sky, _SkylineColor.rgb, mask);
+                half3 composite = sky;
+
+                // The RGB channels contain independent far, mid and near
+                // silhouettes. Different non-integer repeats prevent the
+                // layers and their texture seams from lining up.
+                composite = ApplySkylineLayer(
+                    composite, sky, heading, viewDir.y,
+                    _SkylineRepeatFar, 0.55, 0.72,
+                    _SkylineAirlightFar, half3(1.0, 0.0, 0.0));
+                composite = ApplySkylineLayer(
+                    composite, sky, heading, viewDir.y,
+                    _SkylineRepeatMid, 0.75, 0.38,
+                    _SkylineAirlightMid, half3(0.0, 1.0, 0.0));
+                composite = ApplySkylineLayer(
+                    composite, sky, heading, viewDir.y,
+                    _SkylineRepeatNear, 1.0, 0.0,
+                    _SkylineAirlightNear, half3(0.0, 0.0, 1.0));
+                return composite;
             }
 
             half4 Frag(Varyings input) : SV_Target
@@ -236,6 +309,7 @@ Shader "Arcade/PS1/Storm Sky"
                 float entityAmount = entityMask * _EntityPresence;
                 color *= lerp(1.0h, (half)_EntityDarkness, (half)entityAmount);
 
+                color = ApplyHorizonHaze(color, viewDir);
                 color = ApplySkyline(color, viewDir);
                 color = lerp(color, unity_FogColor.rgb, _SkyFogBlend);
                 return half4(color, 1.0h);

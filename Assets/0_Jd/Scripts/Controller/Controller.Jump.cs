@@ -7,8 +7,8 @@ namespace Player
         [Header("Jump")]
         [SerializeField] private float jumpHeight = 1.2f; // desired jump height
         [SerializeField] private float lowJumpGravityMultiplier = 2.5f; // stronger gravity for low jumps
-        [SerializeField] private float coyoteTime = 0.12f; // grace period after leaving ground
-        [SerializeField] private float jumpBufferTime = 0.12f; // buffer time for jump input before landing
+        [SerializeField] private float coyoteTime = 0.16f; // grace period after leaving ground
+        [SerializeField] private float jumpBufferTime = 0.16f; // buffer time for jump input before landing
 
         private float coyoteTimeRemaining; // remaining coyote time
         private float jumpBufferTimeRemaining; // remaining jump buffer

@@ -18,38 +18,37 @@ namespace Player
         private const float MeaningfulMovementInput = 0.1f;                                                     //the min movement input magnitude to be considered meaningful. 
         private const float MeaningfulMovementInputSquared = MeaningfulMovementInput * MeaningfulMovementInput; //the squared meaningful movement, for avoiding recalculations when comparing against squared input magnitude.
 
-        // Platformer remains available manually but is unsuitable for random maze starts.
         private static readonly CameraMode[] RandomStartCameraModes =
         {
             CameraMode.FirstPerson,
             CameraMode.ThirdPerson,
-            CameraMode.TopDown,
             CameraMode.Isometric
         };
 
         public enum CameraMode  //the 'cameraMode' state machine that controls the current camera mode, which in turn controls movement rulesets and player visibility. New camera modes can be added here, and then implemented in ApplyCameraMode() and ReadCameraInput() to define the behavior of the new mode.
         {
-            FirstPerson,
-            ThirdPerson,
-            TopDown,
-            Isometric,
-            Platformer,
-            FixedSideOn
+            FirstPerson = 0,
+            ThirdPerson = 1,
+            Isometric = 3,
+            FixedSideOn = 5
         }
 
         [Header("Mode")]
         [SerializeField] private CameraMode cameraMode = CameraMode.FirstPerson; //current camera mode 
         [SerializeField] private float fixedSideOnPlaneZ = 0f; // board-plane lock for fixed side-on minigames
+        [SerializeField, Min(0f)] private float fixedSideOnMovementSpeedMultiplier = 1f;
+        [SerializeField, Min(0f)] private float fixedSideOnTurnSpeedMultiplier = 1f;
 
-        [Tooltip("Choose a random non-Platformer camera mode before the controller initializes.")]
+        [Tooltip("Choose a random 3D camera mode before the controller initializes.")]
         [SerializeField] private bool randomizeCameraModeOnStart = false;
 
         [Header("Movement")]                                        
         [SerializeField] private float walkSpeed = 5f;
         [SerializeField] private float sprintSpeed = 8f;
-        [SerializeField] private float acceleration = 35f;
-        [SerializeField] private float deceleration = 45f;
-        [SerializeField] private float airAcceleration = 12f;
+        [SerializeField] private float acceleration = 55f;
+        [SerializeField] private float deceleration = 70f;
+        [SerializeField] private float airAcceleration = 16f;
+        [SerializeField, Min(1f)] private float directionChangeAccelerationMultiplier = 1.75f;
         [SerializeField] private float characterTurnSpeed = 720f;
 
         [Header("Gravity")]                                             
@@ -64,6 +63,7 @@ namespace Player
 
         private CharacterController characterController;
         private InputSystem_Actions inputActions;
+        private readonly RaycastHit[] groundProbeHits = new RaycastHit[8];
         private Vector3 horizontalMovementVelocity;
         private Quaternion cameraMovementFallbackHeading;
         private float verticalSpeed;

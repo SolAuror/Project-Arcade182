@@ -1,20 +1,24 @@
-# Shared Player Controller
+# Arcade Player Controllers
 
-This is the ready-to-use player for the arcade hub and minigames. `Controller` handles movement, sprinting, gravity, grounding, and jumping. Cinemachine handles where the camera sits, how it follows, and Third Person wall avoidance.
+`Controller` provides the shared movement and camera implementation for two purpose-built player prefabs:
 
-The useful files are:
+- `Assets/Shared/Prefabs/ArcadeHubController.prefab` is the non-combat arcade hub player.
+- `Assets/0_Jd/Minigames/LabyrinthCrawler/GamePrefabs/LabCrawlerController.prefab` is the Labyrinth Crawler combat player, with health, mana, spell casting, hit feedback, visible casting hands, and footsteps.
 
-- Prefab: `Assets/Shared/Controller.prefab`
-- Main component and shared settings: `Assets/Shared/Scripts/Controller/Controller.cs`
-- Shared movement: `Assets/Shared/Scripts/Controller/Controller.Movement.cs`
-- Shared jumping: `Assets/Shared/Scripts/Controller/Controller.Jump.cs`
-- Camera coordinator: `Assets/Shared/Scripts/Controller/Controller.Camera.cs`
-- Mode behavior and tuning: `Controller.FirstPerson.cs`, `Controller.ThirdPerson.cs`, `Controller.TopDown.cs`, `Controller.Isometric.cs`, and `Controller.Platformer.cs`
+The shared code handles movement, sprinting, gravity, grounding, and jumping. Cinemachine handles where the camera sits, how it follows, and Third Person wall avoidance.
+
+The useful code files are:
+
+- Main component and shared settings: `Assets/0_Jd/Scripts/Controller/Controller.cs`
+- Shared movement: `Assets/0_Jd/Scripts/Controller/Controller.Movement.cs`
+- Shared jumping: `Assets/0_Jd/Scripts/Controller/Controller.Jump.cs`
+- Camera coordinator: `Assets/0_Jd/Scripts/Controller/Controller.Camera.cs`
+- Mode behavior and tuning: `Controller.FirstPerson.cs`, `Controller.ThirdPerson.cs`, and `Controller.Isometric.cs`; fixed side-on movement is handled by the shared controller files.
 - Input actions: `Assets/Shared/InputSystem_Actions.inputactions`
 
 ## Quick Setup
 
-Drag `Controller.prefab` into the scene, place it slightly above a floor collider, and choose `Camera Mode` on its `Controller`.
+Use `ArcadeHubController.prefab` in the hub and `LabCrawlerController.prefab` in Labyrinth Crawler. Place the selected prefab slightly above a floor collider and choose `Camera Mode` on its `Controller`.
 
 The selected camera mode automatically selects its movement rules. There is no second movement-mode setting to keep in sync.
 
@@ -28,7 +32,7 @@ The controller automatically hides the Player layer in First Person and renders 
 
 - Move: `WASD`, arrow keys, or gamepad left stick
 - Look or orbit: mouse or gamepad right stick. Up input looks up.
-- Jump: `Space` or gamepad south button in First Person, Third Person, Isometric, and Platformer
+- Jump: `Space` or gamepad south button in First Person, Third Person, and Isometric
 - Sprint: `Left Shift` or gamepad left-stick press
 - Unlock or relock the cursor: `Escape`
 - Hold pointer mode in Isometric: `Tab`
@@ -49,12 +53,6 @@ Uses `CinemachineOrbitalFollow`, `CinemachineRotationComposer`, and `Cinemachine
 
 The camera freely orbits around the upper-body target. Movement is camera-relative, the player turns toward movement, sprint works forward, and jumping is enabled. The Deoccluder pulls the camera around or in front of walls that block the player.
 
-### Top Down
-
-Uses a fixed orthographic `CinemachineFollow` camera above the player.
-
-Movement is screen-relative: `W` moves toward the top of the Game view, `S` toward the bottom, `A` left, and `D` right. Sprint works in any meaningful direction, and jumping is disabled. This is the only jump-disabled mode. It does not use look input, so the cursor stays unlocked.
-
 ### Isometric
 
 Uses an orthographic `CinemachineOrbitalFollow` and `CinemachineRotationComposer`.
@@ -63,18 +61,15 @@ The camera can orbit horizontally while its elevated angle stays fixed. Movement
 
 By default, Isometric keeps the cursor locked and uses the crosshair for grab and outline rays. Hold `Tab` to pause orbit, show the cursor, hide the crosshair, and aim grab or outline rays from the mouse position.
 
-### Platformer
+### Fixed Side-On
 
-Uses a fixed side-on orthographic `CinemachineFollow`.
-
-Only left and right movement are accepted. Sprint works in either horizontal direction, and jumping is enabled.
+Supports minigames that provide their own fixed side-on camera. Only left and right movement are accepted, sprint works in either horizontal direction, jumping and gravity are disabled, and the player remains locked to `Fixed Side On Plane Z`. The cursor stays unlocked for mouse interaction.
 
 ## Tuning Cinemachine
 
 Expand `CinemachineRig` inside the shared prefab to tune a mode. Each child `CinemachineCamera` owns its own lens and follow behavior.
 
 - Change a camera's Lens settings for field of view or orthographic size.
-- Change `Follow Offset` on TopDown or Platformer to move their fixed framing.
 - Change `Radius` and axis ranges on an `Orbital Follow` to tune orbit distance and limits.
 - Keep Isometric's vertical orbit axis disabled if its pitch should remain fixed.
 - Tune ThirdPerson's `Cinemachine Deoccluder` to change wall avoidance.
@@ -90,14 +85,14 @@ For code changes, start in the file named after the mode. Those files own the mo
 
 Movement accelerates toward the requested speed rather than snapping instantly. `Acceleration` controls starting and reversing, `Deceleration` controls stopping, and `Air Acceleration` controls steering while airborne.
 
-Jumping is shared by First Person, Third Person, Isometric, and Platformer:
+Jumping is shared by First Person, Third Person, and Isometric:
 
 - `Coyote Time`, which allows a jump just after leaving a ledge.
 - `Jump Buffer Time`, which remembers a jump pressed just before landing.
 - Variable jump height, where releasing jump early produces a shorter jump.
 - Stronger falling gravity, which keeps the jump from feeling floaty.
 
-Top Down ignores jump input but keeps gravity, so falling from ledges and switching modes while airborne still behave normally.
+Fixed Side-On ignores jump input and gravity because its minigames move on a locked board plane.
 
 ## Pseudocode Overview
 
@@ -150,7 +145,7 @@ show the crosshair only when crosshair rays are active
 
 The output `FppCam` remains tagged `MainCamera`, so the grab and outline managers continue to raycast from the final Cinemachine-controlled view.
 
-First Person and Third Person use crosshair rays for both grab and outline. Top Down and Platformer use mouse-position rays. Isometric uses crosshair rays by default, then switches both grab and outline to mouse rays while `Tab` is held.
+First Person and Third Person use crosshair rays for both grab and outline. Fixed Side-On uses mouse-position rays. Isometric uses crosshair rays by default, then switches both grab and outline to mouse rays while `Tab` is held.
 
 First Person and Third Person crosshair targeting keeps grab and outline ray distance at `10`. Isometric and mouse targeting use `30`, which accounts for the overhead camera distance and gives cursor-driven modes more room to click around the screen.
 
@@ -167,7 +162,7 @@ Assign `Crosshair Object` on the Controller if the scene has a crosshair UI. Mis
 - Third Person clips through walls: check its Deoccluder and collision layers.
 - Third Person detects the player as a wall: exclude the Player layer and keep `Ignore Tag` set to `Player`.
 - Isometric pitch changes: keep its vertical input axis disabled and its vertical orbit range fixed.
-- Player cannot jump in Top Down: this is expected.
+- Player cannot jump in Fixed Side-On: this is expected.
 - Player cannot jump in a jump-enabled mode: check the floor collider and `Ground Layers`.
 - Player constantly appears grounded: exclude the Player layer from `Ground Layers`.
 - Grab or outline raycasts fail: keep `FppCam` tagged `MainCamera`.

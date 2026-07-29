@@ -49,9 +49,14 @@ Material:
     - _EntityYaw: -15
     - _HorizonBias: 0.12
     - _SkyFogBlend: 0.16
+    - _SkylineAirlightFar: 0.8
+    - _SkylineAirlightMid: 0.6
+    - _SkylineAirlightNear: 0.35
     - _SkylineBelowHorizon: 0.083
     - _SkylineHeight: 0.25
-    - _SkylineRepeat: 2
+    - _SkylineRepeatFar: 1
+    - _SkylineRepeatMid: 1.7
+    - _SkylineRepeatNear: 2.9
     - _StormFlash: 0
     - _SwirlAmount: 3
     - _WarpScale: 1.5
@@ -62,6 +67,7 @@ Material:
     - _CloudSpeedA: {r: 0.011, g: 0.004, b: 0, a: 0}
     - _CloudSpeedB: {r: -0.006, g: 0.009, b: 0, a: 0}
     - _FlashColor: {r: 0.68, g: 1, b: 0.58, a: 1}
+    - _HazeColor: {r: 0.18, g: 0.24, b: 0.1, a: 1}
     - _HorizonColor: {r: 0.13, g: 0.18, b: 0.085, a: 1}
     - _SkylineColor: {r: 0.01, g: 0.014, b: 0.01, a: 1}
     - _StormFlashDirection: {r: 0, g: 1, b: 0, a: 0}

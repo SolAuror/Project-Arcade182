@@ -7,7 +7,9 @@ namespace Player
         private void UpdateMovement()
         {
             bool isFixedSideOn = cameraMode == CameraMode.FixedSideOn;
-            isGrounded = isFixedSideOn || verticalSpeed <= 0f && CheckGrounded(); // determine grounded state
+            isGrounded = isFixedSideOn ||
+                         verticalSpeed <= 0f &&
+                         (characterController.isGrounded || CheckGrounded()); // determine grounded state
 
             if (AllowsJumping())
             {
@@ -33,9 +35,8 @@ namespace Player
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, movementFacingRotation, characterTurnSpeed * GetTurnSpeedMultiplier() * Time.deltaTime); // rotate toward movement
             }
 
-            float velocityChangeRate = isGrounded
-                ? (movementInput.sqrMagnitude > MeaningfulMovementInputSquared ? acceleration : deceleration)
-                : airAcceleration; // choose acceleration rate
+            bool hasMovementInput = movementInput.sqrMagnitude > MeaningfulMovementInputSquared;
+            float velocityChangeRate = GetHorizontalVelocityChangeRate(hasMovementInput, desiredMovementVelocity);
 
             horizontalMovementVelocity = Vector3.MoveTowards(horizontalMovementVelocity, desiredMovementVelocity, velocityChangeRate * Time.deltaTime); // smooth velocity
 
@@ -43,19 +44,21 @@ namespace Player
             {
                 verticalSpeed = 0f; // fixed board mode is planar, not a gravity platformer
             }
-            else if (isGrounded && verticalSpeed < 0f)
+            else if (isGrounded && verticalSpeed <= 0f)
             {
                 verticalSpeed = groundedVerticalSpeed; // reset vertical speed on ground
             }
-
-            if (!isFixedSideOn)
+            else
             {
                 float gravityMultiplier = verticalSpeed < 0f ? fallGravityMultiplier : GetRisingGravityMultiplier(); // gravity modifier
 
                 verticalSpeed += gravity * gravityMultiplier * Time.deltaTime; // apply gravity
             }
 
-            characterController.Move((horizontalMovementVelocity + Vector3.up * verticalSpeed) * Time.deltaTime); // move character
+            CollisionFlags collisionFlags =
+                characterController.Move((horizontalMovementVelocity + Vector3.up * verticalSpeed) * Time.deltaTime); // move character
+
+            ResolveVerticalCollisions(collisionFlags);
 
             if (isFixedSideOn)
             {
@@ -63,12 +66,80 @@ namespace Player
             }
         }
 
+        private float GetHorizontalVelocityChangeRate(bool hasMovementInput, Vector3 desiredMovementVelocity)
+        {
+            if (!isGrounded)
+            {
+                return airAcceleration;
+            }
+
+            if (!hasMovementInput)
+            {
+                return deceleration;
+            }
+
+            if (horizontalMovementVelocity.sqrMagnitude <= MeaningfulMovementInputSquared ||
+                desiredMovementVelocity.sqrMagnitude <= MeaningfulMovementInputSquared)
+            {
+                return acceleration;
+            }
+
+            float directionAlignment = Vector3.Dot(
+                horizontalMovementVelocity.normalized,
+                desiredMovementVelocity.normalized);
+
+            // Direction changes should shed old momentum much faster than a
+            // same-direction speed change. This keeps strafing and reversals
+            // responsive without making ordinary acceleration instantaneous.
+            float directionChangeAmount = Mathf.InverseLerp(1f, -1f, directionAlignment);
+            return acceleration * Mathf.Lerp(1f, directionChangeAccelerationMultiplier, directionChangeAmount);
+        }
+
         private bool CheckGrounded()
         {
-            float groundCheckRadius = characterController.radius * groundCheckRadiusScale; // sphere radius
-            Vector3 groundCheckPosition = characterController.bounds.center + Vector3.down * (characterController.bounds.extents.y - groundCheckRadius + groundCheckDistance); // sphere center
+            float groundCheckRadius = characterController.radius * groundCheckRadiusScale;
+            float probeStartOffset = Mathf.Max(characterController.skinWidth, 0.02f);
+            Bounds controllerBounds = characterController.bounds;
+            Vector3 groundCheckPosition = new Vector3(
+                controllerBounds.center.x,
+                controllerBounds.min.y + groundCheckRadius + probeStartOffset,
+                controllerBounds.center.z);
+            float probeDistance = probeStartOffset + groundCheckDistance;
 
-            return Physics.CheckSphere(groundCheckPosition, groundCheckRadius, groundLayers, QueryTriggerInteraction.Ignore); // physics check
+            int hitCount = Physics.SphereCastNonAlloc(
+                groundCheckPosition,
+                groundCheckRadius,
+                Vector3.down,
+                groundProbeHits,
+                probeDistance,
+                groundLayers,
+                QueryTriggerInteraction.Ignore);
+
+            float minimumGroundNormalY = Mathf.Cos(characterController.slopeLimit * Mathf.Deg2Rad);
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = groundProbeHits[i];
+                if (hit.collider != null && hit.normal.y >= minimumGroundNormalY)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void ResolveVerticalCollisions(CollisionFlags collisionFlags)
+        {
+            if ((collisionFlags & CollisionFlags.Above) != 0 && verticalSpeed > 0f)
+            {
+                verticalSpeed = 0f;
+            }
+
+            if ((collisionFlags & CollisionFlags.Below) != 0 && verticalSpeed <= 0f)
+            {
+                isGrounded = true;
+                verticalSpeed = groundedVerticalSpeed;
+            }
         }
 
         private void GetMovementBasis(out Vector3 movementRight, out Vector3 movementForward)
@@ -81,9 +152,6 @@ namespace Player
                 return;
             }
 
-            if (TryGetModeMovementBasis(gameplayCamera, out movementRight, out movementForward))
-                return; // mode-specific basis
-
             movementRight = Vector3.ProjectOnPlane(gameplayCamera.transform.right, Vector3.up).normalized; // project camera axes
             movementForward = Vector3.ProjectOnPlane(gameplayCamera.transform.forward, Vector3.up).normalized;
 
@@ -94,19 +162,9 @@ namespace Player
                 movementRight = cameraMovementFallbackHeading * Vector3.right; // fallback right
         }
 
-        private bool TryGetModeMovementBasis(Camera gameplayCamera, out Vector3 movementRight, out Vector3 movementForward)
-        {
-            if (cameraMode == CameraMode.TopDown)
-                return TryGetTopDownMovementBasis(gameplayCamera, out movementRight, out movementForward); // top-down basis
-
-            movementRight = Vector3.zero; // no special basis
-            movementForward = Vector3.zero;
-            return false;
-        }
-
         private bool AllowsJumping()
         {
-            return cameraMode != CameraMode.TopDown && cameraMode != CameraMode.FixedSideOn; // fixed board play disables jumping
+            return cameraMode != CameraMode.FixedSideOn; // fixed board play disables jumping
         }
 
         private void LockFixedSideOnPlane()
@@ -127,10 +185,8 @@ namespace Player
             {
                 CameraMode.FirstPerson => HasValidFirstPersonSprintDirection(movementInput),
                 CameraMode.ThirdPerson => HasValidThirdPersonSprintDirection(movementInput),
-                CameraMode.TopDown => HasValidTopDownSprintDirection(movementInput),
                 CameraMode.Isometric => HasValidIsometricSprintDirection(movementInput),
-                CameraMode.Platformer => HasValidPlatformerSprintDirection(movementInput),
-                CameraMode.FixedSideOn => HasValidPlatformerSprintDirection(movementInput),
+                CameraMode.FixedSideOn => HasValidFixedSideOnSprintDirection(movementInput),
                 _ => false
             }; // delegate sprint checks per mode
         }
@@ -141,10 +197,8 @@ namespace Player
             {
                 CameraMode.FirstPerson => GetFirstPersonMovementDirection(movementInput, movementRight, movementForward),
                 CameraMode.ThirdPerson => GetThirdPersonMovementDirection(movementInput, movementRight, movementForward),
-                CameraMode.TopDown => GetTopDownMovementDirection(movementInput, movementRight, movementForward),
                 CameraMode.Isometric => GetIsometricMovementDirection(movementInput, movementRight, movementForward),
-                CameraMode.Platformer => GetPlatformerMovementDirection(movementInput, movementRight),
-                CameraMode.FixedSideOn => GetPlatformerMovementDirection(movementInput, movementRight),
+                CameraMode.FixedSideOn => GetFixedSideOnMovementDirection(movementInput, movementRight),
                 _ => Vector3.zero
             }; // choose movement calculation by mode
         }
@@ -155,10 +209,8 @@ namespace Player
             {
                 CameraMode.FirstPerson => firstPersonMovementSpeedMultiplier,
                 CameraMode.ThirdPerson => thirdPersonMovementSpeedMultiplier,
-                CameraMode.TopDown => topDownMovementSpeedMultiplier,
                 CameraMode.Isometric => isometricMovementSpeedMultiplier,
-                CameraMode.Platformer => platformerMovementSpeedMultiplier,
-                CameraMode.FixedSideOn => platformerMovementSpeedMultiplier,
+                CameraMode.FixedSideOn => fixedSideOnMovementSpeedMultiplier,
                 _ => 1f
             };
         }
@@ -169,10 +221,8 @@ namespace Player
             {
                 CameraMode.FirstPerson => firstPersonTurnSpeedMultiplier,
                 CameraMode.ThirdPerson => thirdPersonTurnSpeedMultiplier,
-                CameraMode.TopDown => topDownTurnSpeedMultiplier,
                 CameraMode.Isometric => isometricTurnSpeedMultiplier,
-                CameraMode.Platformer => platformerTurnSpeedMultiplier,
-                CameraMode.FixedSideOn => platformerTurnSpeedMultiplier,
+                CameraMode.FixedSideOn => fixedSideOnTurnSpeedMultiplier,
                 _ => 1f
             };
         }
@@ -183,12 +233,20 @@ namespace Player
             {
                 CameraMode.FirstPerson => FirstPersonFacesMovement(),
                 CameraMode.ThirdPerson => ThirdPersonFacesMovement(),
-                CameraMode.TopDown => TopDownFacesMovement(),
                 CameraMode.Isometric => IsometricFacesMovement(),
-                CameraMode.Platformer => PlatformerFacesMovement(),
-                CameraMode.FixedSideOn => PlatformerFacesMovement(),
+                CameraMode.FixedSideOn => true,
                 _ => true
             };
+        }
+
+        private static Vector3 GetFixedSideOnMovementDirection(Vector2 movementInput, Vector3 movementRight)
+        {
+            return movementRight * movementInput.x;
+        }
+
+        private static bool HasValidFixedSideOnSprintDirection(Vector2 movementInput)
+        {
+            return Mathf.Abs(movementInput.x) > MeaningfulMovementInput;
         }
     }
 }

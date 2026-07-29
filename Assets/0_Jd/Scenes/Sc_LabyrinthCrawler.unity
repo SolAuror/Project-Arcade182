@@ -334,7 +334,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4684500389704870999, guid: 0ad1861558572874bb75a70fbddff53b, type: 3}
       propertyPath: m_Name
-      value: SolController
+      value: LabCrawlerController
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

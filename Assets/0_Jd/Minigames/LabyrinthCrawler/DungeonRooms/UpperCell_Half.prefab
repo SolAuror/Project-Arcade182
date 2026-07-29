@@ -248,6 +248,11 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: 729d007002e65e241b4611838d2de4fc, type: 3}
   - {fileID: 919132149155446097, guid: 6debd42c28bbaee4ca2f038eeaf903c4, type: 3}
   partYOffset: 0
+  streetArchVariants:
+  - {fileID: 919132149155446097, guid: bb1fb48c8e5b3ac408ac855495005bb1, type: 3}
+  - {fileID: 919132149155446097, guid: 21c20a49c1e006d4faa3f0187df85d72, type: 3}
+  - {fileID: 919132149155446097, guid: 0e0fe991a0425ae42983ba5b7e8309de, type: 3}
+  - {fileID: 919132149155446097, guid: 725208745a9087c429919ccc4d290e38, type: 3}
 --- !u!1 &3339830095303109806
 GameObject:
   m_ObjectHideFlags: 0
@@ -310,6 +315,11 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: 729d007002e65e241b4611838d2de4fc, type: 3}
   - {fileID: 919132149155446097, guid: 6debd42c28bbaee4ca2f038eeaf903c4, type: 3}
   partYOffset: 0
+  streetArchVariants:
+  - {fileID: 919132149155446097, guid: bb1fb48c8e5b3ac408ac855495005bb1, type: 3}
+  - {fileID: 919132149155446097, guid: 21c20a49c1e006d4faa3f0187df85d72, type: 3}
+  - {fileID: 919132149155446097, guid: 0e0fe991a0425ae42983ba5b7e8309de, type: 3}
+  - {fileID: 919132149155446097, guid: 725208745a9087c429919ccc4d290e38, type: 3}
 --- !u!1 &3415484251922142334
 GameObject:
   m_ObjectHideFlags: 0
@@ -460,6 +470,11 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: 729d007002e65e241b4611838d2de4fc, type: 3}
   - {fileID: 919132149155446097, guid: 6debd42c28bbaee4ca2f038eeaf903c4, type: 3}
   partYOffset: 0
+  streetArchVariants:
+  - {fileID: 919132149155446097, guid: bb1fb48c8e5b3ac408ac855495005bb1, type: 3}
+  - {fileID: 919132149155446097, guid: 21c20a49c1e006d4faa3f0187df85d72, type: 3}
+  - {fileID: 919132149155446097, guid: 0e0fe991a0425ae42983ba5b7e8309de, type: 3}
+  - {fileID: 919132149155446097, guid: 725208745a9087c429919ccc4d290e38, type: 3}
 --- !u!1 &4155068891176543191
 GameObject:
   m_ObjectHideFlags: 0
@@ -554,6 +569,11 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: 729d007002e65e241b4611838d2de4fc, type: 3}
   - {fileID: 919132149155446097, guid: 6debd42c28bbaee4ca2f038eeaf903c4, type: 3}
   partYOffset: 0
+  streetArchVariants:
+  - {fileID: 919132149155446097, guid: bb1fb48c8e5b3ac408ac855495005bb1, type: 3}
+  - {fileID: 919132149155446097, guid: 21c20a49c1e006d4faa3f0187df85d72, type: 3}
+  - {fileID: 919132149155446097, guid: 0e0fe991a0425ae42983ba5b7e8309de, type: 3}
+  - {fileID: 919132149155446097, guid: 725208745a9087c429919ccc4d290e38, type: 3}
 --- !u!1 &7414202868890781264
 GameObject:
   m_ObjectHideFlags: 0

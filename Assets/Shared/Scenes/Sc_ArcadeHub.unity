@@ -136848,7 +136848,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1457218679dd4915a526286a7dc2761a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabToSpawn: {fileID: 4684500389704870999, guid: 0ad1861558572874bb75a70fbddff53b, type: 3}
+  prefabToSpawn: {fileID: 4684500389704870999, guid: 7daf2c754566460489fc6355359eabee, type: 3}
 --- !u!1 &941386849
 GameObject:
   m_ObjectHideFlags: 0
@@ -301772,10 +301772,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1128125214611891113, guid: 7daf2c754566460489fc6355359eabee, type: 3}
-      propertyPath: hitMask.m_Bits
-      value: 51
-      objectReference: {fileID: 0}
     - target: {fileID: 1916755111195717768, guid: 7daf2c754566460489fc6355359eabee, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -301830,7 +301826,7 @@ PrefabInstance:
       objectReference: {fileID: 5170748527322428536}
     - target: {fileID: 8861423841737197292, guid: 7daf2c754566460489fc6355359eabee, type: 3}
       propertyPath: groundLayers.m_Bits
-      value: 1
+      value: 55
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

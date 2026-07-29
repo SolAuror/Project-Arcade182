@@ -29,7 +29,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5820014733962141007}
@@ -92,6 +92,11 @@ MonoBehaviour:
   solidCollider: {fileID: 5820014733962141003}
   passTrigger: {fileID: 5820014733962141004}
   playerTag: Player
+  fallbackVisual: {fileID: 5820014733962141006}
+  illusionMaterial: {fileID: 2100000, guid: b2e6c4a8d0f347c1a9e5b3d7c6f82044, type: 2}
+  visualDepthPadding: 0.3
+  minimumSolidDepth: 0.35
+  triggerDepthPadding: 1.5
   dissolveSeconds: 2.5
   revealClip: {fileID: 8300000, guid: e9b3d7a1c5f24086b0d8c2a6e4f19522, type: 3}
   revealVolume: 0.75

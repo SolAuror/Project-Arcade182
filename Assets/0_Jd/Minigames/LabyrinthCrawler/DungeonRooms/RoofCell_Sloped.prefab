@@ -189,6 +189,8 @@ MonoBehaviour:
   gableYOffset: 0
   capYOffset: 0
   modelBaseEuler: {x: 90, y: 0, z: 0}
+  authoredRoof: 0
+  spawned: []
 --- !u!1 &1775811469684807496
 GameObject:
   m_ObjectHideFlags: 0
@@ -263,6 +265,16 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: 44567978625cf204994e8082bf26aa06, type: 3}
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
+  authoredOpening: 0
+  authoredInteriorOpening: 0
+  streetArchVariants: []
+  pierNameToken: pier
+  archNameToken: arch
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &3339830095303109806
 GameObject:
   m_ObjectHideFlags: 0
@@ -337,6 +349,16 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: 44567978625cf204994e8082bf26aa06, type: 3}
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
+  authoredOpening: 0
+  authoredInteriorOpening: 0
+  streetArchVariants: []
+  pierNameToken: pier
+  archNameToken: arch
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &3415484251922142334
 GameObject:
   m_ObjectHideFlags: 0
@@ -499,6 +521,16 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: 44567978625cf204994e8082bf26aa06, type: 3}
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
+  authoredOpening: 0
+  authoredInteriorOpening: 0
+  streetArchVariants: []
+  pierNameToken: pier
+  archNameToken: arch
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &4155068891176543191
 GameObject:
   m_ObjectHideFlags: 0
@@ -605,6 +637,16 @@ MonoBehaviour:
   - {fileID: 919132149155446097, guid: 44567978625cf204994e8082bf26aa06, type: 3}
   - {fileID: 919132149155446097, guid: a1c39d05f99e66f4cbc109d87add9e38, type: 3}
   partYOffset: 0
+  authoredOpening: 0
+  authoredInteriorOpening: 0
+  streetArchVariants: []
+  pierNameToken: pier
+  archNameToken: arch
+  spawnedVariant: {fileID: 0}
+  spawnedArch: {fileID: 0}
+  hasCachedPlacement: 0
+  cachedLocalPosition: {x: 0, y: 0, z: 0}
+  cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
 --- !u!1 &7414202868890781264
 GameObject:
   m_ObjectHideFlags: 0
@@ -989,6 +1031,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: a2da46aa95a745242933319614bece26, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: b2b6f1462ea614643829f151cd3ee771, type: 2}
     - target: {fileID: 919132149155446097, guid: a2da46aa95a745242933319614bece26, type: 3}
       propertyPath: m_Name
       value: Roof_SingleFull

@@ -9482,18 +9482,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 1128125214611891113, guid: 7daf2c754566460489fc6355359eabee, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1128125214611891113, guid: 7daf2c754566460489fc6355359eabee, type: 3}
-      propertyPath: hitMask.m_Bits
-      value: 51
-      objectReference: {fileID: 0}
-    - target: {fileID: 1903267933512592173, guid: 7daf2c754566460489fc6355359eabee, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1916755111195717768, guid: 7daf2c754566460489fc6355359eabee, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -9506,21 +9494,13 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 3853517124589700457, guid: 7daf2c754566460489fc6355359eabee, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 4684500389704870999, guid: 7daf2c754566460489fc6355359eabee, type: 3}
       propertyPath: m_Name
-      value: SharedPlayerController
+      value: ArcadeHubController
       objectReference: {fileID: 0}
     - target: {fileID: 5258710787579523452, guid: 7daf2c754566460489fc6355359eabee, type: 3}
       propertyPath: m_LocalPosition.y
       value: 1.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 5640285837265940570, guid: 7daf2c754566460489fc6355359eabee, type: 3}
-      propertyPath: m_Enabled
-      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8861423841737197292, guid: 7daf2c754566460489fc6355359eabee, type: 3}
       propertyPath: crosshairObject
