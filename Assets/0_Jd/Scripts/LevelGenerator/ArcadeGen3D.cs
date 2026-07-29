@@ -23,7 +23,7 @@ namespace Sol
         [Min(1)] public int numZ = 10;
 
         [Header("Braiding")]
-        [Tooltip("Fraction of dead-ends knocked open into loops after the perfect-maze carve. 0 = classic single-path maze (the hub default). Loops give the player a route around obstacles like pits.")]
+        [Tooltip("Fraction of dead-ends knocked open into loops after the perfect-maze carve. 0 = classic single-path maze. Loops give the player a route around obstacles like pits.")]
         [Range(0f, 1f)] public float braidRate;
 
         [Header("Pits")]
@@ -141,6 +141,9 @@ namespace Sol
         [Tooltip("Number of rooms along local Z.")]
         [SerializeField] private int numZ = 10;
 
+        [Tooltip("Optional exact X/Z distance between room origins. Leave at zero to infer the size from the room prefab renderers. Use this for cell-centred modular kits so posters, machines, wall thickness, or other decor cannot perturb grid alignment.")]
+        [SerializeField] private Vector2 roomSizeOverride;
+
         [Header("Generation")]
         [Tooltip("Generate and carve the maze automatically when the scene starts.")]
         [SerializeField] private bool autoGenerateOnStart = true;
@@ -150,6 +153,10 @@ namespace Sol
 
         [Tooltip("Maze carving steps processed per frame while generating at runtime.")]
         [SerializeField, Min(1)] private int generationStepsPerFrame = 32;
+
+        [Header("Maze Loops")]
+        [Tooltip("Fraction of dead ends opened into loops after the initial perfect-maze carve. The dungeon uses 0.35.")]
+        [SerializeField, Range(0f, 1f)] private float braidRate;
 
         [Header("Outer Openings")]
         [Tooltip("Optional outside opening on the start room.")]
@@ -174,6 +181,59 @@ namespace Sol
 
         [Tooltip("Render each shared wall once (by one owning cell) instead of both cells drawing it. A window then looks THROUGH into the neighbouring space instead of into a back-to-back wall, and interior walls stop doubling up. Turn OFF if your wall meshes are single-sided and show through from the back. Only applies while Dress Walls After Carve is on.")]
         [SerializeField] private bool deDoubleSharedWalls = true;
+
+        [Tooltip("Optional lightweight passage kit for rooms that do not already carry WallSockets. Closed edges keep their authored solid wall and poster/flyer children; open edges choose one of these parts. Empty leaves existing room behaviour unchanged.")]
+        [SerializeField] private List<GameObject> minimalPassageVariants = new List<GameObject>();
+
+        [Tooltip("Scale multiplier applied once to poster roots discovered by the lightweight wall treatment. Flyers are left at their authored size.")]
+        [SerializeField, Min(0.01f)] private float minimalPosterScaleMultiplier = 1f;
+
+        [Header("Arcade Machine Scatter")]
+        [Tooltip("After carving, redistribute arcade machines already authored in each room onto closed-wall bays. Entire open walls remain clear for doorways and openings. Intended for the Hub; leave off on generators without room-authored cabinets.")]
+        [SerializeField] private bool scatterArcadeMachinesAfterCarve;
+
+        [Tooltip("Playable cabinet prefabs used to fill rooms that contain fewer than Target Arcade Machines Per Room. Add future machines here to include them in the deterministic scatter pool.")]
+        [SerializeField] private List<GameObject> arcadeMachinePrefabs = new List<GameObject>();
+
+        [Tooltip("Minimum number of playable cabinets requested in every walkable room. Existing authored cabinets count toward this target.")]
+        [SerializeField, Min(0)] private int targetArcadeMachinesPerRoom = 2;
+
+        [Tooltip("Uniform local scale applied to scattered cabinet roots before their footprints are measured. Keep at 1 to preserve the authored size.")]
+        [SerializeField, Min(0.01f)] private float arcadeMachineUniformScale = 1f;
+
+        [Tooltip("Small clearance maintained between each cabinet's measured lowest rendered point and the room floor.")]
+        [SerializeField, Min(0f)] private float arcadeMachineGroundClearance;
+
+        [Tooltip("Distance from the room edge to the centre of a cabinet. The Hub's authored machines use approximately 1.38.")]
+        [SerializeField, Min(0f)] private float arcadeMachineWallInset = 1.38f;
+
+        [Tooltip("Distance to either side of the wall centre for the two cabinet bays. Keeps the centre line and adjacent corners clear.")]
+        [SerializeField, Min(0f)] private float arcadeMachineBayOffset = 2.15f;
+
+        [Tooltip("Extra horizontal gap maintained between the measured footprints of neighbouring cabinets.")]
+        [SerializeField, Min(0f)] private float arcadeMachineClearance = 0.15f;
+
+        [Header("Arcade Poster Scatter")]
+        [Tooltip("After carving, redistribute authored posters and fill safe closed-wall poster bays from Arcade Poster Prefabs. Openings and doorway walls never receive posters.")]
+        [SerializeField] private bool scatterArcadePostersAfterCarve;
+
+        [Tooltip("Poster prefabs used to fill closed walls. Add future posters here to include them in the deterministic scatter pool.")]
+        [SerializeField] private List<GameObject> arcadePosterPrefabs = new List<GameObject>();
+
+        [Tooltip("Number of posters placed across each rendered closed wall. Three creates a deliberately poster-heavy arcade.")]
+        [SerializeField, Min(0)] private int postersPerClosedWall = 3;
+
+        [Tooltip("Distance from the room edge to the Hub wall's interior poster plane. The current wall kit's visible inner face is approximately 0.55 units inside the grid boundary.")]
+        [SerializeField, Min(0f)] private float posterWallInset = 0.55f;
+
+        [Tooltip("Height of poster roots above the room floor.")]
+        [SerializeField, Min(0f)] private float posterHeight = 3.35f;
+
+        [Tooltip("Random vertical variation added to poster placement.")]
+        [SerializeField, Min(0f)] private float posterHeightJitter = 0.35f;
+
+        [Tooltip("Horizontal margin kept between the outer poster bays and room corners.")]
+        [SerializeField, Min(0f)] private float posterCornerMargin = 1.05f;
 
         [Header("Upper Floors (lost-city buildings)")]
         [Tooltip("Stack real upper-floor cells on the sealed solid-block buildings to make multi-storey lost-city structures with windowed facades onto the streets, capped by authored roof cells. Purely cosmetic exterior massing - the player never traverses them and the walkable graph never changes. Only applies while Dress Walls After Carve is on; always off on the hub.")]
@@ -1176,6 +1236,13 @@ namespace Sol
 
         private bool GetRoomSize(GameObject sizeSourcePrefab)
         {
+            if (roomSizeOverride.x > 0f && roomSizeOverride.y > 0f)
+            {
+                roomWidth = roomSizeOverride.x;
+                roomLength = roomSizeOverride.y;
+                return true;
+            }
+
             if (!TryGetPrefabBounds(sizeSourcePrefab, out Vector3 minBounds, out Vector3 maxBounds))
             {
                 Debug.LogWarning($"{sizeSourcePrefab.name} does not have any enabled renderers to calculate room size from.");
@@ -1623,6 +1690,8 @@ namespace Sol
             PlaceAuthoredBuildings();
             ClassifySpaces();
             DressWalls();
+            ScatterArcadePosters();
+            ScatterArcadeMachines();
             BuildUpperFloors();
             OptimizeEndpointPlacements();
             VerifyExitReachable();
@@ -2126,6 +2195,14 @@ namespace Sol
                         continue; // leave pit rooms as authored - no arches over a drop
                     }
 
+                    // Arcade's room prefabs intentionally stay much simpler than
+                    // the crawler kit. When a small passage list is supplied, add
+                    // runtime sockets around their existing solid walls and keep
+                    // poster/flyer children as closed-wall-only decoration.
+                    room.EnsureMinimalWallSockets(
+                        minimalPassageVariants,
+                        minimalPosterScaleMultiplier);
+
                     bool selfBlock = IsSolidBlockCell(x, z);
 
                     foreach (Room3D.Directions dir in CardinalDirections)
@@ -2158,6 +2235,745 @@ namespace Sol
                         room.DressWall(dir, open, outer, owner, interiorEdge, deDoubleSharedWalls, rng);
                     }
                 }
+            }
+        }
+
+        private readonly struct ArcadePosterSlot
+        {
+            public ArcadePosterSlot(
+                Room3D.Directions wall,
+                Vector3 localPosition)
+            {
+                Wall = wall;
+                LocalPosition = localPosition;
+            }
+
+            public Room3D.Directions Wall { get; }
+            public Vector3 LocalPosition { get; }
+        }
+
+        // Dense Hub poster pass. Existing room-authored posters are recycled
+        // first, then the serialized pool fills any remaining bays. Because bays
+        // are generated only for closed edges, poster art never leaks into a
+        // doorway or wide opening even when the maze layout changes.
+        private void ScatterArcadePosters()
+        {
+            if (!scatterArcadePostersAfterCarve || rooms == null)
+            {
+                return;
+            }
+
+            System.Random rng = new System.Random(
+                System.HashCode.Combine(
+                    CurrentNumX,
+                    CurrentNumZ,
+                    startRoomIndex,
+                    endRoomIndex,
+                    0x504F5354));
+
+            for (int x = 0; x < CurrentNumX; x++)
+            {
+                for (int z = 0; z < CurrentNumZ; z++)
+                {
+                    Room3D room = rooms[x, z];
+                    if (room == null || room.IsPit || room.IsSolidBlock)
+                    {
+                        continue;
+                    }
+
+                    ScatterRoomArcadePosters(room, x, z, rng);
+                }
+            }
+        }
+
+        private void ScatterRoomArcadePosters(
+            Room3D room,
+            int x,
+            int z,
+            System.Random rng)
+        {
+            List<ArcadePosterSlot> slots =
+                BuildArcadePosterSlots(x, z);
+            List<Transform> posters =
+                FindArcadePosterRoots(room);
+
+            int requestedCount = slots.Count;
+            while (posters.Count < requestedCount
+                && TryPickPooledPrefab(
+                    arcadePosterPrefabs,
+                    rng,
+                    out GameObject prefab))
+            {
+                GameObject instance =
+                    Instantiate(prefab, room.transform);
+                instance.name =
+                    $"__ArcadePoster__{prefab.name}";
+                instance.transform.localScale =
+                    Vector3.Scale(
+                        prefab.transform.localScale,
+                        Vector3.one
+                            * Mathf.Max(
+                                0.01f,
+                                minimalPosterScaleMultiplier));
+                posters.Add(instance.transform);
+            }
+
+            for (int i = posters.Count - 1; i > 0; i--)
+            {
+                int swap = rng.Next(i + 1);
+                (posters[i], posters[swap]) =
+                    (posters[swap], posters[i]);
+            }
+
+            for (int i = 0; i < posters.Count; i++)
+            {
+                Transform poster = posters[i];
+                if (i >= slots.Count)
+                {
+                    poster.gameObject.SetActive(false);
+                    continue;
+                }
+
+                ArcadePosterSlot slot = slots[i];
+                Vector3 position = slot.LocalPosition;
+                position.y +=
+                    ((float)rng.NextDouble() * 2f - 1f)
+                    * Mathf.Max(0f, posterHeightJitter);
+
+                // Detaching from an authored wall prevents a poster moved away
+                // from an open/non-owning edge being hidden with its old parent.
+                poster.SetParent(room.transform, true);
+                poster.SetPositionAndRotation(
+                    room.transform.TransformPoint(position),
+                    room.transform.rotation
+                        * Quaternion.Euler(
+                            0f,
+                            DirectionYaw(slot.Wall),
+                            0f));
+                poster.gameObject.SetActive(true);
+            }
+        }
+
+        private List<ArcadePosterSlot> BuildArcadePosterSlots(
+            int x,
+            int z)
+        {
+            int count = Mathf.Max(0, postersPerClosedWall);
+            List<ArcadePosterSlot> slots =
+                new List<ArcadePosterSlot>(count * 4);
+            if (count == 0)
+            {
+                return slots;
+            }
+
+            float halfWidth = roomWidth * 0.5f;
+            float halfLength = roomLength * 0.5f;
+            float insetX = Mathf.Clamp(
+                posterWallInset,
+                0f,
+                halfWidth);
+            float insetZ = Mathf.Clamp(
+                posterWallInset,
+                0f,
+                halfLength);
+            float horizontalX = Mathf.Max(
+                0f,
+                halfWidth - posterCornerMargin);
+            float horizontalZ = Mathf.Max(
+                0f,
+                halfLength - posterCornerMargin);
+
+            AddPosterWallSlots(
+                slots,
+                x,
+                z,
+                Room3D.Directions.NORTH,
+                count,
+                horizontalX,
+                offset =>
+                    new Vector3(
+                        offset,
+                        posterHeight,
+                        halfLength - insetZ));
+            AddPosterWallSlots(
+                slots,
+                x,
+                z,
+                Room3D.Directions.SOUTH,
+                count,
+                horizontalX,
+                offset =>
+                    new Vector3(
+                        -offset,
+                        posterHeight,
+                        -halfLength + insetZ));
+            AddPosterWallSlots(
+                slots,
+                x,
+                z,
+                Room3D.Directions.EAST,
+                count,
+                horizontalZ,
+                offset =>
+                    new Vector3(
+                        halfWidth - insetX,
+                        posterHeight,
+                        offset));
+            AddPosterWallSlots(
+                slots,
+                x,
+                z,
+                Room3D.Directions.WEST,
+                count,
+                horizontalZ,
+                offset =>
+                    new Vector3(
+                        -halfWidth + insetX,
+                        posterHeight,
+                        -offset));
+
+            return slots;
+        }
+
+        private void AddPosterWallSlots(
+            List<ArcadePosterSlot> slots,
+            int x,
+            int z,
+            Room3D.Directions wall,
+            int count,
+            float horizontalExtent,
+            Func<float, Vector3> positionFactory)
+        {
+            if (IsDoorOpen(x, z, wall)
+                || !DoesRoomOwnRenderedWall(x, z, wall))
+            {
+                return;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                float t =
+                    count == 1
+                        ? 0.5f
+                        : i / (float)(count - 1);
+                float offset =
+                    Mathf.Lerp(
+                        -horizontalExtent,
+                        horizontalExtent,
+                        t);
+                slots.Add(
+                    new ArcadePosterSlot(
+                        wall,
+                        positionFactory(offset)));
+            }
+        }
+
+        private bool DoesRoomOwnRenderedWall(
+            int x,
+            int z,
+            Room3D.Directions wall)
+        {
+            if (!deDoubleSharedWalls)
+            {
+                return true;
+            }
+
+            bool selfBlock = IsSolidBlockCell(x, z);
+            bool hasNeighbor =
+                TryGetNeighbor(
+                    x,
+                    z,
+                    wall,
+                    out int neighborX,
+                    out int neighborZ);
+            bool outer =
+                !hasNeighbor
+                || !IsActiveCell(neighborX, neighborZ);
+            bool neighborBlock =
+                hasNeighbor
+                && IsSolidBlockCell(neighborX, neighborZ);
+
+            return selfBlock != neighborBlock
+                ? selfBlock
+                : outer
+                    || wall == Room3D.Directions.NORTH
+                    || wall == Room3D.Directions.EAST;
+        }
+
+        private static List<Transform> FindArcadePosterRoots(
+            Room3D room)
+        {
+            List<Transform> posters = new List<Transform>();
+            foreach (Transform candidate
+                in room.GetComponentsInChildren<Transform>(true))
+            {
+                if (candidate == room.transform
+                    || candidate.name.IndexOf(
+                        "Poster",
+                        StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    continue;
+                }
+
+                bool nestedBelowPoster = false;
+                Transform parent = candidate.parent;
+                while (parent != null && parent != room.transform)
+                {
+                    if (parent.name.IndexOf(
+                            "Poster",
+                            StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        nestedBelowPoster = true;
+                        break;
+                    }
+
+                    parent = parent.parent;
+                }
+
+                if (!nestedBelowPoster)
+                {
+                    posters.Add(candidate);
+                }
+            }
+
+            return posters;
+        }
+
+        private static bool TryPickPooledPrefab(
+            IReadOnlyList<GameObject> prefabs,
+            System.Random rng,
+            out GameObject prefab)
+        {
+            prefab = null;
+            if (prefabs == null || prefabs.Count == 0)
+            {
+                return false;
+            }
+
+            int start = rng.Next(prefabs.Count);
+            for (int i = 0; i < prefabs.Count; i++)
+            {
+                GameObject candidate =
+                    prefabs[(start + i) % prefabs.Count];
+                if (candidate != null)
+                {
+                    prefab = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private readonly struct ArcadeMachineSlot
+        {
+            public ArcadeMachineSlot(Room3D.Directions wall, Vector3 localPosition)
+            {
+                Wall = wall;
+                LocalPosition = localPosition;
+            }
+
+            public Room3D.Directions Wall { get; }
+            public Vector3 LocalPosition { get; }
+        }
+
+        private readonly struct PlacedArcadeMachine
+        {
+            public PlacedArcadeMachine(Vector2 localPosition, float radius)
+            {
+                LocalPosition = localPosition;
+                Radius = radius;
+            }
+
+            public Vector2 LocalPosition { get; }
+            public float Radius { get; }
+        }
+
+        // Hub-only furnishing pass. A room prefab remains the source of which
+        // playable cabinets it contains; generation only chooses safe locations
+        // after the maze knows which edges became passages. Each closed wall has
+        // two side bays, while an open wall has none, so a cabinet can never sit
+        // inside either the narrow doorway or the wide opening model.
+        private void ScatterArcadeMachines()
+        {
+            if (!scatterArcadeMachinesAfterCarve || rooms == null)
+            {
+                return;
+            }
+
+            System.Random rng = new System.Random(
+                System.HashCode.Combine(
+                    CurrentNumX,
+                    CurrentNumZ,
+                    startRoomIndex,
+                    endRoomIndex,
+                    0x41524344));
+
+            for (int x = 0; x < CurrentNumX; x++)
+            {
+                for (int z = 0; z < CurrentNumZ; z++)
+                {
+                    Room3D room = rooms[x, z];
+                    if (room == null || room.IsPit || room.IsSolidBlock)
+                    {
+                        continue;
+                    }
+
+                    ScatterRoomArcadeMachines(room, x, z, rng);
+                }
+            }
+        }
+
+        private void ScatterRoomArcadeMachines(
+            Room3D room,
+            int x,
+            int z,
+            System.Random rng)
+        {
+            List<Transform> machines = FindArcadeMachineRoots(room);
+            int requestedCount =
+                Mathf.Max(0, targetArcadeMachinesPerRoom);
+            while (machines.Count < requestedCount
+                && TryPickPooledPrefab(
+                    arcadeMachinePrefabs,
+                    rng,
+                    out GameObject prefab))
+            {
+                GameObject instance =
+                    Instantiate(prefab, room.transform);
+                instance.name =
+                    $"__ArcadeMachine__{prefab.name}";
+                machines.Add(instance.transform);
+            }
+
+            if (machines.Count == 0)
+            {
+                return;
+            }
+
+            List<ArcadeMachineSlot> slots = new List<ArcadeMachineSlot>(8);
+            float halfWidth = roomWidth * 0.5f;
+            float halfLength = roomLength * 0.5f;
+            float insetX = Mathf.Clamp(arcadeMachineWallInset, 0f, halfWidth);
+            float insetZ = Mathf.Clamp(arcadeMachineWallInset, 0f, halfLength);
+            float bayX = Mathf.Min(
+                arcadeMachineBayOffset,
+                Mathf.Max(0f, halfWidth - insetX));
+            float bayZ = Mathf.Min(
+                arcadeMachineBayOffset,
+                Mathf.Max(0f, halfLength - insetZ));
+
+            AddMachineWallSlots(
+                slots,
+                x,
+                z,
+                Room3D.Directions.NORTH,
+                new Vector3(-bayX, 0f, halfLength - insetZ),
+                new Vector3(bayX, 0f, halfLength - insetZ));
+            AddMachineWallSlots(
+                slots,
+                x,
+                z,
+                Room3D.Directions.SOUTH,
+                new Vector3(-bayX, 0f, -halfLength + insetZ),
+                new Vector3(bayX, 0f, -halfLength + insetZ));
+            AddMachineWallSlots(
+                slots,
+                x,
+                z,
+                Room3D.Directions.EAST,
+                new Vector3(halfWidth - insetX, 0f, -bayZ),
+                new Vector3(halfWidth - insetX, 0f, bayZ));
+            AddMachineWallSlots(
+                slots,
+                x,
+                z,
+                Room3D.Directions.WEST,
+                new Vector3(-halfWidth + insetX, 0f, -bayZ),
+                new Vector3(-halfWidth + insetX, 0f, bayZ));
+
+            // Hierarchy order is stable for prefab instances. A seeded shuffle
+            // prevents every generated copy from selecting the same fallback wall
+            // while keeping regeneration deterministic for the same layout.
+            for (int i = machines.Count - 1; i > 0; i--)
+            {
+                int swap = rng.Next(i + 1);
+                (machines[i], machines[swap]) = (machines[swap], machines[i]);
+            }
+
+            List<PlacedArcadeMachine> placedMachines =
+                new List<PlacedArcadeMachine>(machines.Count);
+
+            foreach (Transform machine in machines)
+            {
+                float uniformScale =
+                    Mathf.Max(0.01f, arcadeMachineUniformScale);
+                machine.localScale =
+                    Vector3.one * uniformScale;
+
+                Vector3 currentLocalPosition =
+                    room.transform.InverseTransformPoint(machine.position);
+                Quaternion currentLocalRotation =
+                    Quaternion.Inverse(room.transform.rotation) * machine.rotation;
+                Room3D.Directions sourceWall =
+                    ClosestWall(currentLocalPosition);
+                float footprintRadius =
+                    GetArcadeMachineFootprintRadius(machine);
+
+                // Some authored Hub cabinets currently live below a wall parent.
+                // Detach them before placement so hiding an open/non-owning wall
+                // cannot also hide a cabinet that was moved to a safe closed bay.
+                machine.SetParent(room.transform, true);
+
+                int slotIndex = FindPreferredMachineSlot(
+                    slots,
+                    sourceWall,
+                    currentLocalPosition,
+                    footprintRadius,
+                    placedMachines,
+                    rng);
+                if (slotIndex < 0)
+                {
+                    machine.gameObject.SetActive(false);
+                    continue;
+                }
+
+                ArcadeMachineSlot slot = slots[slotIndex];
+                slots.RemoveAt(slotIndex);
+
+                Vector3 placed = slot.LocalPosition;
+                placed.y = currentLocalPosition.y;
+                float yawDelta =
+                    DirectionYaw(slot.Wall) - DirectionYaw(sourceWall);
+
+                machine.SetPositionAndRotation(
+                    room.transform.TransformPoint(placed),
+                    room.transform.rotation
+                        * Quaternion.Euler(0f, yawDelta, 0f)
+                        * currentLocalRotation);
+                machine.gameObject.SetActive(true);
+                GroundArcadeMachine(machine, room);
+                placedMachines.Add(
+                    new PlacedArcadeMachine(
+                        new Vector2(placed.x, placed.z),
+                        footprintRadius));
+            }
+        }
+
+        private void GroundArcadeMachine(
+            Transform machine,
+            Room3D room)
+        {
+            Renderer[] renderers =
+                machine.GetComponentsInChildren<Renderer>(false);
+            bool foundBounds = false;
+            Bounds combined = default;
+
+            foreach (Renderer renderer in renderers)
+            {
+                if (renderer == null
+                    || !renderer.enabled
+                    || !renderer.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                if (!foundBounds)
+                {
+                    combined = renderer.bounds;
+                    foundBounds = true;
+                }
+                else
+                {
+                    combined.Encapsulate(renderer.bounds);
+                }
+            }
+
+            if (!foundBounds)
+            {
+                return;
+            }
+
+            float floorY =
+                room.transform.position.y
+                + Mathf.Max(0f, arcadeMachineGroundClearance);
+            machine.position +=
+                Vector3.up * (floorY - combined.min.y);
+        }
+
+        private void AddMachineWallSlots(
+            List<ArcadeMachineSlot> slots,
+            int x,
+            int z,
+            Room3D.Directions wall,
+            Vector3 first,
+            Vector3 second)
+        {
+            if (IsDoorOpen(x, z, wall))
+            {
+                return;
+            }
+
+            slots.Add(new ArcadeMachineSlot(wall, first));
+            slots.Add(new ArcadeMachineSlot(wall, second));
+        }
+
+        private static List<Transform> FindArcadeMachineRoots(Room3D room)
+        {
+            List<Transform> machines = new List<Transform>();
+            HashSet<Transform> unique = new HashSet<Transform>();
+
+            foreach (Sol.Arcade.ArcadeMachineLauncher launcher
+                in room.GetComponentsInChildren<Sol.Arcade.ArcadeMachineLauncher>(true))
+            {
+                Transform machineRoot = null;
+                Transform current = launcher.transform;
+                while (current != null && current != room.transform)
+                {
+                    if (current.name.IndexOf(
+                            "ArcadeMachine",
+                            StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        machineRoot = current;
+                    }
+
+                    current = current.parent;
+                }
+
+                if (machineRoot != null && unique.Add(machineRoot))
+                {
+                    machines.Add(machineRoot);
+                }
+            }
+
+            return machines;
+        }
+
+        private int FindPreferredMachineSlot(
+            List<ArcadeMachineSlot> slots,
+            Room3D.Directions sourceWall,
+            Vector3 sourcePosition,
+            float footprintRadius,
+            List<PlacedArcadeMachine> placedMachines,
+            System.Random rng)
+        {
+            int best = -1;
+            float bestDistance = float.PositiveInfinity;
+            for (int i = 0; i < slots.Count; i++)
+            {
+                if (slots[i].Wall != sourceWall
+                    || !IsMachineSlotClear(
+                        slots[i],
+                        footprintRadius,
+                        placedMachines))
+                {
+                    continue;
+                }
+
+                float distance =
+                    (slots[i].LocalPosition - sourcePosition).sqrMagnitude;
+                if (distance < bestDistance)
+                {
+                    best = i;
+                    bestDistance = distance;
+                }
+            }
+
+            if (best >= 0)
+            {
+                return best;
+            }
+
+            // Reservoir selection gives every compatible fallback bay an equal,
+            // deterministic chance without allocating a second candidate list.
+            int compatibleCount = 0;
+            for (int i = 0; i < slots.Count; i++)
+            {
+                if (!IsMachineSlotClear(
+                        slots[i],
+                        footprintRadius,
+                        placedMachines))
+                {
+                    continue;
+                }
+
+                compatibleCount++;
+                if (rng.Next(compatibleCount) == 0)
+                {
+                    best = i;
+                }
+            }
+
+            return best;
+        }
+
+        private bool IsMachineSlotClear(
+            ArcadeMachineSlot slot,
+            float footprintRadius,
+            List<PlacedArcadeMachine> placedMachines)
+        {
+            Vector2 candidate = new Vector2(
+                slot.LocalPosition.x,
+                slot.LocalPosition.z);
+
+            foreach (PlacedArcadeMachine placed in placedMachines)
+            {
+                float minimumDistance =
+                    footprintRadius
+                    + placed.Radius
+                    + Mathf.Max(0f, arcadeMachineClearance);
+                if ((candidate - placed.LocalPosition).sqrMagnitude
+                    < minimumDistance * minimumDistance)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static float GetArcadeMachineFootprintRadius(Transform machine)
+        {
+            Renderer[] renderers =
+                machine.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+            {
+                return 0.75f;
+            }
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+            {
+                bounds.Encapsulate(renderers[i].bounds);
+            }
+
+            return Mathf.Max(
+                0.25f,
+                new Vector2(bounds.extents.x, bounds.extents.z).magnitude);
+        }
+
+        private static Room3D.Directions ClosestWall(Vector3 localPosition)
+        {
+            if (Mathf.Abs(localPosition.x) > Mathf.Abs(localPosition.z))
+            {
+                return localPosition.x >= 0f
+                    ? Room3D.Directions.EAST
+                    : Room3D.Directions.WEST;
+            }
+
+            return localPosition.z >= 0f
+                ? Room3D.Directions.NORTH
+                : Room3D.Directions.SOUTH;
+        }
+
+        private static float DirectionYaw(Room3D.Directions direction)
+        {
+            switch (direction)
+            {
+                case Room3D.Directions.EAST: return 90f;
+                case Room3D.Directions.SOUTH: return 180f;
+                case Room3D.Directions.WEST: return 270f;
+                default: return 0f; // NORTH
             }
         }
 
@@ -3766,10 +4582,10 @@ namespace Sol
             return activeRules == null || activeRules.activateEndRoomExit;
         }
 
-        // No serialized hub counterpart: the hub lane (activeRules == null)
-        // always reads 0, so the braid pass early-outs before touching RNG and
-        // the hub maze is generated byte-identically to before this feature.
-        private float CurrentBraidRate => activeRules != null ? Mathf.Clamp01(activeRules.braidRate) : 0f;
+        private float CurrentBraidRate =>
+            activeRules != null
+                ? Mathf.Clamp01(activeRules.braidRate)
+                : Mathf.Clamp01(braidRate);
 
         // Pits + footprint are rules-only features: the hub lane reads 0 pits, a
         // null void prefab, and a full-rectangle footprint, so the mask/pit
@@ -3842,8 +4658,8 @@ namespace Sol
         private void FinishGeneration()
         {
             // Post-carve passes run for every lane but self-disable when their
-            // inputs are inert: BraidMaze does nothing at rate 0 (the hub), and
-            // the pit passes do nothing when no pit rooms were placed.
+            // inputs are inert: BraidMaze does nothing when its configured rate
+            // is 0, and the pit passes do nothing when no pit rooms were placed.
             PostCarveProcessing();
 
             if (activeRules != null

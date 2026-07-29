@@ -97,6 +97,45 @@ namespace Sol
         [SerializeField, HideInInspector] private bool hasCachedPlacement;
         [SerializeField, HideInInspector] private Vector3 cachedLocalPosition;
         [SerializeField, HideInInspector] private Quaternion cachedLocalRotation = Quaternion.identity;
+        [SerializeField, HideInInspector] private List<GameObject> closedDecor = new List<GameObject>();
+
+        /// <summary>
+        /// Configures a socket created at runtime for the Arcade hub's minimal
+        /// solid-or-passage treatment. Existing authored crawler sockets never
+        /// call this path and retain their complete variant configuration.
+        /// </summary>
+        public void ConfigureMinimal(
+            GameObject solid,
+            IReadOnlyList<GameObject> passages,
+            IReadOnlyList<GameObject> decor)
+        {
+            defaultSolid = solid;
+            solidVariants.Clear();
+            passageVariants.Clear();
+            closedDecor.Clear();
+
+            if (passages != null)
+            {
+                for (int i = 0; i < passages.Count; i++)
+                {
+                    if (passages[i] != null)
+                    {
+                        passageVariants.Add(passages[i]);
+                    }
+                }
+            }
+
+            if (decor != null)
+            {
+                for (int i = 0; i < decor.Count; i++)
+                {
+                    if (decor[i] != null && !closedDecor.Contains(decor[i]))
+                    {
+                        closedDecor.Add(decor[i]);
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Renders this edge for its final carved state. Called once per generation
@@ -144,6 +183,8 @@ namespace Sol
                     : open
                         ? PickNonPier(passageVariants, rng)
                         : Pick(solidVariants, rng);
+
+            SetClosedDecorVisible(!open);
 
             if (open && requiredPierFamily.HasValue && chosen == null)
             {
@@ -220,6 +261,8 @@ namespace Sol
             {
                 defaultSolid.SetActive(true);
             }
+
+            SetClosedDecorVisible(true);
         }
 
         /// <summary>
@@ -678,6 +721,22 @@ namespace Sol
             else
             {
                 DestroyImmediate(instance);
+            }
+        }
+
+        private void SetClosedDecorVisible(bool visible)
+        {
+            if (closedDecor == null)
+            {
+                return;
+            }
+
+            foreach (GameObject decor in closedDecor)
+            {
+                if (decor != null)
+                {
+                    decor.SetActive(visible);
+                }
             }
         }
     }

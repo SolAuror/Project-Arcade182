@@ -45,21 +45,50 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   possibleRoomPrefabs:
-  - {fileID: 6010777708736884214, guid: 914f32a7979e05e4897d034009a196c3, type: 3}
-  - {fileID: 6010777708736884214, guid: 32101f2dd7f54a249b93f8d3848f38d0, type: 3}
-  - {fileID: 6010777708736884214, guid: a1282c3190860874f9cecf5e4045bfe1, type: 3}
-  firstRoomPrefab: {fileID: 6010777708736884214, guid: 914f32a7979e05e4897d034009a196c3, type: 3}
+  - {fileID: 6010777708736884214, guid: b37cbb8e445708e4fa5537756d812b42, type: 3}
+  - {fileID: 6010777708736884214, guid: 88f757bbb43578c46a75696aa45c9e0d, type: 3}
+  firstRoomPrefab: {fileID: 6010777708736884214, guid: b37cbb8e445708e4fa5537756d812b42, type: 3}
   lastRoomPrefab: {fileID: 6010777708736884214, guid: 0f5018403b2937142ab78ba25df95dfd, type: 3}
   centerRoomPrefab: {fileID: 6010777708736884214, guid: 287136fa6d078f244bdbd1ae203d856a, type: 3}
   specialRoomPlacementMode: 2
   roomPrefab: {fileID: 0}
   numX: 3
   numZ: 14
+  roomSizeOverride: {x: 8.51, y: 8.51}
   autoGenerateOnStart: 1
   allowRuntimeKeyboardRegenerate: 0
   generationStepsPerFrame: 32
+  braidRate: 0.35
   openStartOuterWall: 0
   startOuterWallDirection: 2
   openEndOuterWall: 0
   endOuterWallDirection: 0
   respawnPlayerAtStartOnRegenerate: 1
+  dressWallsAfterCarve: 1
+  deDoubleSharedWalls: 1
+  minimalPassageVariants:
+  - {fileID: 919132149155446097, guid: 51a0b5bb96cb3f044ad0d1fdcc4f7d5c, type: 3}
+  - {fileID: 919132149155446097, guid: fc11ee0baff9b764182d81213c2a1a8c, type: 3}
+  minimalPosterScaleMultiplier: 0.8
+  scatterArcadeMachinesAfterCarve: 1
+  arcadeMachinePrefabs:
+  - {fileID: 5603015170228617137, guid: cce78d9db59ad72409ba3156b42ad112, type: 3}
+  - {fileID: 2621638281522389152, guid: a1e21c8d7f919c74e95041ccab979e41, type: 3}
+  - {fileID: 8689790630293668894, guid: 22e14584ef123414c9ab23b72657c4d7, type: 3}
+  targetArcadeMachinesPerRoom: 2
+  arcadeMachineUniformScale: 0.81
+  arcadeMachineGroundClearance: 0
+  arcadeMachineWallInset: 1.38
+  arcadeMachineBayOffset: 2.15
+  arcadeMachineClearance: 0.15
+  scatterArcadePostersAfterCarve: 1
+  arcadePosterPrefabs:
+  - {fileID: 600054032671282158, guid: 3d3b052df3a0d9a4f880dcd0e7b43f65, type: 3}
+  - {fileID: 702345999130880218, guid: 25ffa600a9d55ae498d9c3985dc09572, type: 3}
+  - {fileID: 6351941288792361111, guid: 811cfa7abfa0cff47878f8192bcf3bf5, type: 3}
+  postersPerClosedWall: 3
+  posterWallInset: 0.55
+  posterHeight: 3.35
+  posterHeightJitter: 0.35
+  posterCornerMargin: 1.05
+  buildUpperFloors: 0

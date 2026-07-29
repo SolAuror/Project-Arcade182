@@ -158,6 +158,138 @@ namespace Sol // Controls room walls for generated maze paths.
             Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST
         };
 
+        /// <summary>
+        /// Adds the lightweight Arcade wall treatment to wall objects that do not
+        /// already have an authored <see cref="WallSocket"/>. The existing solid
+        /// model remains the closed-edge fallback; supplied parts are used only
+        /// for carved openings. Poster and flyer descendants remain visible on
+        /// closed walls and are hidden when that wall becomes a passage.
+        /// </summary>
+        public void EnsureMinimalWallSockets(
+            IReadOnlyList<GameObject> passageVariants,
+            float posterScaleMultiplier = 1f)
+        {
+            if (passageVariants == null || passageVariants.Count == 0)
+            {
+                return;
+            }
+
+            InitializeWalls();
+
+            foreach (Directions direction in Cardinals)
+            {
+                if (!walls.TryGetValue(direction, out GameObject wall) || wall == null)
+                {
+                    continue;
+                }
+
+                if (sockets.TryGetValue(direction, out WallSocket existing) && existing != null)
+                {
+                    continue;
+                }
+
+                GameObject defaultSolid = FindMinimalDefaultSolid(wall.transform);
+                if (defaultSolid == null)
+                {
+                    Debug.LogWarning(
+                        $"{name}: {direction} wall has no solid model for minimal wall dressing.",
+                        wall);
+                    continue;
+                }
+
+                List<GameObject> closedDecor = FindClosedWallDecor(wall.transform);
+                ScalePosterDecor(
+                    closedDecor,
+                    Mathf.Max(0.01f, posterScaleMultiplier));
+                WallSocket socket = wall.AddComponent<WallSocket>();
+                socket.ConfigureMinimal(defaultSolid, passageVariants, closedDecor);
+                sockets[direction] = socket;
+            }
+        }
+
+        private static void ScalePosterDecor(
+            IReadOnlyList<GameObject> decor,
+            float scaleMultiplier)
+        {
+            if (Mathf.Approximately(scaleMultiplier, 1f))
+            {
+                return;
+            }
+
+            for (int i = 0; i < decor.Count; i++)
+            {
+                GameObject item = decor[i];
+                if (item != null
+                    && item.name.IndexOf(
+                        "Poster",
+                        System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    item.transform.localScale *= scaleMultiplier;
+                }
+            }
+        }
+
+        private static GameObject FindMinimalDefaultSolid(Transform wall)
+        {
+            GameObject fallback = null;
+
+            for (int i = 0; i < wall.childCount; i++)
+            {
+                GameObject child = wall.GetChild(i).gameObject;
+                if (child.name.StartsWith("Wall", System.StringComparison.OrdinalIgnoreCase)
+                    && child.GetComponentInChildren<Renderer>(true) != null)
+                {
+                    return child;
+                }
+
+                if (fallback == null
+                    && !IsPosterOrFlyer(child.name)
+                    && child.GetComponentInChildren<Renderer>(true) != null)
+                {
+                    fallback = child;
+                }
+            }
+
+            return fallback;
+        }
+
+        private static List<GameObject> FindClosedWallDecor(Transform wall)
+        {
+            List<GameObject> decor = new List<GameObject>();
+            foreach (Transform child in wall.GetComponentsInChildren<Transform>(true))
+            {
+                if (child != wall
+                    && IsPosterOrFlyer(child.name)
+                    && !HasPosterOrFlyerAncestor(child.parent, wall))
+                {
+                    decor.Add(child.gameObject);
+                }
+            }
+
+            return decor;
+        }
+
+        private static bool IsPosterOrFlyer(string objectName)
+        {
+            return objectName.IndexOf("Poster", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("Flyer", System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool HasPosterOrFlyerAncestor(Transform current, Transform wall)
+        {
+            while (current != null && current != wall)
+            {
+                if (IsPosterOrFlyer(current.name))
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
         // Maps each of the void's retaining walls to the maze direction it seals, by
         // matching its rotation to this room's own wall for that direction. Only
         // fills directions an explicit NShaft/etc. did not already claim, and only
