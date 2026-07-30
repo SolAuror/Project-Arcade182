@@ -168,7 +168,8 @@ namespace Sol.Arcade
             }
             else if (atomSmasherGame != null ||
                      FindFirstObjectByType<HoopsGame>() != null ||
-                     FindFirstObjectByType<LabyrinthCrawlerGame>() != null)
+                     FindFirstObjectByType<LabyrinthCrawlerGame>() != null ||
+                     FindFirstObjectByType<GameManager3D>() != null)
             {
                 context = PauseContext.Minigame;
             }

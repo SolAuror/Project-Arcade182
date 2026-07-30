@@ -75,6 +75,7 @@ MonoBehaviour:
   - {fileID: 5603015170228617137, guid: cce78d9db59ad72409ba3156b42ad112, type: 3}
   - {fileID: 2621638281522389152, guid: a1e21c8d7f919c74e95041ccab979e41, type: 3}
   - {fileID: 8689790630293668894, guid: 22e14584ef123414c9ab23b72657c4d7, type: 3}
+  - {fileID: 5983383828383295992, guid: b2b8b9f4d1ca2e14e978209662025dbf, type: 3}
   targetArcadeMachinesPerRoom: 2
   arcadeMachineUniformScale: 0.81
   arcadeMachineGroundClearance: 0

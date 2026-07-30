@@ -3,6 +3,11 @@ using UnityEngine.UI;
 
 public class MainMenuUI : MonoBehaviour
 {
+    [Header("Arcade Flow")]
+    [Tooltip("Start gameplay immediately after the arcade cabinet loads this scene.")]
+    [SerializeField] private bool startImmediately = true;
+
+    [Header("Standalone Menu")]
     [SerializeField] private GameObject mainMenuPanel;
     [SerializeField] private GameObject instructionsPanel;
     [SerializeField] private GameObject rulesPanel;
@@ -19,9 +24,16 @@ public class MainMenuUI : MonoBehaviour
 
     private void Start()
     {
-        Time.timeScale = 0f;
-        ShowMainMenu();
-        rulesPanel.SetActive(false);
+        if (startImmediately)
+        {
+            StartGame();
+        }
+        else
+        {
+            Time.timeScale = 0f;
+            ShowMainMenu();
+            rulesPanel.SetActive(false);
+        }
     }
 
     public void StartGame()
