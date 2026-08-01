@@ -16,6 +16,16 @@ namespace Sol.Minigames
         [SerializeField] private Color activeColor = Color.white;
         [SerializeField] private Color hitColor = Color.black;
 
+        [Header("Readability")]
+        [Tooltip("Self-lit floor added to the idle tint so the atom type stays legible against any board lighting. 0 leaves the material's authored emission alone.")]
+        [SerializeField, Min(0f)] private float emissionIntensity;
+
+        [Tooltip("Pulses per second on the self-lit floor — the nervous flicker that marks a volatile atom. 0 keeps it steady.")]
+        [SerializeField, Min(0f)] private float emissionPulseSpeed;
+
+        [Tooltip("How far the pulse dips below full brightness.")]
+        [SerializeField, Range(0f, 1f)] private float emissionPulseDepth = 0.35f;
+
         [Header("Death Pop")]
         [Tooltip("Brief expand-then-shrink when smashed instead of vanishing instantly. 0 disables.")]
         [SerializeField, Min(0f)] private float deathPopSeconds = 0.16f;
@@ -27,6 +37,8 @@ namespace Sol.Minigames
         private Collider[] targetColliders;
         private Vector3 baseScale;
         private Coroutine deathPopRoutine;
+        private Color currentColor = Color.white;
+        private float pulsePhase;
 
         public int ScoreValue => scoreValue;
         public bool RequiredTarget => requiredTarget;
@@ -48,7 +60,21 @@ namespace Sol.Minigames
             targetColliders = GetComponentsInChildren<Collider>(true);
             baseScale = transform.localScale;
             propertyBlock = new MaterialPropertyBlock();
+
+            // Offset each atom's pulse so a full board throbs as a field of
+            // independent particles instead of strobing in unison.
+            pulsePhase = Random.value * Mathf.PI * 2f;
             ApplyColor(activeColor);
+        }
+
+        private void Update()
+        {
+            if (hasBeenHit || emissionIntensity <= 0f || emissionPulseSpeed <= 0f || emissionPulseDepth <= 0f)
+            {
+                return;
+            }
+
+            WriteTint();
         }
 
         private void OnValidate()
@@ -181,12 +207,22 @@ namespace Sol.Minigames
 
         private void ApplyColor(Color color)
         {
+            currentColor = color;
+            WriteTint();
+        }
+
+        // Atom types read purely off their shading: hue plus a self-lit floor
+        // that keeps the type legible wherever the atom drifts, and an optional
+        // pulse for the ones that should feel unstable.
+        private void WriteTint()
+        {
             if (targetRenderers == null)
             {
                 return;
             }
 
             propertyBlock ??= new MaterialPropertyBlock();
+            Color emission = currentColor * (emissionIntensity * CurrentPulseScale());
 
             foreach (Renderer targetRenderer in targetRenderers)
             {
@@ -196,10 +232,27 @@ namespace Sol.Minigames
                 }
 
                 targetRenderer.GetPropertyBlock(propertyBlock);
-                propertyBlock.SetColor("_BaseColor", color);
-                propertyBlock.SetColor("_Color", color);
+                propertyBlock.SetColor("_BaseColor", currentColor);
+                propertyBlock.SetColor("_Color", currentColor);
+
+                if (emissionIntensity > 0f)
+                {
+                    propertyBlock.SetColor("_EmissionColor", emission);
+                }
+
                 targetRenderer.SetPropertyBlock(propertyBlock);
             }
+        }
+
+        private float CurrentPulseScale()
+        {
+            if (emissionPulseSpeed <= 0f || emissionPulseDepth <= 0f)
+            {
+                return 1f;
+            }
+
+            float wave = 0.5f + 0.5f * Mathf.Sin(Time.time * emissionPulseSpeed * Mathf.PI * 2f + pulsePhase);
+            return Mathf.Lerp(1f - emissionPulseDepth, 1f, wave);
         }
     }
 }

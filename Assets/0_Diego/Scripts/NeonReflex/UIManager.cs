@@ -1,5 +1,7 @@
+using Sol.UI;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace NeonReflex
@@ -19,15 +21,30 @@ namespace NeonReflex
 
         private void Start()
         {
+            SimpleUiBuilder.EnsureEventSystem();
             startButton.onClick.AddListener(StartGame);
             instructionsButton.onClick.AddListener(ShowInstructions);
             backButton.onClick.AddListener(ShowStartMenu);
+            ShowStartMenu();
+        }
+
+        private void Update()
+        {
+            if (instructionsPanel.activeInHierarchy &&
+                (Keyboard.current?.escapeKey.wasPressedThisFrame == true ||
+                 Gamepad.current?.buttonEast.wasPressedThisFrame == true))
+            {
+                ShowStartMenu();
+            }
         }
 
         private void StartGame()
         {
             startPanel.SetActive(false);
             instructionsPanel.SetActive(false);
+            ArcadeInputCoordinator.EnterGameplay(
+                CursorLockMode.Confined,
+                true);
             gameManager.StartGame();
         }
 
@@ -35,12 +52,16 @@ namespace NeonReflex
         {
             startPanel.SetActive(true);
             instructionsPanel.SetActive(false);
+            ArcadeInputCoordinator.ShowMenu(startPanel, startButton);
         }
 
         public void ShowInstructions()
         {
             startPanel.SetActive(false);
             instructionsPanel.SetActive(true);
+            ArcadeInputCoordinator.SetMenuFocus(
+                instructionsPanel,
+                backButton);
         }
 
         public void UpdateScore(int score)

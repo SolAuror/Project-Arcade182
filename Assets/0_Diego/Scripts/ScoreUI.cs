@@ -6,7 +6,6 @@ public class ScoreUI : MonoBehaviour
     [SerializeField] private TMP_Text playerScoreText;
     [SerializeField] private TMP_Text aiScoreText;
     [SerializeField] private TMP_Text gameOverText;
-    [SerializeField] private TMP_Text actionPromptText;
 
     [Header("AirFooty Presentation")]
     [SerializeField] private Color playerColor = new Color(0.12f, 0.62f, 1f, 1f);
@@ -21,6 +20,15 @@ public class ScoreUI : MonoBehaviour
     private int previousPlayerScore = -1;
     private int previousAiScore = -1;
     private bool resultVisible;
+
+    public void SetGameplayHudVisible(bool visible)
+    {
+        SetTextVisible(playerScoreText, visible);
+        SetTextVisible(aiScoreText, visible);
+
+        resultVisible = false;
+        SetTextVisible(gameOverText, false);
+    }
 
     private void Awake()
     {
@@ -91,6 +99,53 @@ public class ScoreUI : MonoBehaviour
         previousAiScore = aiScore;
     }
 
+    public void UpdateHeadToHeadScores(
+        int humanScore,
+        int opponentScore,
+        AirFootyTeam humanTeam,
+        AirFootyTeam opponentTeam)
+    {
+        string humanName = AirFootyTeamMember3D.DisplayName(humanTeam);
+        string opponentName = AirFootyTeamMember3D.DisplayName(opponentTeam);
+        if (playerScoreText != null)
+        {
+            playerScoreText.text = $"{humanName}  {humanScore:D2}";
+            playerScoreText.color = AirFootyTeamMember3D.ColorFor(humanTeam);
+        }
+        if (aiScoreText != null)
+        {
+            aiScoreText.text = $"{opponentScore:D2}  {opponentName}";
+            aiScoreText.color = AirFootyTeamMember3D.ColorFor(opponentTeam);
+        }
+
+        previousPlayerScore = humanScore;
+        previousAiScore = opponentScore;
+    }
+
+    public void UpdateEliminationScores(
+        int blue,
+        int red,
+        int green,
+        int gold,
+        int eliminationScore)
+    {
+        if (playerScoreText != null)
+        {
+            playerScoreText.color = Color.white;
+            playerScoreText.text =
+                TeamScoreLine(AirFootyTeam.Blue, blue, eliminationScore, false) + "\n" +
+                TeamScoreLine(AirFootyTeam.Green, green, eliminationScore, false);
+        }
+
+        if (aiScoreText != null)
+        {
+            aiScoreText.color = Color.white;
+            aiScoreText.text =
+                TeamScoreLine(AirFootyTeam.Red, red, eliminationScore, true) + "\n" +
+                TeamScoreLine(AirFootyTeam.Gold, gold, eliminationScore, true);
+        }
+    }
+
     public void ShowGameOver(string message)
     {
         if (gameOverText == null) return;
@@ -135,36 +190,27 @@ public class ScoreUI : MonoBehaviour
         }
     }
 
-    public void ShowActionPrompts()
+    private static void SetTextVisible(TMP_Text text, bool visible)
     {
-        ResolveActionPromptText();
-        if (actionPromptText == null)
+        if (text != null && text.gameObject.activeSelf != visible)
         {
-            return;
+            text.gameObject.SetActive(visible);
         }
-
-        actionPromptText.text =
-            "MOVE — WASD / LEFT STICK\n" +
-            "HOLD + RELEASE KICK — SPACE / A\n" +
-            "FIRST TO 5 • STAY ON YOUR HALF";
     }
 
-    private void ResolveActionPromptText()
+    private static string TeamScoreLine(
+        AirFootyTeam team,
+        int score,
+        int eliminationScore,
+        bool scoreFirst)
     {
-        if (actionPromptText != null)
-        {
-            return;
-        }
-
-        foreach (TMP_Text text in FindObjectsByType<TMP_Text>(
-                     FindObjectsInactive.Include,
-                     FindObjectsSortMode.None))
-        {
-            if (text.name == "Instructions Text")
-            {
-                actionPromptText = text;
-                return;
-            }
-        }
+        string color = ColorUtility.ToHtmlStringRGB(
+            AirFootyTeamMember3D.ColorFor(team));
+        string teamName = AirFootyTeamMember3D.DisplayName(team);
+        string value = $"{score:D2}/{eliminationScore:D2}";
+        string line = scoreFirst
+            ? $"{value}  {teamName}"
+            : $"{teamName}  {value}";
+        return $"<color=#{color}>{line}</color>";
     }
 }

@@ -1031,6 +1031,15 @@
                                          "processors":  "",
                                          "interactions":  "",
                                          "initialStateCheck":  true
+                                     },
+                                     {
+                                         "name":  "Aim",
+                                         "type":  "Value",
+                                         "id":  "8f2b7c41-0d5e-4a63-9c18-2ad4e6f70b91",
+                                         "expectedControlType":  "Vector2",
+                                         "processors":  "",
+                                         "interactions":  "",
+                                         "initialStateCheck":  true
                                      }
                                  ],
                      "bindings":  [
@@ -1075,6 +1084,94 @@
                                           "processors":  "",
                                           "groups":  "Keyboard\u0026Mouse;Touch",
                                           "action":  "AimPoint",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "1c94f0a2-63b8-4d17-8e52-7f0a9c3d4b60",
+                                          "path":  "\u003cGamepad\u003e/buttonSouth",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Gamepad",
+                                          "action":  "Launch",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "6e3d5a18-2c7f-4b09-9a41-d8b52e6f13c7",
+                                          "path":  "\u003cGamepad\u003e/leftShoulder",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Gamepad",
+                                          "action":  "LeftBumper",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "4a17c9e2-8b30-4f6d-95c1-3e7a0d284f56",
+                                          "path":  "\u003cGamepad\u003e/leftTrigger",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Gamepad",
+                                          "action":  "LeftBumper",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "b57e2d90-14a6-4c83-8f27-6d09b3e5a172",
+                                          "path":  "\u003cGamepad\u003e/rightShoulder",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Gamepad",
+                                          "action":  "RightBumper",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "27c8a4f1-9e5b-40d2-b613-8fa72c0e59d4",
+                                          "path":  "\u003cGamepad\u003e/rightTrigger",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Gamepad",
+                                          "action":  "RightBumper",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "3d0b6e75-a29c-4187-8b54-f1e93a7c05d8",
+                                          "path":  "\u003cGamepad\u003e/leftStick",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Gamepad",
+                                          "action":  "Aim",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "9142e8b6-70df-4a25-93c8-5b6e02da71f3",
+                                          "path":  "\u003cGamepad\u003e/rightStick",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Gamepad",
+                                          "action":  "Aim",
+                                          "isComposite":  false,
+                                          "isPartOfComposite":  false
+                                      },
+                                      {
+                                          "name":  "",
+                                          "id":  "e6805c3a-4b91-42fe-87d0-19c4a5f3b28e",
+                                          "path":  "\u003cGamepad\u003e/dpad",
+                                          "interactions":  "",
+                                          "processors":  "",
+                                          "groups":  "Gamepad",
+                                          "action":  "Aim",
                                           "isComposite":  false,
                                           "isPartOfComposite":  false
                                       }

@@ -32,6 +32,7 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
 
     private CinemachineBrain brain;
     private CinemachineCamera broadcastCamera;
+    private CinemachineFollow followComponent;
     private CinemachineBasicMultiChannelPerlin impactNoise;
     private NoiseSettings impactNoiseProfile;
     private Transform followTarget;
@@ -39,13 +40,19 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
     private Vector3 baseCameraOffset;
     private Vector3 baseViewForward;
     private Vector3 baseViewRight;
+    private Vector3 blueCameraPosition;
+    private Quaternion blueCameraRotation;
+    private Quaternion teamRotation = Quaternion.identity;
+    private bool bluePoseCaptured;
     private float impactAmplitude;
 
     public bool IsReady => broadcastCamera != null && outputCamera != null;
+    public Camera OutputCamera => outputCamera;
 
     private void Awake()
     {
         ResolveReferences();
+        CaptureBlueCameraPose();
         BuildRig();
     }
 
@@ -80,6 +87,21 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
             impactAmplitude + Mathf.Max(0f, amount) * impactResponse);
     }
 
+    public void SetPlayer(
+        PlayerMovement3D selectedPlayer,
+        AirFootyTeam selectedTeam)
+    {
+        player = selectedPlayer;
+        ResolveReferences();
+        CaptureBlueCameraPose();
+        ApplyTeamPerspective(selectedTeam);
+        if (player != null && broadcastCamera == null)
+        {
+            BuildRig();
+        }
+        UpdateTargets();
+    }
+
     private void ResolveReferences()
     {
         if (player == null)
@@ -88,7 +110,7 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
         }
         if (outputCamera == null)
         {
-            outputCamera = Camera.main ?? FindFirstObjectByType<Camera>();
+            outputCamera = AirFootyCameraLookup.FindDisplayCamera();
         }
     }
 
@@ -112,13 +134,7 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
             CinemachineBlendDefinition.Styles.EaseInOut,
             0.35f);
 
-        baseCameraOffset = outputCamera.transform.position - arenaCentre;
-        baseViewForward = Vector3.ProjectOnPlane(-baseCameraOffset, Vector3.up).normalized;
-        if (baseViewForward.sqrMagnitude < 0.0001f)
-        {
-            baseViewForward = Vector3.forward;
-        }
-        baseViewRight = Vector3.Cross(Vector3.up, baseViewForward).normalized;
+        RefreshViewBasis();
 
         followTarget = CreateRuntimeChild("AirFooty Camera Follow Target");
         lookTarget = CreateRuntimeChild("AirFooty Camera Look Target");
@@ -136,9 +152,9 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
         broadcastCamera.Follow = followTarget;
         broadcastCamera.LookAt = lookTarget;
 
-        CinemachineFollow follow = cameraObject.AddComponent<CinemachineFollow>();
-        follow.FollowOffset = baseCameraOffset;
-        follow.TrackerSettings = new TrackerSettings
+        followComponent = cameraObject.AddComponent<CinemachineFollow>();
+        followComponent.FollowOffset = baseCameraOffset;
+        followComponent.TrackerSettings = new TrackerSettings
         {
             BindingMode = BindingMode.WorldSpace,
             PositionDamping = new Vector3(
@@ -183,6 +199,76 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
         return child.transform;
     }
 
+    private void CaptureBlueCameraPose()
+    {
+        if (bluePoseCaptured || outputCamera == null)
+        {
+            return;
+        }
+
+        blueCameraPosition = outputCamera.transform.position;
+        blueCameraRotation = outputCamera.transform.rotation;
+        bluePoseCaptured = true;
+    }
+
+    private void ApplyTeamPerspective(AirFootyTeam selectedTeam)
+    {
+        if (!bluePoseCaptured || outputCamera == null)
+        {
+            return;
+        }
+
+        teamRotation = Quaternion.Euler(0f, TeamCameraYaw(selectedTeam), 0f);
+        Vector3 rotatedPosition = arenaCentre +
+                                  teamRotation *
+                                  (blueCameraPosition - arenaCentre);
+        Quaternion rotatedRotation = teamRotation * blueCameraRotation;
+        outputCamera.transform.SetPositionAndRotation(
+            rotatedPosition,
+            rotatedRotation);
+
+        baseCameraOffset = rotatedPosition - arenaCentre;
+        RefreshViewBasis();
+        if (followComponent != null)
+        {
+            followComponent.FollowOffset = baseCameraOffset;
+        }
+        if (broadcastCamera != null)
+        {
+            broadcastCamera.transform.SetPositionAndRotation(
+                rotatedPosition,
+                rotatedRotation);
+        }
+    }
+
+    private void RefreshViewBasis()
+    {
+        if (outputCamera != null && baseCameraOffset.sqrMagnitude <= 0.0001f)
+        {
+            baseCameraOffset = outputCamera.transform.position - arenaCentre;
+        }
+
+        baseViewForward = Vector3.ProjectOnPlane(
+            -baseCameraOffset,
+            Vector3.up).normalized;
+        if (baseViewForward.sqrMagnitude < 0.0001f)
+        {
+            baseViewForward = Vector3.forward;
+        }
+        baseViewRight = Vector3.Cross(Vector3.up, baseViewForward).normalized;
+    }
+
+    private static float TeamCameraYaw(AirFootyTeam team)
+    {
+        return team switch
+        {
+            AirFootyTeam.Red => 180f,
+            AirFootyTeam.Green => -90f,
+            AirFootyTeam.Gold => 90f,
+            _ => 0f
+        };
+    }
+
     private void UpdateTargets()
     {
         if (player == null || followTarget == null || lookTarget == null)
@@ -191,25 +277,35 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
         }
 
         Vector3 playerOffset = player.transform.position - arenaCentre;
-        Vector3 followPosition = arenaCentre + new Vector3(
-            playerOffset.x * followInfluence.x,
+        Vector3 localPlayerOffset =
+            Quaternion.Inverse(teamRotation) * playerOffset;
+        Vector3 localFollowOffset = new Vector3(
+            localPlayerOffset.x * followInfluence.x,
             0f,
-            playerOffset.z * followInfluence.y);
+            localPlayerOffset.z * followInfluence.y);
+        Vector3 followPosition = arenaCentre +
+                                 teamRotation * localFollowOffset;
 
         float xEdge = Mathf.Max(
-            Mathf.InverseLerp(-5.5f, -7.5f, playerOffset.x),
-            Mathf.InverseLerp(-2.5f, -0.5f, playerOffset.x));
-        float zEdge = Mathf.InverseLerp(2.3f, 3.5f, Mathf.Abs(playerOffset.z));
+            Mathf.InverseLerp(-5.5f, -7.5f, localPlayerOffset.x),
+            Mathf.InverseLerp(-2.5f, -0.5f, localPlayerOffset.x));
+        float zEdge = Mathf.InverseLerp(
+            2.3f,
+            3.5f,
+            Mathf.Abs(localPlayerOffset.z));
         float edgeAmount = Mathf.SmoothStep(0f, 1f, Mathf.Max(xEdge, zEdge));
 
         float swayPhase = Time.unscaledTime * Mathf.PI * 2f / charmSwayPeriod;
         Vector3 sway =
             baseViewRight * (Mathf.Sin(swayPhase) * charmSway) +
             baseViewForward * (Mathf.Cos(swayPhase * 0.73f) * charmSway * 0.45f);
-        Vector3 lookPosition = arenaCentre + new Vector3(
-            playerOffset.x * lookInfluence.x,
+        Vector3 localLookOffset = new Vector3(
+            localPlayerOffset.x * lookInfluence.x,
             edgeAmount * edgeLookLift,
-            playerOffset.z * lookInfluence.y) + sway;
+            localPlayerOffset.z * lookInfluence.y);
+        Vector3 lookPosition = arenaCentre +
+                               teamRotation * localLookOffset +
+                               sway;
 
         followTarget.position = followPosition;
         lookTarget.position = lookPosition;
@@ -278,5 +374,31 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
         charmSway = Mathf.Max(0f, charmSway);
         charmSwayPeriod = Mathf.Max(0.01f, charmSwayPeriod);
         impactDecayPerSecond = Mathf.Max(0f, impactDecayPerSecond);
+    }
+}
+
+internal static class AirFootyCameraLookup
+{
+    public static Camera FindDisplayCamera()
+    {
+        Camera inactiveCandidate = null;
+        foreach (Camera candidate in Object.FindObjectsByType<Camera>(
+                     FindObjectsInactive.Include,
+                     FindObjectsSortMode.None))
+        {
+            if (candidate == null || candidate.targetTexture != null)
+            {
+                continue;
+            }
+
+            if (candidate.isActiveAndEnabled)
+            {
+                return candidate;
+            }
+
+            inactiveCandidate ??= candidate;
+        }
+
+        return inactiveCandidate;
     }
 }

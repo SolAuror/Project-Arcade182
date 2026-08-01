@@ -5,9 +5,13 @@ using Random = UnityEngine.Random;
 
 public enum AirFootyTeam
 {
-    None,
-    Player,
-    AI
+    None = 0,
+    Blue = 1,
+    Red = 2,
+    Green = 3,
+    Gold = 4,
+    Player = Blue,
+    AI = Red
 }
 
 public enum AirFootyTouchType
@@ -23,8 +27,8 @@ public enum AirFootyTouchType
 public class BallController3D : MonoBehaviour
 {
     [Header("Movement")]
-    [SerializeField, Min(0f)] private float launchSpeed = 2.5f;
-    [SerializeField, Min(0f)] private float linearDamping = 0.18f;
+    [SerializeField, Min(0f)] private float launchSpeed = 3.1f;
+    [SerializeField, Min(0f)] private float linearDamping = 0.035f;
     [SerializeField, Min(0f)] private float stalledSpeedThreshold = 0.4f;
     [SerializeField, Min(0.1f)] private float stalledDuration = 1.25f;
     [SerializeField, Min(0.1f)] private float stalledNearStrikerDuration = 3f;
@@ -32,15 +36,23 @@ public class BallController3D : MonoBehaviour
     [FormerlySerializedAs("maximumSpeed")]
     [SerializeField, Min(0.1f)] private float ordinaryMaximumSpeed = 12f;
     [SerializeField, Min(0f)] private float passiveContactMaximumSpeed = 4.5f;
-    [SerializeField] private float maximumX = 9f;
-    [SerializeField] private float maximumZ = 3.5f;
+    [SerializeField, Min(0f)] private float movementContactMinimumSpeed = 2.4f;
+    [SerializeField, Min(0.1f)] private float movementContactFullApproachSpeed = 8f;
+    [SerializeField, Min(0f)] private float movementContactMinimumApproachSpeed = 0.6f;
+    [SerializeField, Range(0f, 1f)] private float movementContactRadialBlend = 0.35f;
+    [SerializeField, Range(0f, 1f)] private float movementContactTangentRetention = 0.65f;
+    [SerializeField, Range(0f, 1f)] private float passiveContactMomentumRetention = 0.96f;
+    [SerializeField, Range(0f, 1f)] private float pulseTangentRetention = 0.94f;
+    [SerializeField, Min(0f)] private float movementContactRetriggerSeconds = 0.08f;
 
     [Header("Collision Reliability")]
-    [SerializeField, Min(1)] private int solverIterations = 12;
-    [SerializeField, Min(1)] private int solverVelocityIterations = 8;
-    [SerializeField, Min(0f)] private float maximumDepenetrationVelocity = 24f;
-    [SerializeField, Min(0f)] private float wallSweepSkin = 0.015f;
-    [SerializeField, Range(0f, 1f)] private float wallSweepRestitution = 0.9f;
+    [SerializeField, Min(1)] private int solverIterations = 16;
+    [SerializeField, Min(1)] private int solverVelocityIterations = 12;
+    [SerializeField, Min(0f)] private float maximumDepenetrationVelocity = 32f;
+    [SerializeField, Min(0f)] private float ballContactOffset = 0.01f;
+    [SerializeField, Min(0f)] private float arenaBoundaryContactOffset = 0.018f;
+    [SerializeField, Min(0f)] private float wallSweepSkin = 0.01f;
+    [SerializeField, Range(0f, 1f)] private float wallSweepRestitution = 0.98f;
 
     [Header("Air-Hockey Feel")]
     [SerializeField, Min(0f)] private float trailMinSpeed = 3.5f;
@@ -49,6 +61,7 @@ public class BallController3D : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float hardImpactCameraTrauma = 0.08f;
 
     private Rigidbody ballBody;
+    private SphereCollider ballCollider;
     private Vector3 startingPosition;
     private Renderer ballRenderer;
     private TrailRenderer speedTrail;
@@ -60,12 +73,25 @@ public class BallController3D : MonoBehaviour
     private float lastStrikeFixedTime = float.NegativeInfinity;
     private float activeStrikeContactUntil = float.NegativeInfinity;
     private AirFootyTeam activeStrikeTeam;
+    private float nextPlayerMovementContactTime;
+    private float nextAiMovementContactTime;
+    private float rallyMaximumSpeed = float.PositiveInfinity;
+    private Vector3 preSimulationPlanarVelocity;
     private readonly Collider[] stalledProximityResults = new Collider[8];
 
     public event Action Stalled;
+    public event Action<AirFootyTeam, AirFootyTouchType> DeliberateStrike;
+    public event Action<Collision> CollisionEntered;
+    public event Action ShotSequenceReset;
+    public event Action PlayStopped;
 
     public bool CanMove => canMove;
     public float OrdinaryMaximumSpeed => ordinaryMaximumSpeed;
+    public float CurrentMaximumSpeed =>
+        Mathf.Min(ordinaryMaximumSpeed, rallyMaximumSpeed);
+    public Vector3 PlanarVelocity => ballBody != null
+        ? new Vector3(ballBody.linearVelocity.x, 0f, ballBody.linearVelocity.z)
+        : Vector3.zero;
     public AirFootyTeam LastTouchTeam { get; private set; }
     public AirFootyTouchType LastTouchType { get; private set; }
     public float LastTouchTime { get; private set; } = float.NegativeInfinity;
@@ -73,10 +99,12 @@ public class BallController3D : MonoBehaviour
     private void Awake()
     {
         ballBody = GetComponent<Rigidbody>();
+        ballCollider = GetComponent<SphereCollider>();
         startingPosition = ballBody.position;
         ballBody.useGravity = false;
         ballRenderer = GetComponent<Renderer>();
         ConfigurePhysics();
+        ConfigureArenaBoundaryColliders();
         BuildSpeedTrail();
         BuildImpactAudio();
         BuildHoverPresentation();
@@ -86,8 +114,6 @@ public class BallController3D : MonoBehaviour
     {
         if (!canMove) return;
 
-        KeepBallInsideArena();
-
         Vector3 flatVelocity = new Vector3(ballBody.linearVelocity.x, 0f, ballBody.linearVelocity.z);
         float speed = flatVelocity.magnitude;
 
@@ -96,15 +122,17 @@ public class BallController3D : MonoBehaviour
             ballBody.linearVelocity = flatVelocity;
         }
 
-        if (speed > ordinaryMaximumSpeed)
+        float currentMaximumSpeed = CurrentMaximumSpeed;
+        if (speed > currentMaximumSpeed)
         {
-            ballBody.linearVelocity = flatVelocity.normalized * ordinaryMaximumSpeed;
-            speed = ordinaryMaximumSpeed;
+            ballBody.linearVelocity = flatVelocity.normalized * currentMaximumSpeed;
+            speed = currentMaximumSpeed;
         }
 
         PreventStaticWallTunnelling();
         flatVelocity = new Vector3(ballBody.linearVelocity.x, 0f, ballBody.linearVelocity.z);
         speed = flatVelocity.magnitude;
+        preSimulationPlanarVelocity = flatVelocity;
         UpdateStallDetection(speed);
     }
 
@@ -124,11 +152,12 @@ public class BallController3D : MonoBehaviour
         if (strikerTeam != AirFootyTeam.None &&
             !IsActiveStrikeCollision(strikerTeam))
         {
+            PreservePassiveImpactMomentum(collision);
             RegisterTouch(strikerTeam, AirFootyTouchType.Passive);
-            CapPlanarSpeed(passiveContactMaximumSpeed);
         }
 
         PlayImpactFeedback(speed);
+        CollisionEntered?.Invoke(collision);
     }
 
     private void PlayImpactFeedback(float speed)
@@ -165,57 +194,65 @@ public class BallController3D : MonoBehaviour
         }
     }
 
-    private void KeepBallInsideArena()
+    private void PreservePassiveImpactMomentum(Collision collision)
     {
-        Vector3 position = ballBody.position;
-        Vector3 velocity = ballBody.linearVelocity;
-        bool movedBall = false;
+        Vector3 outgoingVelocity = ballBody.linearVelocity;
+        outgoingVelocity.y = 0f;
+        float incomingSpeed = preSimulationPlanarVelocity.magnitude;
+        float outgoingSpeed = outgoingVelocity.magnitude;
 
-        // This catches the ball if a fast collision pushes it through a wall.
-        if (position.z > maximumZ)
+        if (incomingSpeed <= passiveContactMaximumSpeed)
         {
-            position.z = maximumZ;
-            velocity.z = -Mathf.Abs(velocity.z);
-            movedBall = true;
-        }
-        else if (position.z < -maximumZ)
-        {
-            position.z = -maximumZ;
-            velocity.z = Mathf.Abs(velocity.z);
-            movedBall = true;
+            if (outgoingSpeed > passiveContactMaximumSpeed)
+            {
+                ballBody.linearVelocity =
+                    outgoingVelocity.normalized * passiveContactMaximumSpeed;
+            }
+            return;
         }
 
-        // The goal trigger is before this limit, so goals can still be scored.
-        if (position.x > maximumX)
+        float retainedSpeed = Mathf.Min(
+            incomingSpeed * passiveContactMomentumRetention,
+            CurrentMaximumSpeed);
+        if (outgoingSpeed >= retainedSpeed)
         {
-            position.x = maximumX;
-            velocity.x = -Mathf.Abs(velocity.x);
-            movedBall = true;
-        }
-        else if (position.x < -maximumX)
-        {
-            position.x = -maximumX;
-            velocity.x = Mathf.Abs(velocity.x);
-            movedBall = true;
+            return;
         }
 
-        if (movedBall)
+        Vector3 outgoingDirection;
+        if (outgoingSpeed > 0.01f)
         {
-            ballBody.position = position;
-            ballBody.linearVelocity = velocity;
+            // Preserve the solver's deflection while restoring lost pace.
+            outgoingDirection = outgoingVelocity / outgoingSpeed;
         }
+        else
+        {
+            Vector3 normal = collision.contactCount > 0
+                ? collision.GetContact(0).normal
+                : -preSimulationPlanarVelocity.normalized;
+            normal.y = 0f;
+            outgoingDirection = normal.sqrMagnitude > 0.0001f
+                ? Vector3.Reflect(
+                    preSimulationPlanarVelocity.normalized,
+                    normal.normalized)
+                : -preSimulationPlanarVelocity.normalized;
+        }
+
+        ballBody.linearVelocity = outgoingDirection * retainedSpeed;
     }
 
     public void StopBall()
     {
         canMove = false;
         ResetStallDetection();
+        preSimulationPlanarVelocity = Vector3.zero;
         ballBody.linearVelocity = Vector3.zero;
         ballBody.angularVelocity = Vector3.zero;
         if (speedTrail != null)
         {
             speedTrail.emitting = false;
         }
+        PlayStopped?.Invoke();
     }
 
     public void ResetBall()
@@ -228,11 +265,13 @@ public class BallController3D : MonoBehaviour
     {
         ballBody.position = startingPosition;
         ballBody.rotation = Quaternion.identity;
+        preSimulationPlanarVelocity = Vector3.zero;
         ballBody.linearVelocity = Vector3.zero;
         ballBody.angularVelocity = Vector3.zero;
         canMove = false;
         ClearTouchMetadata();
         ResetStallDetection();
+        ShotSequenceReset?.Invoke();
         if (speedTrail != null)
         {
             speedTrail.emitting = false;
@@ -273,11 +312,175 @@ public class BallController3D : MonoBehaviour
         activeStrikeContactUntil = Time.fixedTime + Mathf.Max(0.05f, Time.fixedDeltaTime * 1.5f);
         RegisterTouch(team, touchType);
         ResetStallDetection();
+        DeliberateStrike?.Invoke(team, touchType);
 
-        float speed = Mathf.Clamp(targetSpeed, 0f, ordinaryMaximumSpeed);
+        float speed = Mathf.Clamp(targetSpeed, 0f, CurrentMaximumSpeed);
         ballBody.linearVelocity = flatDirection.normalized * speed;
         ballBody.angularVelocity = Vector3.zero;
 
+        return true;
+    }
+
+    public void SetRallyPresentation(float maximumSpeed, Color color)
+    {
+        rallyMaximumSpeed = Mathf.Max(0.1f, maximumSpeed);
+        if (speedTrail != null)
+        {
+            speedTrail.startColor = color;
+            speedTrail.endColor = new Color(color.r, color.g, color.b, 0f);
+        }
+
+        CapPlanarSpeed(CurrentMaximumSpeed);
+    }
+
+    public bool ApplyMovementContact(
+        AirFootyTeam team,
+        Vector3 strikerVelocity,
+        Vector3 strikerPosition)
+    {
+        if (!canMove ||
+            team == AirFootyTeam.None ||
+            IsActiveStrikeCollision(team))
+        {
+            return false;
+        }
+
+        ref float nextContactTime = ref (
+            team == AirFootyTeam.Player
+                ? ref nextPlayerMovementContactTime
+                : ref nextAiMovementContactTime);
+        if (Time.fixedTime < nextContactTime)
+        {
+            return false;
+        }
+
+        strikerVelocity.y = 0f;
+        float strikerSpeed = strikerVelocity.magnitude;
+        if (strikerSpeed <= 0.001f)
+        {
+            return false;
+        }
+
+        Vector3 toBall = ballBody.position - strikerPosition;
+        toBall.y = 0f;
+        if (toBall.sqrMagnitude <= 0.0001f)
+        {
+            toBall = strikerVelocity;
+        }
+        toBall.Normalize();
+
+        float approachSpeed = Vector3.Dot(strikerVelocity, toBall);
+        if (approachSpeed < movementContactMinimumApproachSpeed)
+        {
+            return false;
+        }
+
+        float drive = Mathf.InverseLerp(
+            movementContactMinimumApproachSpeed,
+            movementContactFullApproachSpeed,
+            approachSpeed);
+        float targetSpeed = Mathf.Lerp(
+            movementContactMinimumSpeed,
+            passiveContactMaximumSpeed,
+            drive);
+        Vector3 movementDirection = strikerVelocity / strikerSpeed;
+        Vector3 contactDirection = Vector3.Slerp(
+            movementDirection,
+            toBall,
+            movementContactRadialBlend).normalized;
+
+        Vector3 existingVelocity = ballBody.linearVelocity;
+        existingVelocity.y = 0f;
+        float existingSpeed = existingVelocity.magnitude;
+
+        // Passive contact may create low-speed dribble energy, but it must not
+        // turn a fast shot into an easy catch. Let PhysX resolve that impact.
+        if (existingSpeed > passiveContactMaximumSpeed)
+        {
+            nextContactTime =
+                Time.fixedTime + movementContactRetriggerSeconds;
+            RegisterTouch(team, AirFootyTouchType.Passive);
+            ResetStallDetection();
+            return false;
+        }
+
+        Vector3 retainedTangent =
+            (existingVelocity - Vector3.Project(existingVelocity, contactDirection)) *
+            movementContactTangentRetention;
+        Vector3 result = contactDirection * targetSpeed + retainedTangent;
+        if (result.sqrMagnitude > passiveContactMaximumSpeed * passiveContactMaximumSpeed)
+        {
+            result = result.normalized * passiveContactMaximumSpeed;
+        }
+        else
+        {
+            float retainedSpeed = existingSpeed * passiveContactMomentumRetention;
+            if (result.sqrMagnitude < retainedSpeed * retainedSpeed)
+            {
+                result = result.sqrMagnitude > 0.0001f
+                    ? result.normalized * retainedSpeed
+                    : existingVelocity * passiveContactMomentumRetention;
+            }
+        }
+
+        nextContactTime = Time.fixedTime + movementContactRetriggerSeconds;
+        ballBody.linearVelocity = result;
+        ballBody.angularVelocity = Vector3.zero;
+        RegisterTouch(team, AirFootyTouchType.Passive);
+        ResetStallDetection();
+        return true;
+    }
+
+    public bool ApplyPulse(
+        AirFootyTeam team,
+        Vector3 pulseOrigin,
+        float radius,
+        float impulse,
+        AirFootyTouchType touchType)
+    {
+        if (!canMove ||
+            team == AirFootyTeam.None ||
+            radius <= 0f ||
+            impulse <= 0f ||
+            Mathf.Approximately(Time.fixedTime, lastStrikeFixedTime))
+        {
+            return false;
+        }
+
+        Vector3 outward = ballBody.position - pulseOrigin;
+        outward.y = 0f;
+        float distance = outward.magnitude;
+        if (distance > radius || distance <= 0.0001f)
+        {
+            return false;
+        }
+        outward /= distance;
+
+        lastStrikeFixedTime = Time.fixedTime;
+        activeStrikeTeam = team;
+        activeStrikeContactUntil =
+            Time.fixedTime + Mathf.Max(0.05f, Time.fixedDeltaTime * 1.5f);
+        RegisterTouch(team, touchType);
+        ResetStallDetection();
+        DeliberateStrike?.Invoke(team, touchType);
+
+        Vector3 existingVelocity = ballBody.linearVelocity;
+        existingVelocity.y = 0f;
+        float existingOutwardSpeed =
+            Mathf.Max(0f, Vector3.Dot(existingVelocity, outward));
+        Vector3 tangent =
+            existingVelocity - outward * Vector3.Dot(existingVelocity, outward);
+        Vector3 result =
+            outward * (existingOutwardSpeed + impulse) +
+            tangent * pulseTangentRetention;
+        float cap = CurrentMaximumSpeed;
+        if (result.sqrMagnitude > cap * cap)
+        {
+            result = result.normalized * cap;
+        }
+
+        ballBody.linearVelocity = result;
+        ballBody.angularVelocity = Vector3.zero;
         return true;
     }
 
@@ -299,6 +502,39 @@ public class BallController3D : MonoBehaviour
         ballBody.interpolation = RigidbodyInterpolation.Interpolate;
         ballBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         ballBody.constraints |= RigidbodyConstraints.FreezePositionY;
+        if (ballCollider != null)
+        {
+            ballCollider.contactOffset =
+                Mathf.Max(0.001f, ballContactOffset);
+        }
+    }
+
+    private void ConfigureArenaBoundaryColliders()
+    {
+        Collider[] colliders =
+            transform.root.GetComponentsInChildren<Collider>(true);
+        PhysicsMaterial bounceMaterial =
+            ballCollider != null
+                ? ballCollider.sharedMaterial
+                : null;
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            Collider boundary = colliders[i];
+            if (boundary == null ||
+                boundary.isTrigger ||
+                !AirFootyArenaMovement3D.IsAuthoredArenaBoundary(boundary))
+            {
+                continue;
+            }
+
+            boundary.contactOffset =
+                Mathf.Max(0.001f, arenaBoundaryContactOffset);
+            if (boundary.sharedMaterial == null &&
+                bounceMaterial != null)
+            {
+                boundary.sharedMaterial = bounceMaterial;
+            }
+        }
     }
 
     private void PreventStaticWallTunnelling()
@@ -320,7 +556,7 @@ public class BallController3D : MonoBehaviour
                 out RaycastHit hit,
                 sweepDistance,
                 QueryTriggerInteraction.Ignore) ||
-            !IsStaticArenaWall(hit))
+            !IsStaticArenaWall(hit, direction))
         {
             return;
         }
@@ -338,20 +574,29 @@ public class BallController3D : MonoBehaviour
         PlayImpactFeedback(speed);
     }
 
-    private static bool IsStaticArenaWall(RaycastHit hit)
+    private bool IsStaticArenaWall(
+        RaycastHit hit,
+        Vector3 movementDirection)
     {
         Collider hitCollider = hit.collider;
         if (hitCollider == null ||
             hitCollider.isTrigger ||
             hit.rigidbody != null ||
-            Mathf.Abs(hit.normal.y) > 0.5f)
+            !AirFootyArenaMovement3D.IsAuthoredArenaBoundary(hitCollider) ||
+            AirFootyArenaMovement3D.IsGoalBack(hitCollider))
         {
             return false;
         }
 
-        string colliderName = hitCollider.name;
-        return colliderName.IndexOf("Wall", StringComparison.OrdinalIgnoreCase) >= 0 &&
-               !colliderName.EndsWith("Goal Back", StringComparison.Ordinal);
+        return ballCollider == null ||
+               !AirFootyArenaMovement3D.IsMovingAwayFromBoundary(
+                   ballCollider,
+                   hitCollider,
+                   ballBody.worldCenterOfMass,
+                   movementDirection,
+                   hit,
+                   wallSweepSkin,
+                   true);
     }
 
     private void UpdateStallDetection(float speed)
@@ -452,6 +697,8 @@ public class BallController3D : MonoBehaviour
         LastTouchTime = float.NegativeInfinity;
         activeStrikeTeam = AirFootyTeam.None;
         activeStrikeContactUntil = float.NegativeInfinity;
+        nextPlayerMovementContactTime = float.NegativeInfinity;
+        nextAiMovementContactTime = float.NegativeInfinity;
     }
 
     private bool IsActiveStrikeCollision(AirFootyTeam strikerTeam)
@@ -462,6 +709,13 @@ public class BallController3D : MonoBehaviour
 
     private static AirFootyTeam ResolveStrikerTeam(Collider collider)
     {
+        AirFootyTeamMember3D member =
+            collider.GetComponentInParent<AirFootyTeamMember3D>();
+        if (member != null && member.Team != AirFootyTeam.None)
+        {
+            return member.Team;
+        }
+
         if (collider.GetComponentInParent<PlayerMovement3D>() != null)
         {
             return AirFootyTeam.Player;
@@ -478,7 +732,7 @@ public class BallController3D : MonoBehaviour
             ballBody.linearVelocity.x,
             0f,
             ballBody.linearVelocity.z);
-        float cap = Mathf.Min(Mathf.Max(0f, speedCap), ordinaryMaximumSpeed);
+        float cap = Mathf.Min(Mathf.Max(0f, speedCap), CurrentMaximumSpeed);
         if (flatVelocity.sqrMagnitude > cap * cap)
         {
             ballBody.linearVelocity = flatVelocity.normalized * cap;
@@ -533,9 +787,13 @@ public class BallController3D : MonoBehaviour
 
     private void ResolveCameraFx()
     {
-        if (cameraFx == null && Camera.main != null)
+        if (cameraFx == null)
         {
-            cameraFx = Camera.main.GetComponent<AirFootyCameraFx>();
+            Camera displayCamera = AirFootyCameraLookup.FindDisplayCamera();
+            if (displayCamera != null)
+            {
+                cameraFx = displayCamera.GetComponent<AirFootyCameraFx>();
+            }
         }
     }
 
@@ -550,10 +808,30 @@ public class BallController3D : MonoBehaviour
         ordinaryMaximumSpeed = Mathf.Max(0.1f, ordinaryMaximumSpeed);
         passiveContactMaximumSpeed =
             Mathf.Clamp(passiveContactMaximumSpeed, 0f, ordinaryMaximumSpeed);
+        movementContactMinimumSpeed =
+            Mathf.Clamp(movementContactMinimumSpeed, 0f, passiveContactMaximumSpeed);
+        movementContactFullApproachSpeed =
+            Mathf.Max(0.1f, movementContactFullApproachSpeed);
+        movementContactMinimumApproachSpeed =
+            Mathf.Clamp(
+                movementContactMinimumApproachSpeed,
+                0f,
+                movementContactFullApproachSpeed);
+        movementContactRadialBlend = Mathf.Clamp01(movementContactRadialBlend);
+        movementContactTangentRetention =
+            Mathf.Clamp01(movementContactTangentRetention);
+        passiveContactMomentumRetention =
+            Mathf.Clamp01(passiveContactMomentumRetention);
+        pulseTangentRetention = Mathf.Clamp01(pulseTangentRetention);
+        movementContactRetriggerSeconds = Mathf.Max(0f, movementContactRetriggerSeconds);
         solverIterations = Mathf.Max(1, solverIterations);
         solverVelocityIterations = Mathf.Max(1, solverVelocityIterations);
         maximumDepenetrationVelocity = Mathf.Max(0f, maximumDepenetrationVelocity);
+        ballContactOffset = Mathf.Max(0f, ballContactOffset);
+        arenaBoundaryContactOffset =
+            Mathf.Max(0f, arenaBoundaryContactOffset);
         wallSweepSkin = Mathf.Max(0f, wallSweepSkin);
+        wallSweepRestitution = Mathf.Clamp01(wallSweepRestitution);
         trailMinSpeed = Mathf.Max(0f, trailMinSpeed);
         hardImpactSpeed = Mathf.Max(0f, hardImpactSpeed);
     }

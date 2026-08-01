@@ -950,6 +950,7 @@ MonoBehaviour:
   labyrinthSceneName: Sc_LabyrinthCrawler
   hoopsSceneName: Sc_Hoops
   atomSmasherSceneName: Sc_AtomSmasher
+  airFootySceneName: AirFootyFinal
   rootPanel: {fileID: 179919969147381638}
   minigamesPanel: {fileID: 2660945985395077002}
   optionsPanel: {fileID: 6669895498327896051}

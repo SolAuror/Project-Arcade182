@@ -17,6 +17,9 @@ namespace Sol.Minigames
         [Tooltip("Found automatically when left empty.")]
         [SerializeField] private AtomSmasherGame game;
 
+        [Tooltip("Found automatically when left empty. Only used to name the right control in the onboarding line.")]
+        [SerializeField] private AtomSmasherLauncher launcher;
+
         [Header("Info Panel")]
         [SerializeField] private Text scoreText;
         [SerializeField] private Text waveText;
@@ -47,6 +50,11 @@ namespace Sol.Minigames
             if (game == null)
             {
                 game = FindFirstObjectByType<AtomSmasherGame>();
+            }
+
+            if (launcher == null)
+            {
+                launcher = FindFirstObjectByType<AtomSmasherLauncher>();
             }
         }
 
@@ -117,7 +125,9 @@ namespace Sol.Minigames
             {
                 if (!game.HasLaunchedThisRun)
                 {
-                    status = "INJECTOR CHARGED - DRAW BACK AND RELEASE TO FIRE";
+                    status = launcher != null && launcher.IsStickAiming
+                        ? "INJECTOR CHARGED - STICK TO AIM, HOLD AND RELEASE (A) TO FIRE"
+                        : "INJECTOR CHARGED - DRAW BACK AND RELEASE TO FIRE";
                 }
                 else if (game.WaveNumber == 1 && game.HasBallInFlight)
                 {

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public enum AirFootyStrikeResult
@@ -11,7 +12,7 @@ public enum AirFootyStrikeResult
 [DisallowMultipleComponent]
 public sealed class AirFootyStrikeMotor3D : MonoBehaviour
 {
-    private const int QueryCapacity = 8;
+    private const int PulseWaveSegments = 44;
 
     [Header("References")]
     [SerializeField] private BallController3D ball;
@@ -22,38 +23,62 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
     [SerializeField, Min(0f)] private float tapKickSpeed = 6.5f;
     [SerializeField, Min(0f)] private float fullChargeKickSpeed = 10.5f;
     [SerializeField, Min(0f)] private float perfectKickSpeed = 12f;
+    [SerializeField, Min(0f)] private float dashKickSpeed = 10.5f;
     [SerializeField, Range(0f, 1f)] private float tapChargeThreshold = 0.15f;
+
+    [Header("Hover Pulse")]
+    [SerializeField, Min(0.1f)] private float tapPulseRadius = 1.65f;
+    [SerializeField, Min(0.1f)] private float fullPulseRadius = 2.35f;
+    [SerializeField, Min(0f)] private float tapPulseImpulse = 3.25f;
+    [SerializeField, Min(0f)] private float fullPulseImpulse = 8f;
+    [SerializeField, Min(0f)] private float pulseCooldown = 0.06f;
+    [SerializeField] private bool emitPulseWave;
+    [SerializeField, Min(0.05f)] private float pulseWaveSeconds = 0.24f;
+    [SerializeField] private Color aiPulseColor = new Color(1f, 0.18f, 0.08f, 0.95f);
 
     [Header("Charge")]
     [SerializeField, Min(0.05f)] private float timeToFullCharge = 0.55f;
-    [SerializeField, Min(0f)] private float perfectReleaseWindow = 0.08f;
+    [SerializeField, Min(0f)] private float perfectReleaseWindow = 0.14f;
+    [SerializeField, Min(0f)] private float perfectReleaseGrace = 0.12f;
 
     [Header("Reach and Recovery")]
     [SerializeField, Min(0f)] private float strikeRangeBeyondSurface = 0.35f;
+    [SerializeField, Range(-1f, 1f)] private float minimumForwardAimDot = 0.05f;
     [SerializeField, Range(0f, 0.5f)] private float directionToBallBlend = 0.18f;
-    [SerializeField, Min(0f)] private float kickCooldown = 0.4f;
-    [SerializeField, Min(0f)] private float missRecovery = 0.25f;
+    [SerializeField, Min(0f)] private float kickCooldown = 0.25f;
+    [SerializeField, Min(0f)] private float missRecovery = 0.12f;
 
-    private readonly Collider[] queryResults = new Collider[QueryCapacity];
     private Collider ballCollider;
+    private BallController3D[] availableBalls;
     private Renderer strikerRenderer;
     private AudioSource feedbackAudio;
     private AirFootyCameraFx cameraFx;
+    private Material pulseWaveMaterial;
     private float cooldownUntil;
     private float recoveryUntil;
+    private float pulseReadyAt;
 
     public float TimeToFullCharge => timeToFullCharge;
     public float PerfectReleaseWindow => perfectReleaseWindow;
     public bool CanBeginCharge =>
-        ball != null &&
-        ball.CanMove &&
+        FindAvailableBall() != null;
+    public bool IsStrikeReady =>
+        CanBeginCharge &&
         Time.time >= cooldownUntil &&
         Time.time >= recoveryUntil;
+    public bool IsPulseReady =>
+        CanBeginCharge &&
+        Time.time >= pulseReadyAt;
 
     private void Awake()
     {
         ResolveReferences();
         BuildFeedbackAudio();
+    }
+
+    public void ConfigureTeam(AirFootyTeam configuredTeam)
+    {
+        team = configuredTeam;
     }
 
     public float GetChargeFraction(float heldSeconds)
@@ -64,13 +89,111 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
     public bool IsPerfectRelease(float heldSeconds)
     {
         float windowStart = Mathf.Max(0f, timeToFullCharge - perfectReleaseWindow);
-        return heldSeconds >= windowStart && heldSeconds <= timeToFullCharge;
+        return heldSeconds >= windowStart &&
+               heldSeconds <= timeToFullCharge + perfectReleaseGrace;
+    }
+
+    public bool IsOvercharged(float heldSeconds)
+    {
+        return heldSeconds > timeToFullCharge + perfectReleaseGrace;
+    }
+
+    public float GetPulseRadius(float chargeFraction)
+    {
+        return Mathf.Lerp(
+            tapPulseRadius,
+            fullPulseRadius,
+            Mathf.Clamp01(chargeFraction));
+    }
+
+    public bool IsBallInPulseRange(float chargeFraction)
+    {
+        float radius = GetPulseRadius(chargeFraction);
+        ResolveAvailableBalls();
+        for (int i = 0; i < availableBalls.Length; i++)
+        {
+            BallController3D candidate = availableBalls[i];
+            if (candidate == null || !candidate.CanMove)
+            {
+                continue;
+            }
+
+            Vector3 offset = candidate.transform.position - transform.position;
+            offset.y = 0f;
+            if (offset.sqrMagnitude <= radius * radius)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public AirFootyStrikeResult TryPulse(
+        float chargeFraction,
+        float radiusMultiplier = 1f,
+        float impulseMultiplier = 1f)
+    {
+        if (!IsPulseReady)
+        {
+            PlayUnavailableFeedback();
+            return AirFootyStrikeResult.Unavailable;
+        }
+
+        float charge = Mathf.Clamp01(chargeFraction);
+        pulseReadyAt = Time.time + pulseCooldown;
+        float radius =
+            GetPulseRadius(charge) * Mathf.Max(0f, radiusMultiplier);
+        float impulse =
+            Mathf.Lerp(tapPulseImpulse, fullPulseImpulse, charge) *
+            Mathf.Max(0f, impulseMultiplier);
+        if (emitPulseWave)
+        {
+            StartCoroutine(PlayPulseWave(radius, aiPulseColor));
+        }
+        AirFootyTouchType touchType = charge <= tapChargeThreshold
+            ? AirFootyTouchType.TapKick
+            : AirFootyTouchType.ChargedKick;
+        ResolveAvailableBalls();
+        bool hit = false;
+        for (int i = 0; i < availableBalls.Length; i++)
+        {
+            BallController3D candidate = availableBalls[i];
+            if (candidate != null && candidate.ApplyPulse(
+                    team,
+                    transform.position,
+                    radius,
+                    impulse,
+                    touchType))
+            {
+                hit = true;
+            }
+        }
+
+        if (!hit)
+        {
+            PlayWhiffFeedback();
+            return AirFootyStrikeResult.Miss;
+        }
+
+        bool fullPower = charge >= 0.98f;
+        PlayHitFeedback(charge, fullPower);
+        return fullPower
+            ? AirFootyStrikeResult.Perfect
+            : AirFootyStrikeResult.Hit;
+    }
+
+    public bool IsBallInStrikeRange(Vector3 requestedAim)
+    {
+        Vector3 aim = FlattenAndNormalize(requestedAim);
+        return aim != Vector3.zero && FindBallInStrikeRange(aim) != null;
     }
 
     public AirFootyStrikeResult TryStrike(Vector3 requestedAim, float heldSeconds)
     {
-        if (!CanBeginCharge)
+        if (!IsStrikeReady)
         {
+            PlayUnavailableFeedback();
             return AirFootyStrikeResult.Unavailable;
         }
 
@@ -108,6 +231,42 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
         return perfect ? AirFootyStrikeResult.Perfect : AirFootyStrikeResult.Hit;
     }
 
+    public AirFootyStrikeResult TryDashStrike(Vector3 requestedAim)
+    {
+        if (!IsStrikeReady)
+        {
+            return AirFootyStrikeResult.Unavailable;
+        }
+
+        Vector3 aim = FlattenAndNormalize(requestedAim);
+        if (aim == Vector3.zero)
+        {
+            return AirFootyStrikeResult.Unavailable;
+        }
+
+        cooldownUntil = Time.time + kickCooldown;
+        BallController3D targetBall = FindBallInStrikeRange(aim);
+        if (targetBall == null)
+        {
+            recoveryUntil = Time.time + missRecovery;
+            return AirFootyStrikeResult.Miss;
+        }
+
+        Vector3 strikeDirection =
+            ResolveStrikeDirection(aim, targetBall.transform.position);
+        if (!targetBall.ApplyStrike(
+                team,
+                AirFootyTouchType.DashKick,
+                strikeDirection,
+                dashKickSpeed))
+        {
+            return AirFootyStrikeResult.Unavailable;
+        }
+
+        PlayHitFeedback(0.85f, false);
+        return AirFootyStrikeResult.Hit;
+    }
+
     private void ResolveReferences()
     {
         if (ball == null)
@@ -120,44 +279,85 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
         }
 
         ballCollider = ball != null ? ball.GetComponent<Collider>() : null;
+        ResolveAvailableBalls();
         strikerRenderer = GetComponentInChildren<Renderer>();
+    }
+
+    private void ResolveAvailableBalls()
+    {
+        Transform root = transform.root;
+        availableBalls = root != null
+            ? root.GetComponentsInChildren<BallController3D>(false)
+            : null;
+        if (availableBalls == null || availableBalls.Length == 0)
+        {
+            availableBalls = FindObjectsByType<BallController3D>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+        }
+    }
+
+    private BallController3D FindAvailableBall()
+    {
+        ResolveAvailableBalls();
+        for (int i = 0; i < availableBalls.Length; i++)
+        {
+            if (availableBalls[i] != null && availableBalls[i].CanMove)
+            {
+                return availableBalls[i];
+            }
+        }
+
+        return null;
     }
 
     private BallController3D FindBallInStrikeRange(Vector3 aim)
     {
-        if (ball == null || strikerCollider == null || ballCollider == null)
+        if (strikerCollider == null)
         {
             ResolveReferences();
         }
-        if (ball == null || strikerCollider == null || ballCollider == null)
+        if (strikerCollider == null)
         {
             return null;
         }
 
         Bounds strikerBounds = strikerCollider.bounds;
-        Bounds targetBounds = ballCollider.bounds;
         float strikerRadius = Mathf.Max(strikerBounds.extents.x, strikerBounds.extents.z);
-        float ballRadius = Mathf.Max(targetBounds.extents.x, targetBounds.extents.z);
-        float forwardOffset = strikerRadius + strikeRangeBeyondSurface * 0.5f;
-        float queryRadius = ballRadius + strikeRangeBeyondSurface * 0.5f;
-        Vector3 queryCentre = transform.position + aim * forwardOffset;
-
-        int hitCount = Physics.OverlapSphereNonAlloc(
-            queryCentre,
-            queryRadius,
-            queryResults,
-            ~0,
-            QueryTriggerInteraction.Ignore);
-        for (int i = 0; i < hitCount; i++)
+        ResolveAvailableBalls();
+        BallController3D best = null;
+        float bestDistance = float.PositiveInfinity;
+        for (int i = 0; i < availableBalls.Length; i++)
         {
-            Collider hit = queryResults[i];
-            if (hit != null && hit.GetComponentInParent<BallController3D>() == ball)
+            BallController3D candidate = availableBalls[i];
+            Collider candidateCollider = candidate != null
+                ? candidate.GetComponent<Collider>()
+                : null;
+            if (candidate == null || !candidate.CanMove || candidateCollider == null)
             {
-                return ball;
+                continue;
             }
+
+            Bounds targetBounds = candidateCollider.bounds;
+            float ballRadius = Mathf.Max(targetBounds.extents.x, targetBounds.extents.z);
+            float legalCentreDistance =
+                strikerRadius + ballRadius + strikeRangeBeyondSurface;
+            Vector3 toBall = targetBounds.center - strikerBounds.center;
+            toBall.y = 0f;
+            float centreDistance = toBall.magnitude;
+            if (centreDistance > legalCentreDistance ||
+                centreDistance <= 0.0001f ||
+                Vector3.Dot(aim, toBall / centreDistance) < minimumForwardAimDot ||
+                centreDistance >= bestDistance)
+            {
+                continue;
+            }
+
+            best = candidate;
+            bestDistance = centreDistance;
         }
 
-        return null;
+        return best;
     }
 
     private Vector3 ResolveStrikeDirection(Vector3 aim, Vector3 ballPosition)
@@ -190,6 +390,73 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
         feedbackAudio.dopplerLevel = 0f;
     }
 
+    private IEnumerator PlayPulseWave(float radius, Color color)
+    {
+        Shader shader = Shader.Find("Sprites/Default");
+        if (pulseWaveMaterial == null && shader != null)
+        {
+            pulseWaveMaterial = new Material(shader)
+            {
+                name = "AirFooty AI Pulse (Runtime)"
+            };
+        }
+
+        GameObject waveObject = new GameObject("AI Hover Pulse Wave");
+        waveObject.transform.SetParent(transform, false);
+        waveObject.transform.localPosition = Vector3.up * 0.045f;
+        LineRenderer wave = waveObject.AddComponent<LineRenderer>();
+        wave.useWorldSpace = false;
+        wave.loop = true;
+        wave.positionCount = PulseWaveSegments;
+        wave.startWidth = 0.1f;
+        wave.endWidth = 0.1f;
+        wave.numCornerVertices = 3;
+        wave.shadowCastingMode =
+            UnityEngine.Rendering.ShadowCastingMode.Off;
+        wave.receiveShadows = false;
+        wave.sharedMaterial = pulseWaveMaterial;
+
+        float startedAt = Time.unscaledTime;
+        while (wave != null)
+        {
+            float progress =
+                (Time.unscaledTime - startedAt) /
+                Mathf.Max(0.01f, pulseWaveSeconds);
+            if (progress >= 1f)
+            {
+                break;
+            }
+
+            float eased = 1f - (1f - progress) * (1f - progress);
+            SetRingGeometry(wave, Mathf.Lerp(0.55f, radius, eased));
+            Color faded = new Color(
+                color.r,
+                color.g,
+                color.b,
+                color.a * (1f - progress));
+            wave.startColor = faded;
+            wave.endColor = faded;
+            yield return null;
+        }
+
+        if (waveObject != null)
+        {
+            Destroy(waveObject);
+        }
+    }
+
+    private static void SetRingGeometry(LineRenderer ring, float radius)
+    {
+        for (int i = 0; i < ring.positionCount; i++)
+        {
+            float angle = i / (float)ring.positionCount * Mathf.PI * 2f;
+            ring.SetPosition(i, new Vector3(
+                Mathf.Cos(angle) * radius,
+                0f,
+                Mathf.Sin(angle) * radius));
+        }
+    }
+
     private void PlayWhiffFeedback()
     {
         if (feedbackAudio == null)
@@ -199,6 +466,18 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
 
         feedbackAudio.pitch = 1.5f;
         feedbackAudio.volume = 0.08f;
+        feedbackAudio.PlayOneShot(AirFootyFeedbackUtility.ImpactClip);
+    }
+
+    private void PlayUnavailableFeedback()
+    {
+        if (feedbackAudio == null)
+        {
+            return;
+        }
+
+        feedbackAudio.pitch = 0.72f;
+        feedbackAudio.volume = 0.045f;
         feedbackAudio.PlayOneShot(AirFootyFeedbackUtility.ImpactClip);
     }
 
@@ -213,9 +492,13 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
 
         if (perfect)
         {
-            if (cameraFx == null && Camera.main != null)
+            if (cameraFx == null)
             {
-                cameraFx = Camera.main.GetComponent<AirFootyCameraFx>();
+                Camera displayCamera = AirFootyCameraLookup.FindDisplayCamera();
+                if (displayCamera != null)
+                {
+                    cameraFx = displayCamera.GetComponent<AirFootyCameraFx>();
+                }
             }
 
             cameraFx?.AddTrauma(0.12f);
@@ -229,13 +512,29 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        if (pulseWaveMaterial != null)
+        {
+            Destroy(pulseWaveMaterial);
+        }
+    }
+
     private void OnValidate()
     {
         tapKickSpeed = Mathf.Max(0f, tapKickSpeed);
         fullChargeKickSpeed = Mathf.Max(tapKickSpeed, fullChargeKickSpeed);
         perfectKickSpeed = Mathf.Max(fullChargeKickSpeed, perfectKickSpeed);
+        dashKickSpeed = Mathf.Clamp(dashKickSpeed, tapKickSpeed, perfectKickSpeed);
+        tapPulseRadius = Mathf.Max(0.1f, tapPulseRadius);
+        fullPulseRadius = Mathf.Max(tapPulseRadius, fullPulseRadius);
+        tapPulseImpulse = Mathf.Max(0f, tapPulseImpulse);
+        fullPulseImpulse = Mathf.Max(tapPulseImpulse, fullPulseImpulse);
+        pulseCooldown = Mathf.Max(0f, pulseCooldown);
+        pulseWaveSeconds = Mathf.Max(0.05f, pulseWaveSeconds);
         timeToFullCharge = Mathf.Max(0.05f, timeToFullCharge);
         perfectReleaseWindow = Mathf.Clamp(perfectReleaseWindow, 0f, timeToFullCharge);
+        perfectReleaseGrace = Mathf.Max(0f, perfectReleaseGrace);
         strikeRangeBeyondSurface = Mathf.Max(0f, strikeRangeBeyondSurface);
         kickCooldown = Mathf.Max(0f, kickCooldown);
         missRecovery = Mathf.Max(0f, missRecovery);

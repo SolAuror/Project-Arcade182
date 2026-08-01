@@ -249,7 +249,7 @@ public sealed class AirFootyWorldPopup : MonoBehaviour
             return;
         }
 
-        Camera view = Camera.main;
+        Camera view = AirFootyCameraLookup.FindDisplayCamera();
         if (view != null)
         {
             transform.rotation = view.transform.rotation;

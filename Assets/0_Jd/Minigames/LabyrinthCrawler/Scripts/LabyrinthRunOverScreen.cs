@@ -1,3 +1,4 @@
+using Sol.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -20,9 +21,6 @@ namespace Sol.Minigames
         [SerializeField] private Button restartButton;
         [SerializeField] private Button quitButton;
 
-        private CursorLockMode previousLockState;
-        private bool previousCursorVisible;
-
         private void Awake()
         {
             if (restartButton != null)
@@ -43,16 +41,14 @@ namespace Sol.Minigames
                 game = FindFirstObjectByType<LabyrinthCrawlerGame>();
             }
 
-            previousLockState = Cursor.lockState;
-            previousCursorVisible = Cursor.visible;
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
+            ArcadeInputCoordinator.PushMenu(
+                gameObject,
+                restartButton);
         }
 
         private void OnDisable()
         {
-            Cursor.lockState = previousLockState;
-            Cursor.visible = previousCursorVisible;
+            ArcadeInputCoordinator.PopContext();
         }
 
         private void Update()

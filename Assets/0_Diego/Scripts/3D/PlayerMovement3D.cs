@@ -6,8 +6,8 @@ public class PlayerMovement3D : MonoBehaviour
 {
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 8f;
-    [SerializeField] private Vector2 minimumPosition = new Vector2(-7.5f, -3.5f);
-    [SerializeField] private Vector2 maximumPosition = new Vector2(-0.5f, 3.5f);
+    [SerializeField, Min(0f)] private float midfieldOverlap = 0.15f;
+    [SerializeField, Min(0f)] private float wallSweepSkin = 0.012f;
 
     [Header("View-relative Controls")]
     [SerializeField] private bool cameraRelativeMovement = true;
@@ -18,12 +18,24 @@ public class PlayerMovement3D : MonoBehaviour
     private InputAction moveAction;
     private bool movementEnabled = true;
     private float moveSpeedMultiplier = 1f;
+    private Vector3 dashDirection;
+    private float dashSpeedMultiplier;
+    private float dashUntil;
+    private bool useFourPlayerTeamArea;
+    private Vector3 arenaCentre;
+    private float teamAreaApexDepth = 1.1f;
+    private float teamAreaGoalLineDepth = 7.75f;
 
     public Vector3 CurrentMovementDirection => movementDirection;
+    public Vector3 CurrentPlanarVelocity { get; private set; }
+    public bool IsDashing => movementEnabled && Time.time < dashUntil;
 
     private void Awake()
     {
         playerBody = GetComponent<Rigidbody>();
+        AirFootyArenaMovement3D.ConfigureStrikerPhysics(
+            playerBody,
+            wallSweepSkin);
         ResolveMovementCamera();
         BuildMoveAction();
     }
@@ -38,6 +50,7 @@ public class PlayerMovement3D : MonoBehaviour
         moveAction?.Disable();
         movementDirection = Vector3.zero;
         moveSpeedMultiplier = 1f;
+        CurrentPlanarVelocity = Vector3.zero;
     }
 
     private void OnDestroy()
@@ -59,12 +72,45 @@ public class PlayerMovement3D : MonoBehaviour
 
     private void FixedUpdate()
     {
+        Vector3 previousPosition = playerBody.position;
+        Vector3 activeDirection = IsDashing ? dashDirection : movementDirection;
+        float activeSpeedMultiplier =
+            IsDashing ? dashSpeedMultiplier : moveSpeedMultiplier;
         Vector3 newPosition =
-            playerBody.position +
-            movementDirection * (moveSpeed * moveSpeedMultiplier * Time.fixedDeltaTime);
-        newPosition.x = Mathf.Clamp(newPosition.x, minimumPosition.x, maximumPosition.x);
-        newPosition.z = Mathf.Clamp(newPosition.z, minimumPosition.y, maximumPosition.y);
+            previousPosition +
+            activeDirection * (moveSpeed * activeSpeedMultiplier * Time.fixedDeltaTime);
+        AirFootyTeam team = ResolveTeam();
+        newPosition = useFourPlayerTeamArea
+            ? AirFootyArenaMovement3D.ResolvePositionInTeamSemicircle(
+                playerBody,
+                newPosition,
+                arenaCentre,
+                AirFootyTeamMember3D.HomeDirection(team),
+                teamAreaApexDepth,
+                teamAreaGoalLineDepth,
+                wallSweepSkin)
+            : AirFootyArenaMovement3D.ResolvePositionOnHalf(
+                playerBody,
+                newPosition,
+                AirFootyTeamMember3D.HomeDirection(team),
+                -midfieldOverlap,
+                wallSweepSkin);
+        Vector3 planarVelocity = Time.fixedDeltaTime > 0f
+            ? (newPosition - previousPosition) / Time.fixedDeltaTime
+            : Vector3.zero;
+        planarVelocity.y = 0f;
+        CurrentPlanarVelocity = planarVelocity;
         playerBody.MovePosition(newPosition);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        ApplyMovementContact(collision);
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        ApplyMovementContact(collision);
     }
 
     public void SetMovementEnabled(bool enabled)
@@ -74,12 +120,62 @@ public class PlayerMovement3D : MonoBehaviour
         {
             movementDirection = Vector3.zero;
             moveSpeedMultiplier = 1f;
+            CurrentPlanarVelocity = Vector3.zero;
+            CancelDash();
         }
     }
 
     public void SetMoveSpeedMultiplier(float multiplier)
     {
         moveSpeedMultiplier = Mathf.Max(0f, multiplier);
+    }
+
+    public void ConfigureTeamArea(
+        bool fourPlayerMode,
+        Vector3 centre,
+        float apexDepth,
+        float goalLineDepth)
+    {
+        useFourPlayerTeamArea = fourPlayerMode;
+        arenaCentre = centre;
+        teamAreaApexDepth = Mathf.Max(0.1f, apexDepth);
+        teamAreaGoalLineDepth = Mathf.Max(
+            teamAreaApexDepth + 0.5f,
+            goalLineDepth);
+    }
+
+    public void BeginDash(
+        Vector3 direction,
+        float duration,
+        float speedMultiplier)
+    {
+        direction.y = 0f;
+        if (!movementEnabled || direction.sqrMagnitude <= 0.0001f)
+        {
+            return;
+        }
+
+        dashDirection = direction.normalized;
+        dashSpeedMultiplier = Mathf.Max(1f, speedMultiplier);
+        dashUntil = Time.time + Mathf.Max(0.01f, duration);
+    }
+
+    public void BoostActiveDash(
+        float speedMultiplier,
+        float extraDuration)
+    {
+        if (!IsDashing)
+        {
+            return;
+        }
+
+        dashSpeedMultiplier *= Mathf.Max(1f, speedMultiplier);
+        dashUntil += Mathf.Max(0f, extraDuration);
+    }
+
+    public void CancelDash()
+    {
+        dashUntil = float.NegativeInfinity;
     }
 
     private Vector3 ResolveMovementDirection(Vector2 input)
@@ -117,7 +213,7 @@ public class PlayerMovement3D : MonoBehaviour
     {
         if (movementCamera == null || !movementCamera.isActiveAndEnabled)
         {
-            movementCamera = Camera.main;
+            movementCamera = AirFootyCameraLookup.FindDisplayCamera();
         }
     }
 
@@ -139,5 +235,445 @@ public class PlayerMovement3D : MonoBehaviour
 
         moveAction.AddBinding("<Gamepad>/leftStick");
         moveAction.AddBinding("<Gamepad>/dpad");
+    }
+
+    private void ApplyMovementContact(Collision collision)
+    {
+        if (IsDashing)
+        {
+            return;
+        }
+
+        BallController3D ball = collision.collider.GetComponentInParent<BallController3D>();
+        ball?.ApplyMovementContact(
+            ResolveTeam(),
+            CurrentPlanarVelocity,
+            playerBody.position);
+    }
+
+    private AirFootyTeam ResolveTeam()
+    {
+        AirFootyTeamMember3D member = GetComponent<AirFootyTeamMember3D>();
+        return member != null && member.Team != AirFootyTeam.None
+            ? member.Team
+            : AirFootyTeam.Blue;
+    }
+}
+
+internal static class AirFootyArenaMovement3D
+{
+    private const int MaximumSlideIterations = 3;
+    private const int MaximumSweepHits = 16;
+    private static readonly RaycastHit[] SweepHits =
+        new RaycastHit[MaximumSweepHits];
+
+    public static void ConfigureStrikerPhysics(
+        Rigidbody body,
+        float contactOffset)
+    {
+        body.interpolation = RigidbodyInterpolation.Interpolate;
+        body.collisionDetectionMode =
+            CollisionDetectionMode.ContinuousSpeculative;
+        body.maxDepenetrationVelocity = 16f;
+
+        SphereCollider sphere = body.GetComponent<SphereCollider>();
+        if (sphere != null)
+        {
+            sphere.contactOffset = Mathf.Max(
+                0.001f,
+                contactOffset);
+        }
+    }
+
+    public static Vector3 ResolvePosition(
+        Rigidbody body,
+        Vector3 desiredPosition,
+        float minimumX,
+        float maximumX,
+        float skin)
+    {
+        Vector3 currentPosition = body.position;
+        desiredPosition.y = currentPosition.y;
+        desiredPosition.x = Mathf.Clamp(
+            desiredPosition.x,
+            minimumX,
+            maximumX);
+
+        Vector3 displacement = desiredPosition - currentPosition;
+        displacement.y = 0f;
+        float distance = displacement.magnitude;
+        if (distance <= 0.0001f)
+        {
+            return desiredPosition;
+        }
+
+        SphereCollider sphere = body.GetComponent<SphereCollider>();
+        if (sphere == null)
+        {
+            return desiredPosition;
+        }
+
+        Vector3 worldCentreOffset =
+            body.transform.TransformPoint(sphere.center) - body.position;
+        Vector3 scale = body.transform.lossyScale;
+        float radius =
+            sphere.radius *
+            Mathf.Max(
+                Mathf.Abs(scale.x),
+                Mathf.Abs(scale.y),
+                Mathf.Abs(scale.z));
+
+        Vector3 resolvedPosition = currentPosition;
+        Vector3 remaining = displacement;
+        for (int iteration = 0;
+             iteration < MaximumSlideIterations;
+             iteration++)
+        {
+            distance = remaining.magnitude;
+            if (distance <= 0.0001f)
+            {
+                break;
+            }
+
+            Vector3 direction = remaining / distance;
+            Vector3 worldCentre =
+                resolvedPosition + worldCentreOffset;
+            if (!TryFindBoundaryHit(
+                    sphere,
+                    worldCentre,
+                    radius,
+                    direction,
+                    distance,
+                    skin,
+                    iteration == 0,
+                    out RaycastHit hit))
+            {
+                resolvedPosition += remaining;
+                remaining = Vector3.zero;
+                break;
+            }
+
+            float safeDistance = Mathf.Clamp(
+                hit.distance - skin,
+                0f,
+                distance);
+            resolvedPosition += direction * safeDistance;
+            remaining -= direction * safeDistance;
+
+            Vector3 wallNormal = hit.normal;
+            wallNormal.y = 0f;
+            if (wallNormal.sqrMagnitude > 0.0001f)
+            {
+                remaining = Vector3.ProjectOnPlane(
+                    remaining,
+                    wallNormal.normalized);
+            }
+            else
+            {
+                remaining = Vector3.zero;
+            }
+        }
+
+        resolvedPosition.y = currentPosition.y;
+        resolvedPosition.x = Mathf.Clamp(
+            resolvedPosition.x,
+            minimumX,
+            maximumX);
+        return resolvedPosition;
+    }
+
+    public static Vector3 ResolvePositionOnHalf(
+        Rigidbody body,
+        Vector3 desiredPosition,
+        Vector3 homeDirection,
+        float minimumHomeProjection,
+        float skin)
+    {
+        homeDirection.y = 0f;
+        if (homeDirection.sqrMagnitude <= 0.0001f)
+        {
+            return ResolvePosition(
+                body,
+                desiredPosition,
+                float.NegativeInfinity,
+                float.PositiveInfinity,
+                skin);
+        }
+
+        homeDirection.Normalize();
+        desiredPosition = ClampToHalf(
+            desiredPosition,
+            homeDirection,
+            minimumHomeProjection);
+        Vector3 resolved = ResolvePosition(
+            body,
+            desiredPosition,
+            float.NegativeInfinity,
+            float.PositiveInfinity,
+            skin);
+        return ClampToHalf(
+            resolved,
+            homeDirection,
+            minimumHomeProjection);
+    }
+
+    public static Vector3 ResolvePositionInTeamSemicircle(
+        Rigidbody body,
+        Vector3 desiredPosition,
+        Vector3 arenaCentre,
+        Vector3 homeDirection,
+        float apexDepth,
+        float goalLineDepth,
+        float skin)
+    {
+        homeDirection.y = 0f;
+        if (homeDirection.sqrMagnitude <= 0.0001f)
+        {
+            return ResolvePosition(
+                body,
+                desiredPosition,
+                float.NegativeInfinity,
+                float.PositiveInfinity,
+                skin);
+        }
+
+        homeDirection.Normalize();
+        desiredPosition = ClampToTeamSemicircle(
+            body,
+            desiredPosition,
+            arenaCentre,
+            homeDirection,
+            apexDepth,
+            goalLineDepth);
+        Vector3 resolved = ResolvePosition(
+            body,
+            desiredPosition,
+            float.NegativeInfinity,
+            float.PositiveInfinity,
+            skin);
+        return ClampToTeamSemicircle(
+            body,
+            resolved,
+            arenaCentre,
+            homeDirection,
+            apexDepth,
+            goalLineDepth);
+    }
+
+    private static Vector3 ClampToTeamSemicircle(
+        Rigidbody body,
+        Vector3 position,
+        Vector3 arenaCentre,
+        Vector3 homeDirection,
+        float apexDepth,
+        float goalLineDepth)
+    {
+        Vector3 tangent = Vector3.Cross(Vector3.up, homeDirection).normalized;
+        Vector3 relative = position - arenaCentre;
+        float home = Vector3.Dot(relative, homeDirection);
+        float lateral = Vector3.Dot(relative, tangent);
+
+        float strikerRadius = ResolvePlanarRadius(body);
+        float circleCentre = Mathf.Max(apexDepth, goalLineDepth - strikerRadius);
+        float radius = Mathf.Max(0.1f, goalLineDepth - apexDepth - strikerRadius);
+        float radialHome = Mathf.Min(0f, home - circleCentre);
+        Vector2 radial = new Vector2(radialHome, lateral);
+        if (radial.sqrMagnitude > radius * radius)
+        {
+            radial = radial.normalized * radius;
+        }
+
+        position = arenaCentre +
+                   homeDirection * (circleCentre + radial.x) +
+                   tangent * radial.y;
+        position.y = body.position.y;
+        return position;
+    }
+
+    private static float ResolvePlanarRadius(Rigidbody body)
+    {
+        SphereCollider sphere = body != null
+            ? body.GetComponent<SphereCollider>()
+            : null;
+        if (sphere == null)
+        {
+            return 0f;
+        }
+
+        Vector3 scale = sphere.transform.lossyScale;
+        return sphere.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
+    }
+
+    private static Vector3 ClampToHalf(
+        Vector3 position,
+        Vector3 homeDirection,
+        float minimumProjection)
+    {
+        float projection = Vector3.Dot(position, homeDirection);
+        if (projection < minimumProjection)
+        {
+            position += homeDirection * (minimumProjection - projection);
+        }
+
+        return position;
+    }
+
+    private static bool TryFindBoundaryHit(
+        SphereCollider sphere,
+        Vector3 worldCentre,
+        float radius,
+        Vector3 direction,
+        float distance,
+        float skin,
+        bool allowPenetrationCheck,
+        out RaycastHit nearestHit)
+    {
+        int hitCount = Physics.SphereCastNonAlloc(
+            worldCentre,
+            radius,
+            direction,
+            SweepHits,
+            distance + skin,
+            ~0,
+            QueryTriggerInteraction.Ignore);
+
+        bool foundSurface = false;
+        nearestHit = default;
+        float nearestDistance = float.PositiveInfinity;
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit hit = SweepHits[i];
+            Collider collider = hit.collider;
+            if (collider == null ||
+                collider == sphere ||
+                collider.attachedRigidbody != null ||
+                !IsAuthoredArenaBoundary(collider) ||
+                hit.distance >= nearestDistance)
+            {
+                continue;
+            }
+            if (IsMovingAwayFromBoundary(
+                    sphere,
+                    collider,
+                    worldCentre,
+                    direction,
+                    hit,
+                    skin,
+                    allowPenetrationCheck))
+            {
+                continue;
+            }
+
+            foundSurface = true;
+            nearestHit = hit;
+            nearestDistance = hit.distance;
+        }
+
+        return foundSurface;
+    }
+
+    public static bool IsMovingAwayFromBoundary(
+        SphereCollider sphere,
+        Collider boundary,
+        Vector3 worldCentre,
+        Vector3 movementDirection,
+        RaycastHit hit,
+        float skin,
+        bool allowPenetrationCheck)
+    {
+        if (hit.distance > Mathf.Max(0.002f, skin * 2f))
+        {
+            return false;
+        }
+
+        if (allowPenetrationCheck &&
+            Physics.ComputePenetration(
+                sphere,
+                sphere.transform.position,
+                sphere.transform.rotation,
+                boundary,
+                boundary.transform.position,
+                boundary.transform.rotation,
+                out Vector3 separationDirection,
+                out _))
+        {
+            separationDirection.y = 0f;
+            if (separationDirection.sqrMagnitude > 0.0001f)
+            {
+                return Vector3.Dot(
+                           movementDirection,
+                           separationDirection.normalized) > 0.001f;
+            }
+        }
+
+        bool supportsClosestPoint =
+            boundary is BoxCollider ||
+            boundary is SphereCollider ||
+            boundary is CapsuleCollider ||
+            boundary is MeshCollider boundaryMesh && boundaryMesh.convex;
+        if (supportsClosestPoint)
+        {
+            Vector3 awayFromSurface =
+                worldCentre - boundary.ClosestPoint(worldCentre);
+            awayFromSurface.y = 0f;
+            if (awayFromSurface.sqrMagnitude > 0.000001f)
+            {
+                return Vector3.Dot(
+                           movementDirection,
+                           awayFromSurface.normalized) > 0.001f;
+            }
+        }
+
+        Vector3 hitNormal = hit.normal;
+        hitNormal.y = 0f;
+        return hitNormal.sqrMagnitude > 0.0001f &&
+               Vector3.Dot(
+                   movementDirection,
+                   hitNormal.normalized) > 0.001f;
+    }
+
+    public static bool IsAuthoredArenaBoundary(Collider collider)
+    {
+        Transform current = collider.transform;
+        while (current != null)
+        {
+            string objectName = current.name;
+            if (objectName.IndexOf(
+                    "Wall",
+                    System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                objectName.IndexOf(
+                    "Corner",
+                    System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                objectName.IndexOf(
+                    "Goal",
+                    System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            current = current.parent;
+        }
+
+        return false;
+    }
+
+    public static bool IsGoalBack(Collider collider)
+    {
+        Transform current = collider != null
+            ? collider.transform
+            : null;
+        while (current != null)
+        {
+            if (current.name.IndexOf(
+                    "Goal Back",
+                    System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            current = current.parent;
+        }
+
+        return false;
     }
 }

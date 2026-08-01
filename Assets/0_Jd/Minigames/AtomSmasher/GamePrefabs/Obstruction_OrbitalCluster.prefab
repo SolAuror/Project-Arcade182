@@ -278,7 +278,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c7a66d4d2d0733446ada0801c4a9a889, type: 2}
+  - {fileID: 2100000, guid: 82a83678f21f45ccb3961c332984f62e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -317,8 +317,11 @@ MonoBehaviour:
   requiredTarget: 1
   deactivateOnHit: 1
   targetRenderers: []
-  activeColor: {r: 1, g: 0.45, b: 0.15, a: 1}
-  hitColor: {r: 0.25, g: 0.08, b: 0, a: 1}
+  activeColor: {r: 0.66, g: 0.5, b: 1, a: 1}
+  hitColor: {r: 0.12, g: 0.08, b: 0.25, a: 1}
+  emissionIntensity: 0.4
+  emissionPulseSpeed: 0
+  emissionPulseDepth: 0.35
   deathPopSeconds: 0.16
   deathPopScale: 1.35
 --- !u!1 &110003
@@ -436,7 +439,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c7a66d4d2d0733446ada0801c4a9a889, type: 2}
+  - {fileID: 2100000, guid: 82a83678f21f45ccb3961c332984f62e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -475,8 +478,11 @@ MonoBehaviour:
   requiredTarget: 1
   deactivateOnHit: 1
   targetRenderers: []
-  activeColor: {r: 1, g: 0.45, b: 0.15, a: 1}
-  hitColor: {r: 0.25, g: 0.08, b: 0, a: 1}
+  activeColor: {r: 0.66, g: 0.5, b: 1, a: 1}
+  hitColor: {r: 0.12, g: 0.08, b: 0.25, a: 1}
+  emissionIntensity: 0.4
+  emissionPulseSpeed: 0
+  emissionPulseDepth: 0.35
   deathPopSeconds: 0.16
   deathPopScale: 1.35
 --- !u!1 &110004
@@ -594,7 +600,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c7a66d4d2d0733446ada0801c4a9a889, type: 2}
+  - {fileID: 2100000, guid: 82a83678f21f45ccb3961c332984f62e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -633,7 +639,10 @@ MonoBehaviour:
   requiredTarget: 1
   deactivateOnHit: 1
   targetRenderers: []
-  activeColor: {r: 1, g: 0.45, b: 0.15, a: 1}
-  hitColor: {r: 0.25, g: 0.08, b: 0, a: 1}
+  activeColor: {r: 0.66, g: 0.5, b: 1, a: 1}
+  hitColor: {r: 0.12, g: 0.08, b: 0.25, a: 1}
+  emissionIntensity: 0.4
+  emissionPulseSpeed: 0
+  emissionPulseDepth: 0.35
   deathPopSeconds: 0.16
   deathPopScale: 1.35

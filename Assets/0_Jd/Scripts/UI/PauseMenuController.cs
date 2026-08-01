@@ -48,8 +48,8 @@ namespace Sol.Arcade
 
         private PauseContext context;
         private AtomSmasherGame atomSmasherGame;
+        private MainMenuUI airFootyMenu;
         private float pausedFromTimeScale = 1f;
-        private CursorLockMode pausedFromLockMode;
         private bool isPaused;
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace Sol.Arcade
             instance = this;
 
             WireButton(resumeButton, Resume);
-            WireButton(viewToggleButton, ToggleAtomSmasherView);
+            WireButton(viewToggleButton, HandleMinigameSetupAction);
             WireButton(quitToHubButton, () => QuitToScene(hubSceneName));
             WireButton(volumeButton, CycleVolume);
             WireButton(quitToMenuButton, () => QuitToScene(menuSceneName));
@@ -128,8 +128,12 @@ namespace Sol.Arcade
             {
                 return;
             }
+            if (airFootyMenu != null && !airFootyMenu.IsMatchActive)
+            {
+                return;
+            }
 
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (TogglePressedThisFrame())
             {
                 if (isPaused)
                 {
@@ -140,13 +144,63 @@ namespace Sol.Arcade
                     Pause();
                 }
             }
+            else if (isPaused && CancelPressedThisFrame())
+            {
+                Resume();
+            }
 
             if (isPaused)
             {
-                // Keep the cursor free while paused; controllers re-lock on resume.
-                Cursor.lockState = CursorLockMode.None;
-                Cursor.visible = true;
+                KeepSelectionAlive();
             }
+        }
+
+        private static bool TogglePressedThisFrame()
+        {
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+
+            return Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame;
+        }
+
+        // B backs out of the menu the way it backs out of anything else, but it
+        // must not open it — that would fight Crouch on the same button.
+        private static bool CancelPressedThisFrame()
+        {
+            return Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame;
+        }
+
+        /// <summary>
+        /// Stick and d-pad navigation only works while something is selected,
+        /// and a click on empty space clears the selection — so the menu keeps
+        /// a live one for as long as it is open.
+        /// </summary>
+        private void KeepSelectionAlive()
+        {
+            ArcadeInputCoordinator.SetMenuFocus(
+                pauseCanvas,
+                FirstInteractableButton());
+        }
+
+        private Selectable FirstInteractableButton()
+        {
+            if (pauseCanvas == null)
+            {
+                return null;
+            }
+
+            foreach (Selectable candidate in
+                     pauseCanvas.GetComponentsInChildren<Selectable>(false))
+            {
+                if (candidate.interactable)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
         private void Configure()
@@ -161,6 +215,7 @@ namespace Sol.Arcade
             IsPaused = false;
 
             atomSmasherGame = FindFirstObjectByType<AtomSmasherGame>();
+            airFootyMenu = FindFirstObjectByType<MainMenuUI>();
 
             if (FindFirstObjectByType<MainMenu>() != null)
             {
@@ -169,7 +224,8 @@ namespace Sol.Arcade
             else if (atomSmasherGame != null ||
                      FindFirstObjectByType<HoopsGame>() != null ||
                      FindFirstObjectByType<LabyrinthCrawlerGame>() != null ||
-                     FindFirstObjectByType<GameManager3D>() != null)
+                     FindFirstObjectByType<GameManager3D>() != null ||
+                     airFootyMenu != null)
             {
                 context = PauseContext.Minigame;
             }
@@ -180,7 +236,9 @@ namespace Sol.Arcade
 
             bool minigame = context == PauseContext.Minigame;
             bool hub = context == PauseContext.Hub;
-            SetButtonVisible(viewToggleButton, minigame && atomSmasherGame != null);
+            SetButtonVisible(
+                viewToggleButton,
+                minigame && (atomSmasherGame != null || airFootyMenu != null));
             SetButtonVisible(quitToHubButton, minigame);
             SetButtonVisible(volumeButton, hub);
             // The hub returns to the menu; a minigame can go back to the hub OR
@@ -197,6 +255,21 @@ namespace Sol.Arcade
                 ApplySavedAtomSmasherView();
                 RefreshViewToggleLabel();
             }
+            else if (airFootyMenu != null && viewToggleLabel != null)
+            {
+                viewToggleLabel.text = "AIR FOOTY SETUP";
+            }
+        }
+
+        private void HandleMinigameSetupAction()
+        {
+            if (airFootyMenu != null)
+            {
+                QuitToScene("AirFootyFinal");
+                return;
+            }
+
+            ToggleAtomSmasherView();
         }
 
         private void CaptureAuthoredProjection()
@@ -234,11 +307,14 @@ namespace Sol.Arcade
             isPaused = true;
             IsPaused = true;
             pausedFromTimeScale = Time.timeScale;
-            pausedFromLockMode = Cursor.lockState;
             Time.timeScale = 0f;
             AudioListener.pause = true;
             SimpleUiBuilder.EnsureEventSystem();
             pauseCanvas.SetActive(true);
+            ArcadeInputCoordinator.PushMenu(
+                pauseCanvas,
+                resumeButton);
+            KeepSelectionAlive();
         }
 
         private void Resume()
@@ -258,9 +334,8 @@ namespace Sol.Arcade
             isPaused = false;
             Time.timeScale = pausedFromTimeScale;
             AudioListener.pause = false;
-            Cursor.lockState = pausedFromLockMode;
-            Cursor.visible = pausedFromLockMode != CursorLockMode.Locked;
             pauseCanvas.SetActive(false);
+            ArcadeInputCoordinator.PopContext();
         }
 
         private void QuitToScene(string sceneName)

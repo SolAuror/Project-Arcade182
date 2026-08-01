@@ -1,3 +1,4 @@
+using Sol.Arcade;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Player;
@@ -24,14 +25,35 @@ namespace Sol.Minigames
         [SerializeField] private int arcSegments = 24;
         [SerializeField] private float arcTimeStep = 0.08f;
 
+        [Header("Stick Aim")]
+        [Tooltip("Degrees per second the barrel sweeps at full stick deflection.")]
+        [SerializeField, Min(1f)] private float aimDegreesPerSecond = 150f;
+
+        [Tooltip("Stick deflection below this is treated as rest, so the barrel holds its angle.")]
+        [SerializeField, Range(0.01f, 0.9f)] private float aimStickDeadzone = 0.2f;
+
+        [Tooltip("Response curve on stick deflection. Above 1 gives fine control near centre and a fast sweep at full tilt.")]
+        [SerializeField, Min(1f)] private float aimStickResponseExponent = 1.7f;
+
+        [Tooltip("Pointer travel (pixels) that hands aiming back to the mouse after the stick has been used.")]
+        [SerializeField, Min(0f)] private float pointerWakeThreshold = 6f;
+
         private InputSystem_Actions actions;
         private InputAction launchAction;
         private InputAction aimPointAction;
+        private InputAction aimStickAction;
         private InputActionMap atomSmasherMap;
         private bool isAiming;
         private int lastLaunchFrame = -1;
         private Color arcBaseStartColor = Color.white;
         private Color arcBaseEndColor = Color.white;
+        private float aimAngle = 90f;
+        private bool stickAiming;
+        private Vector2 lastPointerPosition;
+        private bool hasPointerBaseline;
+
+        /// <summary>True while the barrel is being steered by a stick, so prompts can name the right buttons.</summary>
+        public bool IsStickAiming => stickAiming;
 
         private void Awake()
         {
@@ -69,6 +91,7 @@ namespace Sol.Minigames
 
             launchAction = actions.AtomSmasher.Launch;
             aimPointAction = actions.AtomSmasher.AimPoint;
+            aimStickAction = actions.AtomSmasher.Aim;
             atomSmasherMap = actions.AtomSmasher.Get();
             launchAction.started += OnLaunchStarted;
             launchAction.canceled += OnLaunchCanceled;
@@ -86,6 +109,7 @@ namespace Sol.Minigames
             atomSmasherMap?.Disable();
             launchAction = null;
             aimPointAction = null;
+            aimStickAction = null;
             atomSmasherMap = null;
         }
 
@@ -98,6 +122,7 @@ namespace Sol.Minigames
         private void Update()
         {
             SyncToPlayerAnchor();
+            UpdateAimAngle();
             DrawAimArc(GetAimDirection());
         }
 
@@ -108,6 +133,7 @@ namespace Sol.Minigames
             arcTimeStep = Mathf.Max(0.01f, arcTimeStep);
             minAimAngle = Mathf.Clamp(minAimAngle, 0f, 180f);
             maxAimAngle = Mathf.Clamp(maxAimAngle, minAimAngle, 180f);
+            aimAngle = Mathf.Clamp(aimAngle, minAimAngle, maxAimAngle);
         }
 
         public void AssignGame(AtomSmasherGame owningGame)
@@ -123,6 +149,11 @@ namespace Sol.Minigames
 
         private void OnLaunchStarted(InputAction.CallbackContext context)
         {
+            if (PauseMenuController.IsPaused)
+            {
+                return;
+            }
+
             isAiming = true;
         }
 
@@ -133,6 +164,14 @@ namespace Sol.Minigames
 
         private void LaunchFromInput()
         {
+            // Launch shares its button with UI submit (A / left click), so a
+            // press aimed at the pause menu must not also fire a probe.
+            if (PauseMenuController.IsPaused)
+            {
+                isAiming = false;
+                return;
+            }
+
             if (Time.frameCount == lastLaunchFrame)
             {
                 return;
@@ -196,34 +235,96 @@ namespace Sol.Minigames
             transform.rotation = Quaternion.identity;
         }
 
-        private Vector3 GetAimDirection()
+        // Mouse and stick both steer the same barrel angle, and whichever the
+        // player touched last owns it: the stick sweeps the angle at a rate,
+        // the pointer snaps it to wherever it is on the board.
+        private void UpdateAimAngle()
         {
-            Vector3 firePosition = GetFirePosition();
-            Vector3 targetPosition = firePosition + Vector3.up;
-            Camera cameraToUse = aimCamera != null ? aimCamera : Camera.main;
+            Vector2 stick = aimStickAction != null ? aimStickAction.ReadValue<Vector2>() : Vector2.zero;
+            float deflection = Mathf.Abs(stick.x);
 
-            if (cameraToUse != null && aimPointAction != null)
+            if (deflection > aimStickDeadzone)
             {
-                Ray ray = cameraToUse.ScreenPointToRay(aimPointAction.ReadValue<Vector2>());
-                Plane boardPlane = new Plane(Vector3.forward, new Vector3(0f, 0f, game != null ? game.PhysicsPlaneZ : firePosition.z));
+                stickAiming = true;
+                float scaled = Mathf.Pow(
+                    Mathf.InverseLerp(aimStickDeadzone, 1f, deflection),
+                    aimStickResponseExponent);
 
-                if (boardPlane.Raycast(ray, out float enter))
-                {
-                    targetPosition = ray.GetPoint(enter);
-                }
+                // Screen-space convention: pushing right walks the barrel toward
+                // the low angles on the right of the board.
+                aimAngle -= Mathf.Sign(stick.x) * scaled * aimDegreesPerSecond * Time.unscaledDeltaTime;
+                aimAngle = Mathf.Clamp(aimAngle, minAimAngle, maxAimAngle);
+                return;
             }
 
-            Vector3 direction = targetPosition - firePosition;
+            if (PointerMoved() || !stickAiming)
+            {
+                stickAiming = false;
+                if (TryReadPointerAngle(out float pointerAngle))
+                {
+                    aimAngle = pointerAngle;
+                }
+            }
+        }
+
+        private bool PointerMoved()
+        {
+            if (aimPointAction == null)
+            {
+                return false;
+            }
+
+            Vector2 pointer = aimPointAction.ReadValue<Vector2>();
+            if (!hasPointerBaseline)
+            {
+                hasPointerBaseline = true;
+                lastPointerPosition = pointer;
+                return false;
+            }
+
+            if ((pointer - lastPointerPosition).sqrMagnitude < pointerWakeThreshold * pointerWakeThreshold)
+            {
+                return false;
+            }
+
+            lastPointerPosition = pointer;
+            return true;
+        }
+
+        private bool TryReadPointerAngle(out float angle)
+        {
+            angle = aimAngle;
+            Camera cameraToUse = aimCamera != null ? aimCamera : Camera.main;
+
+            if (cameraToUse == null || aimPointAction == null)
+            {
+                return false;
+            }
+
+            Vector3 firePosition = GetFirePosition();
+            Ray ray = cameraToUse.ScreenPointToRay(aimPointAction.ReadValue<Vector2>());
+            Plane boardPlane = new Plane(Vector3.forward, new Vector3(0f, 0f, game != null ? game.PhysicsPlaneZ : firePosition.z));
+
+            if (!boardPlane.Raycast(ray, out float enter))
+            {
+                return false;
+            }
+
+            Vector3 direction = ray.GetPoint(enter) - firePosition;
             direction.z = 0f;
 
             if (direction.sqrMagnitude < 0.001f)
             {
-                direction = Vector3.up;
+                return false;
             }
 
-            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-            angle = Mathf.Clamp(angle, minAimAngle, maxAimAngle);
-            float radians = angle * Mathf.Deg2Rad;
+            angle = Mathf.Clamp(Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg, minAimAngle, maxAimAngle);
+            return true;
+        }
+
+        private Vector3 GetAimDirection()
+        {
+            float radians = Mathf.Clamp(aimAngle, minAimAngle, maxAimAngle) * Mathf.Deg2Rad;
             return new Vector3(Mathf.Cos(radians), Mathf.Sin(radians), 0f).normalized;
         }
 

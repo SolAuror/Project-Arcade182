@@ -612,7 +612,11 @@ namespace Sol.Minigames
 
             Vector3 feedbackPosition = target.transform.position;
             int multiplier = GetBallScoreMultiplier(ball);
-            PlayFeedback(targetHitClip, targetHitParticles, feedbackPosition, new Color(1f, 0.9f, 0.35f, 1f), GetChainPitch(multiplier));
+
+            // Lifted toward white so the shell reads as a flash of the atom's
+            // own colour rather than a duller copy of it.
+            Color popTint = Color.Lerp(target.ActiveColor, Color.white, 0.35f);
+            PlayFeedback(targetHitClip, targetHitParticles, feedbackPosition, popTint, GetChainPitch(multiplier));
             SpawnElectronBurst(feedbackPosition);
 
             // Smashing an atom re-energizes the ball; only dead rallies time out.
@@ -2099,7 +2103,7 @@ namespace Sol.Minigames
             return true;
         }
 
-        private void PlayFeedback(AudioClip clip, ParticleSystem particlesPrefab, Vector3 position, Color fallbackColor, float pitch = 1f)
+        private void PlayFeedback(AudioClip clip, ParticleSystem particlesPrefab, Vector3 position, Color tint, float pitch = 1f)
         {
             if (feedbackAudioSource != null && clip != null)
             {
@@ -2109,6 +2113,13 @@ namespace Sol.Minigames
             if (particlesPrefab != null)
             {
                 ParticleSystem particles = Instantiate(particlesPrefab, position, Quaternion.identity);
+
+                // The burst carries the colour of whatever caused it, so the
+                // board's colour language survives the moment of the hit: an
+                // explosive pops orange, a quantum atom pops green.
+                ParticleSystem.MainModule main = particles.main;
+                main.startColor = new ParticleSystem.MinMaxGradient(tint);
+
                 Destroy(particles.gameObject, defaultParticleLifetime);
                 return;
             }

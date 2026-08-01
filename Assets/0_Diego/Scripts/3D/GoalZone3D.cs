@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
@@ -6,16 +7,41 @@ public class GoalZone3D : MonoBehaviour
     public enum ScoringSide { Player, AI }
 
     [SerializeField] private ScoringSide pointGoesTo;
+    [SerializeField] private AirFootyTeam goalOwner;
     [SerializeField] private GameManager3D gameManager;
     [SerializeField] private AudioSource goalSound;
     [SerializeField] private ParticleSystem goalParticles;
+    [SerializeField] private AirFootyShotTracker3D shotTracker;
     [SerializeField] private Color playerGoalColor = new Color(0.12f, 0.62f, 1f, 1f);
     [SerializeField] private Color aiGoalColor = new Color(1f, 0.18f, 0.25f, 1f);
 
-    private bool goalActivated;
+    private readonly HashSet<int> ballsInside = new();
+
+    public AirFootyTeam OwnerTeam
+    {
+        get
+        {
+            if (goalOwner == AirFootyTeam.None)
+            {
+                goalOwner = ResolveGoalOwner();
+            }
+            return goalOwner;
+        }
+    }
 
     private void Awake()
     {
+        goalOwner = ResolveGoalOwner();
+        if (gameManager == null)
+        {
+            gameManager = GetComponentInParent<GameManager3D>();
+        }
+
+        if (shotTracker == null)
+        {
+            shotTracker = FindFirstObjectByType<AirFootyShotTracker3D>();
+        }
+
         if (goalSound == null)
         {
             goalSound = gameObject.AddComponent<AudioSource>();
@@ -27,24 +53,34 @@ public class GoalZone3D : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        BallController3D ball = other.GetComponent<BallController3D>();
-        if (ball == null || goalActivated) return;
+        BallController3D ball = other.GetComponentInParent<BallController3D>();
+        if (ball == null || !ballsInside.Add(ball.GetInstanceID())) return;
 
-        goalActivated = true;
-        if (gameManager.GoalScored(pointGoesTo))
+        if (gameManager != null && gameManager.GoalConceded(OwnerTeam, ball))
         {
+            AirFootyTeam scoringTeam = ball.LastTouchTeam;
+            shotTracker?.RecordGoal(transform.position, scoringTeam);
             PlayGoalFeedback();
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        BallController3D ball = other.GetComponentInParent<BallController3D>();
+        if (ball != null)
+        {
+            ballsInside.Remove(ball.GetInstanceID());
         }
     }
 
     public void AllowGoal()
     {
-        goalActivated = false;
+        ballsInside.Clear();
     }
 
     private void PlayGoalFeedback()
     {
-        Color color = pointGoesTo == ScoringSide.Player ? playerGoalColor : aiGoalColor;
+        Color color = AirFootyTeamMember3D.ColorFor(OwnerTeam);
 
         if (goalSound != null)
         {
@@ -54,7 +90,7 @@ public class GoalZone3D : MonoBehaviour
             }
             else
             {
-                goalSound.pitch = pointGoesTo == ScoringSide.Player ? 1.05f : 0.92f;
+                goalSound.pitch = OwnerTeam == AirFootyTeam.Blue ? 0.92f : 1.05f;
                 goalSound.PlayOneShot(AirFootyFeedbackUtility.GoalClip);
             }
         }
@@ -72,7 +108,21 @@ public class GoalZone3D : MonoBehaviour
 
         AirFootyWorldPopup.Spawn(
             transform.position + Vector3.up * 1.15f,
-            pointGoesTo == ScoringSide.Player ? "BLUE GOAL!" : "RED GOAL!",
+            $"{AirFootyTeamMember3D.DisplayName(OwnerTeam)} CONCEDES!",
             color);
+    }
+
+    private AirFootyTeam ResolveGoalOwner()
+    {
+        AirFootyTeam inferred =
+            AirFootyTeamMember3D.InferFromHierarchy(transform);
+        if (inferred != AirFootyTeam.None)
+        {
+            return inferred;
+        }
+
+        return pointGoesTo == ScoringSide.Player
+            ? AirFootyTeam.Red
+            : AirFootyTeam.Blue;
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Sol.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -29,9 +30,6 @@ namespace Sol.Minigames
 
         private List<LabyrinthUpgrade> choices;
         private Action<LabyrinthUpgrade> onPicked;
-        private CursorLockMode previousLockState;
-        private bool previousCursorVisible;
-
         public bool IsOpen { get; private set; }
 
         public void Show(List<LabyrinthUpgrade> upgradeChoices, Action<LabyrinthUpgrade> pickedCallback)
@@ -80,12 +78,10 @@ namespace Sol.Minigames
                 }
             }
 
-            previousLockState = Cursor.lockState;
-            previousCursorVisible = Cursor.visible;
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-
             gameObject.SetActive(true);
+            ArcadeInputCoordinator.PushMenu(
+                gameObject,
+                FirstAvailableButton());
         }
 
         private void Update()
@@ -120,14 +116,29 @@ namespace Sol.Minigames
             IsOpen = false;
             choices = null;
 
-            Cursor.lockState = previousLockState;
-            Cursor.visible = previousCursorVisible;
-
             gameObject.SetActive(false);
+            ArcadeInputCoordinator.PopContext();
 
             Action<LabyrinthUpgrade> callback = onPicked;
             onPicked = null;
             callback?.Invoke(picked);
+        }
+
+        private Selectable FirstAvailableButton()
+        {
+            foreach (UpgradeCardWidget card in cards)
+            {
+                if (card != null &&
+                    card.root != null &&
+                    card.root.activeInHierarchy &&
+                    card.takeButton != null &&
+                    card.takeButton.interactable)
+                {
+                    return card.takeButton;
+                }
+            }
+
+            return null;
         }
     }
 }

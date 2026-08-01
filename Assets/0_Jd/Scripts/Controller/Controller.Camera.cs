@@ -1,5 +1,6 @@
 using Sol.Grab; // grab utilities
 using Sol.Outline; // outline utilities
+using Sol.UI;
 using Unity.Cinemachine; // cinemachine types
 using UnityEngine; // Unity core
 using UnityEngine.InputSystem; // input system
@@ -50,7 +51,7 @@ namespace Player
 
         private void DisableCamera()
         {
-            SetCursorLocked(false); // unlock cursor on disable
+            SetCursorLocked(false); // release centre lock while keeping the pointer inside the game window
         }
 
         private void UpdateCameraMode()
@@ -66,11 +67,6 @@ namespace Player
             {
                 wasIsometricPointerModifierActive = isIsometricPointerModifierActive;
                 ApplyInteractionPolicy(true); // modifier changed
-            }
-
-            if (UsesLookInput() && !UsesMouseInteraction() && Keyboard.current?.escapeKey.wasPressedThisFrame == true)
-            {
-                SetCursorLocked(Cursor.lockState != CursorLockMode.Locked); // toggle cursor lock on Escape
             }
 
             ApplyInteractionPolicy(false); // refresh interaction policy
@@ -239,8 +235,11 @@ namespace Player
 
         private static void SetCursorLocked(bool shouldLockCursor)
         {
-            Cursor.lockState = shouldLockCursor ? CursorLockMode.Locked : CursorLockMode.None;
-            Cursor.visible = !shouldLockCursor;
+            ArcadeInputCoordinator.ConfigureGameplayCursor(
+                shouldLockCursor
+                    ? CursorLockMode.Locked
+                    : CursorLockMode.Confined,
+                !shouldLockCursor);
         }
     }
 }

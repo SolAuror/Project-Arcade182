@@ -1,6 +1,7 @@
 using Sol.Minigames;
 using Sol.UI;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -21,6 +22,7 @@ namespace Sol.Arcade
         [SerializeField] private string labyrinthSceneName = "Sc_LabyrinthCrawler";
         [SerializeField] private string hoopsSceneName = "Sc_Hoops";
         [SerializeField] private string atomSmasherSceneName = "Sc_AtomSmasher";
+        [SerializeField] private string airFootySceneName = "AirFootyFinal";
 
         [Header("Panels")]
         [SerializeField] private GameObject rootPanel;
@@ -48,13 +50,14 @@ namespace Sol.Arcade
         [SerializeField] private Text volumeLabel;
         [SerializeField] private Button optionsBackButton;
 
+        private GameObject activePanel;
+
         private void Awake()
         {
             Time.timeScale = 1f;
             AudioListener.pause = false;
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
             SimpleUiBuilder.EnsureEventSystem();
+            ArcadeInputCoordinator.ShowMenu(rootPanel, startButton);
 
             WireButton(startButton, () => LoadScene(hubSceneName));
             WireButton(playMinigamesButton, () => ShowPanel(minigamesPanel));
@@ -63,6 +66,7 @@ namespace Sol.Arcade
             WireButton(labyrinthButton, () => LoadScene(labyrinthSceneName));
             WireButton(hoopsButton, () => LoadScene(hoopsSceneName));
             WireButton(atomSmasherButton, () => LoadScene(atomSmasherSceneName));
+            BuildAirFootyButton();
             WireButton(minigamesBackButton, () => ShowPanel(rootPanel));
             WireButton(volumeButton, CycleVolume);
             WireButton(optionsBackButton, () => ShowPanel(rootPanel));
@@ -78,6 +82,26 @@ namespace Sol.Arcade
 
             RefreshVolumeLabel();
             ShowPanel(rootPanel);
+        }
+
+        private void BuildAirFootyButton()
+        {
+            if (minigamesPanel == null ||
+                minigamesPanel.transform.Find("Button AIR FOOTY") != null)
+            {
+                return;
+            }
+
+            Button airFootyButton = SimpleUiBuilder.CreateButton(
+                minigamesPanel.transform,
+                "AIR FOOTY",
+                28,
+                () => LoadScene(airFootySceneName));
+            if (minigamesBackButton != null)
+            {
+                airFootyButton.transform.SetSiblingIndex(
+                    minigamesBackButton.transform.GetSiblingIndex());
+            }
         }
 
         private static void WireButton(Button button, UnityEngine.Events.UnityAction onClick)
@@ -102,11 +126,55 @@ namespace Sol.Arcade
             }
         }
 
+        // Stick and d-pad navigation is dead until something is selected, so the
+        // menu always keeps a live selection — on open, on every panel switch,
+        // and after a stray click deselects.
+        private void Update()
+        {
+            if (CancelPressedThisFrame() && activePanel != rootPanel)
+            {
+                ShowPanel(rootPanel);
+                return;
+            }
+
+            ArcadeInputCoordinator.SetMenuFocus(
+                activePanel,
+                FirstInteractable(activePanel));
+        }
+
         private void ShowPanel(GameObject panel)
         {
             SetPanelActive(rootPanel, panel);
             SetPanelActive(minigamesPanel, panel);
             SetPanelActive(optionsPanel, panel);
+            activePanel = panel;
+            ArcadeInputCoordinator.SetMenuFocus(
+                panel,
+                FirstInteractable(panel));
+        }
+
+        private static Selectable FirstInteractable(GameObject panel)
+        {
+            if (panel == null)
+            {
+                return null;
+            }
+
+            foreach (Selectable candidate in panel.GetComponentsInChildren<Selectable>(false))
+            {
+                if (candidate.interactable)
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool CancelPressedThisFrame()
+        {
+            return Keyboard.current?.escapeKey.wasPressedThisFrame == true ||
+                   Gamepad.current?.buttonEast.wasPressedThisFrame == true;
         }
 
         private static void SetPanelActive(GameObject candidate, GameObject selected)

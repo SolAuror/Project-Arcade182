@@ -1,13 +1,14 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Sol.Minigames
 {
     /// <summary>
     /// Floating world-space damage number: rises, faces the camera, fades out,
     /// and destroys itself. Spawn via <see cref="Spawn"/> from any combat code.
-    /// The visual (text plus a dark readability drop shadow) is the authored
-    /// Resources/DamagePopup.prefab; the static spawners only instantiate it
-    /// and fill in message, color, life, and size.
+    /// Uses the optional Resources/DamagePopup prefab when present, otherwise
+    /// builds the same text-and-shadow visual at runtime. Popup spawning is
+    /// therefore independent of where the authored prefab is organised.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Sol/Minigames/Shared/Damage Popup")]
@@ -19,6 +20,7 @@ namespace Sol.Minigames
 
         private static readonly Color DefaultColor = new Color(1f, 0.85f, 0.3f, 1f);
         private static DamagePopup cachedPrefab;
+        private static bool resourceLookupCompleted;
 
         [SerializeField, Min(0.1f)] private float lifeSeconds = 0.9f;
         [SerializeField, Min(0f)] private float riseSpeed = 1.25f;
@@ -42,19 +44,57 @@ namespace Sol.Minigames
         {
             if (cachedPrefab == null)
             {
-                cachedPrefab = Resources.Load<DamagePopup>(PrefabResourcePath);
-                if (cachedPrefab == null)
+                if (!resourceLookupCompleted)
                 {
-                    Debug.LogWarning($"DamagePopup prefab missing from a Resources folder ('{PrefabResourcePath}'); popup '{message}' skipped.");
-                    return null;
+                    cachedPrefab = Resources.Load<DamagePopup>(PrefabResourcePath);
+                    resourceLookupCompleted = true;
                 }
             }
 
             Vector2 jitter = Random.insideUnitCircle * 0.2f;
-            DamagePopup popup = Instantiate(cachedPrefab);
+            DamagePopup popup = cachedPrefab != null
+                ? Instantiate(cachedPrefab)
+                : CreateRuntimePopup();
             popup.transform.position = position + new Vector3(jitter.x, Random.value * 0.2f, jitter.y);
             popup.Configure(message, color ?? DefaultColor, lifeSeconds, sizeScale);
             return popup;
+        }
+
+        private static DamagePopup CreateRuntimePopup()
+        {
+            GameObject popupObject = new GameObject("DamagePopup");
+            TextMesh mainText = ConfigureTextMesh(
+                popupObject.AddComponent<TextMesh>());
+
+            GameObject shadowObject = new GameObject("Shadow");
+            shadowObject.transform.SetParent(popupObject.transform, false);
+            shadowObject.transform.localPosition = new Vector3(0.04f, -0.04f, 0.02f);
+            TextMesh shadowText = ConfigureTextMesh(
+                shadowObject.AddComponent<TextMesh>());
+
+            DamagePopup popup = popupObject.AddComponent<DamagePopup>();
+            popup.textMesh = mainText;
+            popup.shadowMesh = shadowText;
+            return popup;
+        }
+
+        private static TextMesh ConfigureTextMesh(TextMesh mesh)
+        {
+            mesh.text = "0";
+            mesh.characterSize = BaseCharacterSize;
+            mesh.fontSize = 46;
+            mesh.fontStyle = FontStyle.Bold;
+            mesh.anchor = TextAnchor.MiddleCenter;
+            mesh.alignment = TextAlignment.Center;
+            mesh.richText = true;
+
+            MeshRenderer renderer = mesh.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+            }
+            return mesh;
         }
 
         private void Configure(string message, Color color, float overrideLifeSeconds, float sizeScale)

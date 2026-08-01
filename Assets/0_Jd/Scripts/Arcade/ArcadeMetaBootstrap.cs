@@ -1,4 +1,5 @@
 using Sol.Minigames;
+using Sol.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -31,6 +32,7 @@ namespace Sol.Arcade
 
         private static void ConfigureScene()
         {
+            ConfigureInputContext();
             PauseMenuController.ConfigureForActiveScene();
 
             // The hub is the scene with a maze generator but no labyrinth game.
@@ -42,6 +44,34 @@ namespace Sol.Arcade
             {
                 new GameObject("Hub Game Loop").AddComponent<HubGameLoop>();
             }
+        }
+
+        private static void ConfigureInputContext()
+        {
+            SimpleUiBuilder.EnsureEventSystem();
+
+            MainMenu mainMenu = Object.FindFirstObjectByType<MainMenu>();
+            MainMenuUI airFootyMenu = Object.FindFirstObjectByType<MainMenuUI>();
+            if (mainMenu != null || airFootyMenu != null)
+            {
+                ArcadeInputCoordinator.ResetForScene(
+                    CursorLockMode.Locked,
+                    false);
+                ArcadeInputCoordinator.ShowMenu(
+                    mainMenu != null
+                        ? mainMenu.gameObject
+                        : airFootyMenu.gameObject);
+                return;
+            }
+
+            bool pointerDrivenGame =
+                Object.FindFirstObjectByType<AtomSmasherGame>() != null ||
+                Object.FindFirstObjectByType<NeonReflex.UIManager>() != null;
+            ArcadeInputCoordinator.ResetForScene(
+                pointerDrivenGame
+                    ? CursorLockMode.Confined
+                    : CursorLockMode.Locked,
+                pointerDrivenGame);
         }
     }
 }

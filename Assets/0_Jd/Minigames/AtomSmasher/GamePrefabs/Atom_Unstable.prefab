@@ -89,7 +89,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c7a66d4d2d0733446ada0801c4a9a889, type: 2}
+  - {fileID: 2100000, guid: 697034dee48b4baf9fd39b40bf378fba, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -131,6 +131,9 @@ MonoBehaviour:
   - {fileID: 2300000}
   activeColor: {r: 1, g: 0.2, b: 0.7, a: 1}
   hitColor: {r: 0, g: 0, b: 0, a: 1}
+  emissionIntensity: 0.62
+  emissionPulseSpeed: 3.1
+  emissionPulseDepth: 0.5
   deathPopSeconds: 0.16
   deathPopScale: 1.35
 --- !u!114 &11400002

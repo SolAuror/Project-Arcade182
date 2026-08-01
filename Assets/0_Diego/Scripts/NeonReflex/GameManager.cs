@@ -38,7 +38,10 @@ namespace NeonReflex
 
         private void Update()
         {
-            if (gameOver && Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame)
+            bool restartPressed =
+                Keyboard.current?.spaceKey.wasPressedThisFrame == true ||
+                Gamepad.current?.buttonSouth.wasPressedThisFrame == true;
+            if (gameOver && restartPressed)
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
