@@ -7,11 +7,13 @@ namespace Sol.Arcade
 {
     /// <summary>
     /// Wires the overarching game loop into every scene without prefab edits:
-    /// applies saved options, keeps the pause menu alive, and spawns the hub
-    /// game loop (maze regen + golden exit door) whenever the hub loads.
+    /// applies saved options, keeps the pause menu alive, and protects the
+    /// handcrafted hub from accidentally running Labyrinth maze generation.
     /// </summary>
     public static class ArcadeMetaBootstrap
     {
+        private const string HubSceneName = "Sc_ArcadeHub";
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Initialize()
         {
@@ -35,10 +37,7 @@ namespace Sol.Arcade
             ConfigureInputContext();
             PauseMenuController.ConfigureForActiveScene();
 
-            // The hub is the scene with a maze generator but no labyrinth game.
-            bool isHub = Object.FindFirstObjectByType<ArcadeGen3D>() != null &&
-                         Object.FindFirstObjectByType<LabyrinthCrawlerGame>() == null &&
-                         Object.FindFirstObjectByType<MainMenu>() == null;
+            bool isHub = SceneManager.GetActiveScene().name == HubSceneName;
 
             if (isHub && Object.FindFirstObjectByType<HubGameLoop>() == null)
             {

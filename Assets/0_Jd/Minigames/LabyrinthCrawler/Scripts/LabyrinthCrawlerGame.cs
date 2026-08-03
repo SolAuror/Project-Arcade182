@@ -812,7 +812,7 @@ namespace Sol.Minigames
                 labyrinthMazeRules.GetAuthoredBuildingCount(CurrentStage));
             rules.activateEndRoomExit = false; // the exit pad replaces the interact clerk
 
-            if (!mazeGenerator.GenerateWithRules(rules, OnMazeReady))
+            if (!mazeGenerator.GenerateWithRules(this, rules, OnMazeReady))
             {
                 Debug.LogWarning($"{name} could not generate the Labyrinth Crawler maze with its current rules.", this);
             }

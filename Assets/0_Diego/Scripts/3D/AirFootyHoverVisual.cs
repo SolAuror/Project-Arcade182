@@ -18,8 +18,15 @@ public sealed class AirFootyHoverVisual : MonoBehaviour
         ringColor = color;
         name = "AirFooty Ball Hover";
 
-        BuildShadow();
-        BuildRing();
+        ResolveAuthoredParts();
+        if (shadowRenderer == null)
+        {
+            BuildShadow();
+        }
+        if (hoverRing == null)
+        {
+            BuildRing();
+        }
     }
 
     private void LateUpdate()
@@ -61,6 +68,15 @@ public sealed class AirFootyHoverVisual : MonoBehaviour
         {
             Destroy(shadowMaterial);
         }
+    }
+
+    private void ResolveAuthoredParts()
+    {
+        Transform ring = transform.Find("Hover Ring");
+        hoverRing = ring != null ? ring.GetComponent<LineRenderer>() : null;
+
+        Transform shadow = transform.Find("Hover Shadow");
+        shadowRenderer = shadow != null ? shadow.GetComponent<Renderer>() : null;
     }
 
     private void BuildRing()

@@ -761,7 +761,7 @@ public class BallController3D : MonoBehaviour
         speedTrail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
         Shader shader = Shader.Find("Sprites/Default");
-        if (shader != null)
+        if (speedTrail.sharedMaterial == null && shader != null)
         {
             speedTrail.material = new Material(shader)
             {
@@ -772,7 +772,11 @@ public class BallController3D : MonoBehaviour
 
     private void BuildImpactAudio()
     {
-        impactAudio = gameObject.AddComponent<AudioSource>();
+        impactAudio = GetComponent<AudioSource>();
+        if (impactAudio == null)
+        {
+            impactAudio = gameObject.AddComponent<AudioSource>();
+        }
         impactAudio.playOnAwake = false;
         impactAudio.spatialBlend = 0.35f;
         impactAudio.dopplerLevel = 0f;
@@ -780,8 +784,15 @@ public class BallController3D : MonoBehaviour
 
     private void BuildHoverPresentation()
     {
-        GameObject visual = new GameObject("AirFooty Ball Hover");
-        AirFootyHoverVisual hover = visual.AddComponent<AirFootyHoverVisual>();
+        Transform authoredVisual = transform.Find("AirFooty Ball Hover");
+        GameObject visual = authoredVisual != null
+            ? authoredVisual.gameObject
+            : new GameObject("AirFooty Ball Hover");
+        AirFootyHoverVisual hover = visual.GetComponent<AirFootyHoverVisual>();
+        if (hover == null)
+        {
+            hover = visual.AddComponent<AirFootyHoverVisual>();
+        }
         hover.Initialize(transform, startingPosition.y, trailColor);
     }
 

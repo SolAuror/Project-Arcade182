@@ -3,31 +3,31 @@ using UnityEngine;
 namespace Sol.Arcade
 {
     /// <summary>
-    /// Overarching hub loop, spawned automatically each time the hub scene
-    /// loads (see <see cref="ArcadeMetaBootstrap"/>): regenerates the arcade
-    /// maze so every return from a minigame gets a fresh layout. The golden
-    /// exit door is authored in a room prefab; the exit clerk sells the coin
-    /// it redeems.
+    /// Marks and protects the handcrafted arcade hub. Maze generation belongs
+    /// exclusively to Labyrinth Crawler and is never permitted in this scene.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Sol/Arcade/Hub Game Loop")]
     public class HubGameLoop : MonoBehaviour
     {
-        [Tooltip("Regenerate the hub maze every time the scene loads.")]
-        [SerializeField] private bool regenerateMazeOnLoad = true;
-
-        private void Start()
+        private void Awake()
         {
-            ArcadeGen3D generator = FindFirstObjectByType<ArcadeGen3D>();
-            if (generator == null)
-            {
-                Debug.LogWarning($"{name} found no ArcadeGen3D in the hub scene.", this);
-                return;
-            }
+            ArcadeGen3D[] generators = FindObjectsByType<ArcadeGen3D>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
 
-            if (regenerateMazeOnLoad)
+            foreach (ArcadeGen3D generator in generators)
             {
-                generator.CreateArcade();
+                if (generator == null)
+                {
+                    continue;
+                }
+
+                generator.enabled = false;
+                Debug.LogError(
+                    $"Disabled '{generator.name}' in the handcrafted arcade hub. " +
+                    "Maze generation is owned exclusively by Labyrinth Crawler.",
+                    generator);
             }
         }
     }

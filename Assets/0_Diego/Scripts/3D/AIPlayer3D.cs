@@ -851,10 +851,17 @@ public class AIPlayer3D : MonoBehaviour
 
     private void BuildTelegraph()
     {
-        GameObject telegraphObject = new GameObject("AI Shot Telegraph");
+        Transform authoredTelegraph = transform.Find("AI Shot Telegraph");
+        GameObject telegraphObject = authoredTelegraph != null
+            ? authoredTelegraph.gameObject
+            : new GameObject("AI Shot Telegraph");
         telegraphObject.transform.SetParent(transform, false);
 
-        telegraphLine = telegraphObject.AddComponent<LineRenderer>();
+        telegraphLine = telegraphObject.GetComponent<LineRenderer>();
+        if (telegraphLine == null)
+        {
+            telegraphLine = telegraphObject.AddComponent<LineRenderer>();
+        }
         telegraphLine.useWorldSpace = true;
         telegraphLine.loop = false;
         telegraphLine.positionCount = 2;
@@ -872,7 +879,7 @@ public class AIPlayer3D : MonoBehaviour
             0.16f);
 
         Shader shader = Shader.Find("Sprites/Default");
-        if (shader != null)
+        if (telegraphLine.sharedMaterial == null && shader != null)
         {
             telegraphMaterial = new Material(shader)
             {
@@ -882,7 +889,11 @@ public class AIPlayer3D : MonoBehaviour
         }
         telegraphLine.enabled = false;
 
-        dashTrail = gameObject.AddComponent<TrailRenderer>();
+        dashTrail = GetComponent<TrailRenderer>();
+        if (dashTrail == null)
+        {
+            dashTrail = gameObject.AddComponent<TrailRenderer>();
+        }
         dashTrail.time = 0.26f;
         dashTrail.minVertexDistance = 0.04f;
         dashTrail.startWidth = 0.46f;
@@ -896,10 +907,14 @@ public class AIPlayer3D : MonoBehaviour
         dashTrail.shadowCastingMode =
             UnityEngine.Rendering.ShadowCastingMode.Off;
         dashTrail.receiveShadows = false;
-        dashTrail.sharedMaterial = telegraphMaterial;
+        dashTrail.sharedMaterial = telegraphLine.sharedMaterial;
         dashTrail.emitting = false;
 
-        telegraphGlow = telegraphObject.AddComponent<Light>();
+        telegraphGlow = telegraphObject.GetComponent<Light>();
+        if (telegraphGlow == null)
+        {
+            telegraphGlow = telegraphObject.AddComponent<Light>();
+        }
         telegraphGlow.type = LightType.Point;
         telegraphGlow.color = telegraphColor;
         telegraphGlow.range = 3f;

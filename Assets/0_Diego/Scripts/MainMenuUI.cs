@@ -18,10 +18,17 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private Button instructionsButton;
     [SerializeField] private Button backButton;
 
-    private GameObject modeSelectionPanel;
-    private GameObject teamSelectionPanel;
-    private Button greenTeamButton;
-    private Button goldTeamButton;
+    [Header("Authored Mode and Team Selection")]
+    [SerializeField] private GameObject modeSelectionPanel;
+    [SerializeField] private GameObject teamSelectionPanel;
+    [SerializeField] private Button twoPlayerModeButton;
+    [SerializeField] private Button fourPlayerModeButton;
+    [SerializeField] private Button modeBackButton;
+    [SerializeField] private Button blueTeamButton;
+    [SerializeField] private Button redTeamButton;
+    [SerializeField] private Button greenTeamButton;
+    [SerializeField] private Button goldTeamButton;
+    [SerializeField] private Button teamBackButton;
     private Button firstModeButton;
     private Button firstTeamButton;
     private GameObject twoPlayerVariant;
@@ -32,7 +39,7 @@ public class MainMenuUI : MonoBehaviour
     private GameObject goldFeedRoot;
     private ScoreUI scoreUI;
     private TMP_Text rulesText;
-    private Camera displayCamera;
+    [SerializeField] private Camera displayCamera;
     private AirFootyGameMode selectedMode = AirFootyGameMode.TwoPlayer;
 
     public bool IsMatchActive { get; private set; }
@@ -316,6 +323,15 @@ public class MainMenuUI : MonoBehaviour
 
     private void BuildSelectionPanels()
     {
+        if (modeSelectionPanel != null && teamSelectionPanel != null)
+        {
+            ResolveAuthoredSelectionButtons();
+            WireAuthoredSelectionButtons();
+            modeSelectionPanel.SetActive(false);
+            teamSelectionPanel.SetActive(false);
+            return;
+        }
+
         Canvas canvas = GetComponentInParent<Canvas>();
         if (canvas == null)
         {
@@ -345,17 +361,18 @@ public class MainMenuUI : MonoBehaviour
             "Choose the arena before selecting your team",
             24,
             SimpleUiBuilder.TextColor);
-        firstModeButton = SimpleUiBuilder.CreateButton(
+        twoPlayerModeButton = SimpleUiBuilder.CreateButton(
             modeColumn,
             "2 PLAYER - 1 BALL",
             30,
             () => SelectMode(AirFootyGameMode.TwoPlayer));
-        SimpleUiBuilder.CreateButton(
+        firstModeButton = twoPlayerModeButton;
+        fourPlayerModeButton = SimpleUiBuilder.CreateButton(
             modeColumn,
             "4 PLAYER ELIMINATION - 2 BALLS",
             30,
             () => SelectMode(AirFootyGameMode.FourPlayer));
-        SimpleUiBuilder.CreateButton(
+        modeBackButton = SimpleUiBuilder.CreateButton(
             modeColumn,
             "BACK",
             26,
@@ -379,12 +396,13 @@ public class MainMenuUI : MonoBehaviour
             "All unselected teams are AI controlled",
             23,
             SimpleUiBuilder.TextColor);
-        firstTeamButton = SimpleUiBuilder.CreateButton(
+        blueTeamButton = SimpleUiBuilder.CreateButton(
             teamColumn,
             "BLUE",
             30,
             () => BeginMatch(AirFootyTeam.Blue));
-        SimpleUiBuilder.CreateButton(
+        firstTeamButton = blueTeamButton;
+        redTeamButton = SimpleUiBuilder.CreateButton(
             teamColumn,
             "RED",
             30,
@@ -399,7 +417,7 @@ public class MainMenuUI : MonoBehaviour
             "GOLD",
             30,
             () => BeginMatch(AirFootyTeam.Gold));
-        SimpleUiBuilder.CreateButton(
+        teamBackButton = SimpleUiBuilder.CreateButton(
             teamColumn,
             "BACK TO MODE",
             26,
@@ -407,6 +425,60 @@ public class MainMenuUI : MonoBehaviour
 
         modeSelectionPanel.SetActive(false);
         teamSelectionPanel.SetActive(false);
+    }
+
+    private void ResolveAuthoredSelectionButtons()
+    {
+        twoPlayerModeButton ??= FindButton(
+            modeSelectionPanel,
+            "Button 2 PLAYER - 1 BALL");
+        fourPlayerModeButton ??= FindButton(
+            modeSelectionPanel,
+            "Button 4 PLAYER ELIMINATION - 2 BALLS");
+        modeBackButton ??= FindButton(modeSelectionPanel, "Button BACK");
+        blueTeamButton ??= FindButton(teamSelectionPanel, "Button BLUE");
+        redTeamButton ??= FindButton(teamSelectionPanel, "Button RED");
+        greenTeamButton ??= FindButton(teamSelectionPanel, "Button GREEN");
+        goldTeamButton ??= FindButton(teamSelectionPanel, "Button GOLD");
+        teamBackButton ??= FindButton(
+            teamSelectionPanel,
+            "Button BACK TO MODE");
+        firstModeButton = twoPlayerModeButton;
+        firstTeamButton = blueTeamButton;
+    }
+
+    private void WireAuthoredSelectionButtons()
+    {
+        WireButton(
+            twoPlayerModeButton,
+            () => SelectMode(AirFootyGameMode.TwoPlayer));
+        WireButton(
+            fourPlayerModeButton,
+            () => SelectMode(AirFootyGameMode.FourPlayer));
+        WireButton(modeBackButton, ShowMainMenu);
+        WireButton(blueTeamButton, () => BeginMatch(AirFootyTeam.Blue));
+        WireButton(redTeamButton, () => BeginMatch(AirFootyTeam.Red));
+        WireButton(greenTeamButton, () => BeginMatch(AirFootyTeam.Green));
+        WireButton(goldTeamButton, () => BeginMatch(AirFootyTeam.Gold));
+        WireButton(teamBackButton, ShowModeSelection);
+    }
+
+    private static Button FindButton(GameObject root, string objectName)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        foreach (Button button in root.GetComponentsInChildren<Button>(true))
+        {
+            if (button.name == objectName)
+            {
+                return button;
+            }
+        }
+
+        return null;
     }
 
     private static GameObject CreateSelectionPanel(Transform parent, string panelName)

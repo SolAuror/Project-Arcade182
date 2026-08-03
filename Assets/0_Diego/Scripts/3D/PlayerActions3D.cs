@@ -74,6 +74,7 @@ public sealed class PlayerActions3D : MonoBehaviour
     private Renderer turboRenderer;
     private LineRenderer[] chargePips;
     private Material pulseMaterial;
+    private bool ownsPulseMaterial;
     private AudioSource feedbackAudio;
     private Vector3 lastAimDirection = Vector3.right;
     private float pulseStartedAt;
@@ -133,7 +134,7 @@ public sealed class PlayerActions3D : MonoBehaviour
     {
         pulseAction?.Dispose();
         dashAction?.Dispose();
-        if (pulseMaterial != null)
+        if (ownsPulseMaterial && pulseMaterial != null)
         {
             Destroy(pulseMaterial);
         }
@@ -537,16 +538,27 @@ public sealed class PlayerActions3D : MonoBehaviour
 
     private void BuildPulsePresentation()
     {
+        Transform authoredRing = transform.Find("Hover Pulse Charge");
+        LineRenderer authoredRingRenderer = authoredRing != null
+            ? authoredRing.GetComponent<LineRenderer>()
+            : null;
+        pulseMaterial = authoredRingRenderer != null
+            ? authoredRingRenderer.sharedMaterial
+            : null;
+
         Shader shader = Shader.Find("Sprites/Default");
-        if (shader != null)
+        if (pulseMaterial == null && shader != null)
         {
             pulseMaterial = new Material(shader)
             {
                 name = "AirFooty Pulse (Runtime)"
             };
+            ownsPulseMaterial = true;
         }
 
-        GameObject ringObject = new GameObject("Hover Pulse Charge");
+        GameObject ringObject = authoredRing != null
+            ? authoredRing.gameObject
+            : new GameObject("Hover Pulse Charge");
         ringObject.transform.SetParent(transform, false);
         ringObject.transform.localPosition = Vector3.up * 0.04f;
         pulseRing = BuildLineRenderer(
@@ -555,9 +567,16 @@ public sealed class PlayerActions3D : MonoBehaviour
             0.06f);
         pulseRing.enabled = false;
 
-        GameObject aimObject = new GameObject("Dash Aim Indicator");
+        Transform authoredAim = transform.Find("Dash Aim Indicator");
+        GameObject aimObject = authoredAim != null
+            ? authoredAim.gameObject
+            : new GameObject("Dash Aim Indicator");
         aimObject.transform.SetParent(transform, false);
-        dashAimIndicator = aimObject.AddComponent<LineRenderer>();
+        dashAimIndicator = aimObject.GetComponent<LineRenderer>();
+        if (dashAimIndicator == null)
+        {
+            dashAimIndicator = aimObject.AddComponent<LineRenderer>();
+        }
         dashAimIndicator.useWorldSpace = true;
         dashAimIndicator.loop = false;
         dashAimIndicator.positionCount = 3;
@@ -576,7 +595,10 @@ public sealed class PlayerActions3D : MonoBehaviour
         chargePips = new LineRenderer[pipCount];
         for (int i = 0; i < pipCount; i++)
         {
-            GameObject pipObject = new GameObject($"Ability Charge {i + 1}");
+            Transform authoredPip = transform.Find($"Ability Charge {i + 1}");
+            GameObject pipObject = authoredPip != null
+                ? authoredPip.gameObject
+                : new GameObject($"Ability Charge {i + 1}");
             pipObject.transform.SetParent(transform, false);
             pipObject.transform.localPosition = new Vector3(
                 (i - (pipCount - 1) * 0.5f) * 0.3f,
@@ -595,7 +617,11 @@ public sealed class PlayerActions3D : MonoBehaviour
         int segments,
         float width)
     {
-        LineRenderer line = owner.AddComponent<LineRenderer>();
+        LineRenderer line = owner.GetComponent<LineRenderer>();
+        if (line == null)
+        {
+            line = owner.AddComponent<LineRenderer>();
+        }
         line.useWorldSpace = false;
         line.loop = true;
         line.positionCount = segments;
@@ -687,10 +713,17 @@ public sealed class PlayerActions3D : MonoBehaviour
     {
         turboRenderer = GetComponentInChildren<Renderer>();
 
-        GameObject stabilizerObject = new GameObject("Turbo Stabilizers");
+        Transform authoredStabilizer = transform.Find("Turbo Stabilizers");
+        GameObject stabilizerObject = authoredStabilizer != null
+            ? authoredStabilizer.gameObject
+            : new GameObject("Turbo Stabilizers");
         stabilizerObject.transform.SetParent(transform, false);
         stabilizerObject.transform.localPosition = Vector3.up * 0.07f;
-        turboStabilizer = stabilizerObject.AddComponent<LineRenderer>();
+        turboStabilizer = stabilizerObject.GetComponent<LineRenderer>();
+        if (turboStabilizer == null)
+        {
+            turboStabilizer = stabilizerObject.AddComponent<LineRenderer>();
+        }
         turboStabilizer.useWorldSpace = false;
         turboStabilizer.loop = true;
         turboStabilizer.positionCount = 12;
@@ -706,9 +739,16 @@ public sealed class PlayerActions3D : MonoBehaviour
         turboThrusters = new TrailRenderer[2];
         for (int i = 0; i < turboThrusters.Length; i++)
         {
-            GameObject thruster = new GameObject($"Turbo Thruster {i + 1}");
+            Transform authoredThruster = transform.Find($"Turbo Thruster {i + 1}");
+            GameObject thruster = authoredThruster != null
+                ? authoredThruster.gameObject
+                : new GameObject($"Turbo Thruster {i + 1}");
             thruster.transform.SetParent(transform, true);
-            TrailRenderer trail = thruster.AddComponent<TrailRenderer>();
+            TrailRenderer trail = thruster.GetComponent<TrailRenderer>();
+            if (trail == null)
+            {
+                trail = thruster.AddComponent<TrailRenderer>();
+            }
             trail.time = turboTrailTime;
             trail.minVertexDistance = 0.025f;
             trail.startWidth = 0.24f;
@@ -722,10 +762,17 @@ public sealed class PlayerActions3D : MonoBehaviour
             turboThrusters[i] = trail;
         }
 
-        GameObject glowObject = new GameObject("Turbo Reactor Glow");
+        Transform authoredGlow = transform.Find("Turbo Reactor Glow");
+        GameObject glowObject = authoredGlow != null
+            ? authoredGlow.gameObject
+            : new GameObject("Turbo Reactor Glow");
         glowObject.transform.SetParent(transform, false);
         glowObject.transform.localPosition = Vector3.up * 0.38f;
-        turboGlow = glowObject.AddComponent<Light>();
+        turboGlow = glowObject.GetComponent<Light>();
+        if (turboGlow == null)
+        {
+            turboGlow = glowObject.AddComponent<Light>();
+        }
         turboGlow.type = LightType.Point;
         turboGlow.range = 3.3f;
         turboGlow.shadows = LightShadows.None;

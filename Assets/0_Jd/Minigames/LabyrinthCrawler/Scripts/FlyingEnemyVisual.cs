@@ -28,8 +28,8 @@ namespace Sol.Minigames
 
             visualRestPosition = visual.localPosition;
             phase = Random.Range(0f, Mathf.PI * 2f);
-            leftWing = CreateWing("Left Flight Wing", -1f);
-            rightWing = CreateWing("Right Flight Wing", 1f);
+            leftWing = ResolveOrCreateWing("Left Flight Wing", -1f);
+            rightWing = ResolveOrCreateWing("Right Flight Wing", 1f);
         }
 
         private void Update()
@@ -40,8 +40,14 @@ namespace Sol.Minigames
             visual.localPosition = visualRestPosition + Vector3.up * (Mathf.Sin(Time.time * 3.4f + phase) * 0.08f);
         }
 
-        private Transform CreateWing(string wingName, float side)
+        private Transform ResolveOrCreateWing(string wingName, float side)
         {
+            Transform authoredWing = visual.Find(wingName);
+            if (authoredWing != null)
+            {
+                return authoredWing;
+            }
+
             GameObject wing = GameObject.CreatePrimitive(PrimitiveType.Cube);
             wing.name = wingName;
             wing.transform.SetParent(visual, false);

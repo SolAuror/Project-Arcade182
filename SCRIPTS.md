@@ -1,138 +1,116 @@
-# Script Directory
+# Code index
 
-Master index of every gameplay script in the project, what it does, and where it runs.
+**Revised:** 1 August 2026
 
-**Scope legend** — `SYSTEM`: integral, runs in every (or nearly every) scene · `HUB`: arcade hub / meta loop · `LAB`: Labyrinth Crawler · `HOOPS`: Hoops · `ATOM`: Atom Smasher · `FUNGUS`: Fungus Pachinko · `MENU`: main/pause menus · `EDITOR`: editor-only tooling.
+This is the current high-level map. I list systems by ownership rather than every generated input wrapper or small visual component.
 
-All paths are relative to `Assets/0_Jd/Scripts/` unless noted.
+## Shared and hub systems
 
-## System-integral
-
-| Script | Scope | Purpose |
-|---|---|---|
-| `Controller/Controller.cs` (+ `.Movement`, `.Camera`, `.Jump`) | SYSTEM | Shared player controller core: movement, gravity, grounding, camera-mode state machine, input wiring. |
-| `Controller/Controller.FirstPerson / .ThirdPerson / .TopDown / .Isometric / .Platformer` | SYSTEM | Per-camera-mode movement and look rules for the shared controller. |
-| `Controller/Controller.HeadBob.cs` | SYSTEM | First-person walk bob (figure-8 on the FP vcam), speed-scaled, grounded-only. Active in hub and labyrinth. |
-| `PlayerSpawn.cs` | SYSTEM | Scene-start spawn marker. Spawns the player prefab if missing; only an explicit respawn call moves an existing player. |
-| `PhysGrab/Sol.GrabManager.cs` | SYSTEM | Singleton physics grab/carry/throw system (crosshair or mouse mode). |
-| `PhysGrab/Sol.GrabbableComponent.cs` | SYSTEM | Marks a rigidbody as grabbable by the GrabManager. |
-| `Outline/Sol.OutlineManager.cs` | SYSTEM | Hover-outline raycaster matching the grab interaction mode. |
-| `Outline/Sol.OutlineComponent.cs` | SYSTEM | Per-object outline registration. |
-| `Outline/SolOutlineRendererFeature.cs` | SYSTEM | URP render feature drawing the outlines. |
-| `Minigames/Shared/PlayerScoreCarrier.cs` | SYSTEM | Persistent progression (PlayerPrefs): tickets, per-game last/best scores, minigame completion flags, golden coin, game-beaten flag. |
-| `Arcade/ArcadeMetaBootstrap.cs` | SYSTEM | `RuntimeInitializeOnLoadMethod` bootstrap: applies saved options, injects the pause menu everywhere, spawns `HubGameLoop` in the hub. No scene wiring needed. |
-| `UI/PauseMenuController.cs` | SYSTEM/MENU | Esc pause menu (persistent singleton, prefab-authored via `Resources/UI/PauseMenu`). Minigames: Resume / Quit to Hub (+ Atom Smasher 2D-3D view toggle). Hub: Resume / Volume / Quit to Menu / Quit Game. |
-| `UI/SimpleUiBuilder.cs` | SYSTEM/MENU | UGUI construction helpers used by the editor UI setup to build the menu prefabs, plus the runtime `EnsureEventSystem` helper. |
-| `UI/ArcadeOptions.cs` | SYSTEM/MENU | Persisted options store (master volume) shared by main and pause menus. |
-| `Assets/Shared/Input/InputSystem_Actions.cs` | SYSTEM | Generated Input System actions asset wrapper (Player, AtomSmasher, FungusPachinko, Hoops, LabyrinthCrawler maps). Do not hand-edit. |
-
-## Hub & overarching loop
-
-| Script | Scope | Purpose |
-|---|---|---|
-| `ArcadeGen/ArcadeGen3D.cs` | HUB, LAB | Weighted-prefab maze generator (DFS carve). Drives the hub arcade and every labyrinth stage. |
-| `ArcadeGen/Room3D.cs` | HUB, LAB | Maze cell: wall flags, spawn weight, wall transforms. |
-| `ArcadeGen/Room2D.cs`, `ArcadeGen/SolMazeGen2D.cs` | legacy | Older 2D maze generator pair; not part of the current loop. |
-| `ArcadeGen/EndRoomExitClerkActivator.cs` | HUB | Activates the clerk desk on a still-closed wall of the generated end room. |
-| `MazeExitInteractable.cs` | HUB, LAB | Interactable clerk. Hub: sells the golden coin for 1,000,000 tickets. Labyrinth: legacy stage-exit hook (replaced by the exit pad). |
-| `Arcade/HubGameLoop.cs` | HUB | Auto-spawned each hub load: regenerates the maze so every return from a minigame gets a fresh layout. |
-| `Arcade/GoldenExitDoor.cs` | HUB | Doorframe that redeems the golden coin: beats the game and returns to the main menu. Sealed (dark) without the coin, gold when unlocked. Authored into a room prefab. |
-| `ArcadeMachineLauncher.cs` | HUB | Arcade cabinet: aim-and-interact to launch a minigame scene; optional live RenderTexture preview screen. |
-| `HubHud.cs` | HUB | Hub overlay: live ticket total. |
-| `UI/MainMenu.cs` | MENU | "Insert Coin to Exit" main menu: Start Game, Play Minigames (per-game unlock after first completion), Options, Quit. |
-
-## Shared minigame framework (`Minigames/Shared/`)
-
-| Script | Scope | Purpose |
-|---|---|---|
-| `MinigameTimer.cs` | LAB | Reusable stopwatch/countdown timer component. |
-| `Combat/Faction.cs` | LAB | Player/Enemy/Neutral faction enum. |
-| `Combat/Health.cs` | LAB | Reusable health pool with damage/death events and faction filtering. |
-| `Combat/Mana.cs` | LAB | Regenerating mana pool; records failed spends for HUD/audio feedback. |
-| `Combat/SpellDefinition.cs` | LAB | Base ScriptableObject for spells (name, damage, mana, cooldown). |
-| `Combat/HitscanSpellDefinition.cs` | LAB | Instant beam spell (the laser; sustained while held). |
-| `Combat/ProjectileSpellDefinition.cs` | LAB | Projectile spell (fireball). |
-| `Combat/AoeSpellDefinition.cs` | LAB | Radial burst spell (pulse): damage + knockback crowd control + shockwave visual. |
-| `Combat/SpellCastContext.cs` | LAB | Per-cast data (caster, aim ray, faction, runtime bonuses). |
-| `Combat/SpellCaster.cs` | LAB | Slot-based loadout with unlock/level/cooldown state; casts for player input and enemy AI. |
-| `Combat/Projectile.cs` | LAB | Moving spell projectile with faction-filtered impact. Friendly projectiles pass through each other; supports mid-air shoot-down (laser) and pulse reflection (flips owner and flies back). |
-| `Combat/HitFlash.cs` | LAB | Tints renderers briefly when the sibling Health takes damage. |
-| `Combat/DamagePopup.cs` | LAB, ATOM, HOOPS, HUB | Floating world-space number/message popup (damage, score, clerk dialogue). |
-| `Combat/SpellBurstVisual.cs` | LAB, HOOPS | Procedural expanding shockwave sphere (pulse blast, enemy deaths, hoop score/activation flares). |
-| `Combat/PlayerHitFeedback.cs` | LAB | Player damage overlay: red hit flash + low-health heartbeat vignette. Overlay authored on the player prefab (runtime build only as fallback). |
-| `PlayerScoreCarrier.cs` | SYSTEM | (listed above) score/ticket/coin persistence. |
-
-## Labyrinth Crawler (`Minigames/LabyrinthCrawler/`)
-
-| Script | Purpose |
+| Path under `Assets/0_Jd/Scripts/` | Role |
 |---|---|
-| `LabyrinthCrawlerGame.cs` | Run orchestrator: stage/maze sizing, enemy spawning (scaling packs), scoring & par times, upgrades flow, fall-out respawn, audio hooks, score/ticket recording. |
-| `LabyrinthRuntimeUtility.cs` | Shared allocation-free trigger/tag/shuffle helpers used across crawler runtime components. |
-| `EnemyController.cs` | Maze enemy: cached graph patrol, line-of-sight chase/tracking, spell casting, pulse knockback, pit death, and spatial footsteps. |
-| `PlayerSpellInput.cs` | Binds player input to SpellCaster slots (attack / cast / pulse). |
-| `LabyrinthExitPad.cs` | Stand-on stage exit: instant when enemies are dead, interruptible dwell otherwise; animated pad visual. |
-| `LabyrinthExitBeacon.cs` | World-space exit marker revealed by room clear or the Cartographer timer. |
-| `LabyrinthSecretPass.cs` | Post-generation graph analysis and placement for treasure leaves, useful shortcuts, and rare shortest-path blockers. |
-| `IllusoryWall.cs` | Model-aware secret plug with player-only passage, spell/touch ripples, crossing detection, and dissolve reveal. |
-| `LabyrinthSecretCache.cs` | Trigger pickup for weighted shrine, hoard, or banked bonus-upgrade rewards. |
-| `LabyrinthUpgrade.cs` / `LabyrinthUpgradeSystem.cs` | Upgrade definitions and the 1-of-3 roll/apply logic between stages. |
-| `LabyrinthUpgradeScreen.cs` | Prefab-authored upgrade choice UI (pauses time while open). |
-| `LabyrinthHud.cs` | Run HUD: timer, score, vitals, spell slots with cooldowns, dwell bar, mana-fail flash, run-over panel. |
-| `LabyrinthRunOverScreen.cs` | Death-screen restart/quit input, buttons, and cursor ownership. |
-| `DustMotes.cs` | Keeps the authored world-space dust emitter centered on the runtime player camera. |
-| `RetroPresenter.cs` | Scene-scoped PS1 presentation: low-resolution point-filtered target, posterize/dither pass, vertex snap, storm sky, olive fog, and restoration of camera/render globals on disable. |
-| `StormDirector.cs` | Distant world-space storm pulses: bolt, directional light, sky/entity/fog response, ambient override, thunder hooks, and a nearest-two realtime point-light shadow budget. |
+| `Controller/Controller*.cs` | Shared movement, gravity, camera modes, look, jump and first-person head bob. |
+| `General/PlayerSpawn.cs` | Resolves or creates the scene player at an authored spawn marker. |
+| `General/PlayerScoreCarrier.cs` | Persistent tickets, scores, completion flags, Golden Coin and game-complete state. |
+| `General/Combat/` | Health, mana, factions, spell definitions, caster, projectiles and shared hit feedback. |
+| `PhysGrab/` | Physics grab, carry and throw system. |
+| `Outline/` | URP hover-outline components and renderer feature. |
+| `Arcade/ArcadeMetaBootstrap.cs` | Applies options, installs shared pause flow and ensures the hub loop exists. |
+| `Arcade/HubGameLoop.cs` | Regenerates the hub maze after returning from a minigame. |
+| `Arcade/ArcadeMachineLauncher.cs` | Interact-to-launch cabinet and optional live preview screen. |
+| `Arcade/GoldenExitDoor.cs` | Consumes the Golden Coin, records completion and returns to menu. |
+| `UI/MainMenu.cs` | Main menu, unlocked-minigame list and scene entry. |
+| `UI/PauseMenuController.cs` | Shared pause, options and quit flow. |
+| `UI/SimpleUiBuilder.cs` | Authoring helpers plus the small runtime EventSystem fallback. |
 
-## Hoops (`Minigames/Hoops/`)
+## Maze generation
 
-| Script | Purpose |
+Paths are under `Assets/0_Jd/Scripts/LevelGenerator/`.
+
+| Script | Role |
 |---|---|
-| `HoopsGame.cs` | 60-second free-shoot round: active-hoop selection, goal-staged difficulty (static → sliding → wild + winged), streaks, item × hoop-difficulty scoring, out-of-bounds return (2s grace), audio hooks, ticket recording. |
-| `HoopsScoreZone.cs` | Hoop trigger: pole/backboard slide movement, winged flight mode, active-target pulse, score punch/flash/burst feedback. |
-| `HoopsThrowable.cs` | Basketball physics for throwable balls: bounce material, flight trail, impact squash, fall reset, per-ball point value. |
-| `HoopsScorable.cs` | Marks any prop as throwable-for-points with its own value. |
-| `HoopsHud.cs` | Round HUD: score, pulsing countdown, active target line with difficulty/stage tag, streak meter, results. |
+| `ArcadeGen3D.cs` | Weighted-prefab depth-first maze generation for the hub and Labyrinth Crawler. |
+| `Room3D.cs` | Generated cell state, wall directions, transforms and pit metadata. |
+| `WallSocket.cs` / `RoomDecorSocket.cs` | Authored sockets that choose compatible prefabs during generation. |
+| `BuildingComponent.cs` | Multi-cell authored building placement in a generated layout. |
+| `EndRoomExitClerkActivator.cs` | Places the hub clerk against a valid closed end-room wall. |
+| `Editor/BuildingComponentEditor.cs` | Inspector authoring for building layouts. |
+| `Editor/BuildingGeneratorUtility.cs` | Editor-only generation and prefab baking support. |
 
-## Atom Smasher (`Minigames/AtomSmasher/`)
+The maze itself remains runtime-generated by design. Its rooms, walls, decoration and special structures come from authored prefabs.
 
-| Script | Purpose |
+## Air Footy
+
+Paths are under `Assets/0_Diego/Scripts/`.
+
+| Script | Role |
 |---|---|
-| `AtomSmasherGame.cs` | Wave orchestrator: shots/timer rules, target shuffle, obstruction/moving/quantum/special spawning, chain multipliers, hitstop + popups + camera shake, wave-clear beat, ticket recording. |
-| `AtomSmasherLauncher.cs` | Mouse-aimed launcher with trajectory arc; follows the player anchor. |
-| `AtomSmasherBall.cs` | Plane-locked bouncy ball: drain/settle/lifetime rules, boost visuals, spawn pop and impact squash. |
-| `AtomSmasherTarget.cs` | Base atom: score value, hit color, death pop, reset for wave replays. |
-| `AtomSmasherMovingTarget.cs` | Patrol motion for moving atoms. |
-| `AtomSmasherQuantumTarget.cs` | Marks an atom quantum-charged (split ball / speed boost on smash). |
-| `AtomSmasherUnstableTarget.cs` | Vibrating atom that only dies to rebound shots; deflects direct hits. |
-| `AtomSmasherExplosiveTarget.cs` | Detonates an area and consumes the ball when smashed. |
-| `AtomSmasherStaticBar.cs` / `AtomSmasherMovingBar.cs` | Static and ping-pong obstruction bars. |
-| `AtomSmasherRotator.cs` | Spins an obstruction around the board axis (rotor cross). |
-| `AtomSmasherBumper.cs` | Player-actuated pinball flipper: press to swat balls with rebound impulse. |
-| `AtomSmasherPitTrap.cs` | Pit floor cover: solid through wave 5, then one random pit opens per wave (wave 10+: left / right / both). Balls drain through open pits. |
-| `AtomSmasherBlackHole.cs` | Gravity-well obstruction (wave 3+): curves shots, swallows balls past the event horizon, vacuums electron sparks board-wide. |
-| `AtomSmasherElectron.cs` | Procedural spark particle released on smashes; bounces off walls, pulled in by black holes. |
-| `AtomSmasherCameraFx.cs` | Trauma shake + FOV kick on the standalone board camera (never the player rig). |
-| `AtomSmasherHud.cs` | Board HUD: score, wave, targets, chain, timer, status, results, and the Peggle-style ball rack (icon per remaining ball, +N overflow). |
+| `AirFootySessionConfig.cs` | Carries selected 2-player/4-player mode and human team into the match. |
+| `MainMenuUI.cs` | Air Footy mode/team menu and activation of the matching authored prefab. |
+| `3D/GameManager3D.cs` | Countdown, goals, re-drops, head-to-head result, four-team elimination, persistence and return flow. |
+| `3D/BallController3D.cs` | Planar ball physics, stall detection, collision sweeps, touch metadata and active strike authority. |
+| `3D/PlayerMovement3D.cs` | Camera-relative movement and team-area bounds. |
+| `3D/PlayerActions3D.cs` | Pulse, dash, shared-charge input and player feedback rig. |
+| `3D/AirFootyStrikeMotor3D.cs` | Shared player/AI pulse range, strength and dash-contact rules. |
+| `3D/AirFootyAbilityChargeBank3D.cs` | Shared three-charge resource and sequential recovery. |
+| `3D/AIPlayer3D.cs` | Head-to-head predictive intercept and shot-construction state machine. |
+| `3D/AirFootySideAI3D.cs` | Multi-ball threat response and target selection for four-team mode. |
+| `3D/GoalZone3D.cs` | Team-owned goal trigger and score notification. |
+| `3D/AirFootyRallyDirector.cs` | Alternating deliberate-strike heat and speed tiers. |
+| `3D/AirFootyArenaPresentation.cs` | Authored pitch-line fallback and team accents. |
+| `3D/AirFootyCinemachineCameraRig.cs` | Team-aware broadcast follow and impact response. |
+| `3D/AirFootyCrowdDirector.cs` / `AirFootyCrowd*.cs` | Team crowd reactions driven by match state. |
+| `3D/AirFootyFeedbackUtility.cs` | Short-lived goal, message and renderer-flash helpers. |
+| `3D/AirFootyPlaytestTelemetry.cs` | Editor/development-only state, strike and rally measurements. |
 
-## Fungus Pachinko (`Assets/0_Finn/Scripts/FungusPachinko/`, namespace `Finn.Minigames`)
+See [Air Footy documentation](Assets/0_Diego/Documentation/README.md).
 
-| Script | Purpose |
+## Labyrinth Crawler
+
+Paths are under `Assets/0_Jd/Minigames/LabyrinthCrawler/Scripts/`.
+
+| Script | Role |
 |---|---|
-| `FungusGameController.cs` | Round orchestrator: five balls, one point per light, all-lights-out +50 bonus (folded into the recorded score), 1:1 ticket recording, delayed hub return. |
-| `FungusDropper.cs` | Player-controlled dropper on a rail across the board top; the game's only input reader (dedicated `FungusPachinko` action map: A/D move, Space drop). |
-| `FungusBall.cs` | Plane-locked physics ball with settle and lifetime timeouts; reports when finished, never scores itself. |
-| `FungusLight.cs` | Trigger-based board light: turns off once when a ball passes through, worth one point. |
-| `FungusLightBank.cs` | Aggregates all lights under the machine: remaining count, any-light-off re-broadcast, all-lights-out event. |
-| `FungusDrain.cs` | Bottom-of-board trigger that retires any ball reaching it. |
-| `FungusHud.cs` | Event-driven HUD: score, balls, lights remaining, status line, result panel. |
+| `LabyrinthCrawlerGame.cs` | Run, stage generation, enemy placement, scoring, upgrades and result recording. |
+| `EnemyController.cs` | Graph patrol, sight, last-seen tracking, chase/ranged/flying movement, casting and death. |
+| `FlyingEnemyVisual.cs` | Animates the authored flyer body and wing transforms. |
+| `PlayerSpellInput.cs` | Maps player input to `SpellCaster` slots. |
+| `LabyrinthExitPad.cs` / `LabyrinthExitBeacon.cs` | Interruptible stage exit and revealable world marker. |
+| `LabyrinthSecretPass.cs` | Graph-based placement of useful shortcuts, blockers and treasure leaves. |
+| `IllusoryWall.cs` | Player-only secret wall, ripple inputs, crossing detection and dissolve. |
+| `LabyrinthSecretCache.cs` | Weighted secret reward pickup. |
+| `LabyrinthUpgrade*.cs` | Upgrade definitions, roll/apply logic and choice UI. |
+| `LabyrinthHud.cs` / `LabyrinthRunOverScreen.cs` | Run HUD, cooldowns, vitals and death flow. |
+| `RetroPresenter.cs` | Low-resolution render target, posterise/dither present pass, fog, sky instance and state restoration. |
+| `StormDirector.cs` | Storm timing, world bolt, lights, fog/sky response and thunder hooks. |
 
-## Editor tooling (`Scripts/Editor/`, editor-only)
+See [Labyrinth Crawler documentation](Assets/0_Jd/Minigames/LabyrinthCrawler/Documentation/README.md).
 
-| Script | Purpose |
+## Atom Smasher
+
+Paths are under `Assets/0_Jd/Minigames/AtomSmasher/Scripts/`.
+
+`AtomSmasherGame` owns the wave and score loop. The remaining scripts split launcher/ball behaviour, base and specialised targets, black holes, pits, bumpers, moving/rotating obstructions, camera feedback, particles and HUD. The source-level overview remains in that folder's `README.md`.
+
+## Hoops
+
+Paths are under `Assets/0_Jd/Minigames/Hoops/Scripts/`.
+
+`HoopsGame` owns the timed round and target escalation. `HoopsScoreZone`, `HoopsThrowable`, `HoopsScorable` and `HoopsHud` own hoop motion, physical balls/props, point values and display respectively.
+
+## Fungus Pachinko
+
+Paths are under `Assets/0_Finn/Scripts/FungusPachinko/`.
+
+`FungusGameController` owns the five-ball round. Dropper, ball, light bank, drain and HUD scripts keep input, physics, scoring triggers and display separate.
+
+## Editor maintenance
+
+| Tool | Role |
 |---|---|
-| `ArcadeGen3DEditor.cs` (`0_Jd/Editor/`) | Inspector conveniences for the maze generator. |
-| `LabyrinthStormAuthoring.cs` (`Minigames/LabyrinthCrawler/Editor/`) | Idempotent storm-sky asset/prefab authoring and offscreen render validation. Run via `Sol → Labyrinth Crawler`. |
-| `GameplayTweaksSetup.cs` | One-shot wiring: laser beam retune, pit-cover wave settings in Sc_AtomSmasher, and the ball rack widget in the AtomSmasherHud prefab. |
-| `BlackHoleTrapSetup.cs` | Builds the black hole prefab/materials and registers it as an obstacle option in Sc_AtomSmasher. |
-| `MainMenuSetup.cs` | Builds the MainMenu + PauseMenu canvas prefabs, bakes the damage overlay into the player prefab, creates Sc_MainMenu, and registers it first in Build Settings. Run via `Sol → Setup → Menus And UI Prefabs`. |
-| `FungusPachinkoBuilder.cs` (`0_Finn/Editor/`) | Generates the Fungus Pachinko materials, ball + machine prefabs, Sc_FungusPachinko scene, and Build Settings entry. Run via `Tools → Finn → Build Fungus Pachinko` (overwrites the generated assets). |
+| `Assets/0_Jd/Minigames/LabyrinthCrawler/Scripts/Editor/RuntimeAssetBakeAuthoring.cs` | Idempotently bakes fixed Air Footy feedback parts and Labyrinth enemy support parts into prefabs. |
+| `Assets/0_Jd/Minigames/LabyrinthCrawler/Scripts/Editor/LabyrinthStormAuthoring.cs` | Authors and validates storm materials and director setup. |
+| `Assets/0_Jd/Editor/Labyrinth*Authoring.cs` | Builds fixed Labyrinth models, props, UI, pit, cache, dust and beacon assets. |
+| `Assets/0_Jd/Editor/ArcadeGen3DEditor.cs` | Maze-generator inspector actions. |
+| `Assets/0_Finn/Editor/FungusPachinkoBuilder.cs` | Authors the Fungus Pachinko asset set and scene. |
+
+Editor authoring tools may overwrite the assets they explicitly own. Runtime code should not rewrite project assets.
