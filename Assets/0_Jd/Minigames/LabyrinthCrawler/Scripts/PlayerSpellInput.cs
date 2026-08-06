@@ -49,7 +49,7 @@ namespace Sol.Minigames
         private readonly bool[] suppressManaFailUntilReleased = new bool[3];
         private SpellCaster caster;
         private Mana mana;
-        private LabyrinthCrawlerGame game;
+        [SerializeField] private LabyrinthCrawlerGame game;
         private InputSystem_Actions inputActions;
         private InputActionMap crawlerMap;
         private InputAction attackAction;

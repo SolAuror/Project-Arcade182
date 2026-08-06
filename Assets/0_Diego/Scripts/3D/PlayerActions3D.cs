@@ -18,6 +18,9 @@ public sealed class PlayerActions3D : MonoBehaviour
 
     private const int PulseRingSegments = 44;
     private const int PipRingSegments = 14;
+    private const float ChargePipSideOffset = 0.86f;
+    private const float ChargePipSpacing = 0.3f;
+    private const float ChargePipHeight = 0.07f;
 
     [Header("References")]
     [SerializeField] private PlayerMovement3D playerMovement;
@@ -74,7 +77,6 @@ public sealed class PlayerActions3D : MonoBehaviour
     private Renderer turboRenderer;
     private LineRenderer[] chargePips;
     private Material pulseMaterial;
-    private bool ownsPulseMaterial;
     private AudioSource feedbackAudio;
     private Vector3 lastAimDirection = Vector3.right;
     private float pulseStartedAt;
@@ -134,10 +136,6 @@ public sealed class PlayerActions3D : MonoBehaviour
     {
         pulseAction?.Dispose();
         dashAction?.Dispose();
-        if (ownsPulseMaterial && pulseMaterial != null)
-        {
-            Destroy(pulseMaterial);
-        }
     }
 
     private void Update()
@@ -195,6 +193,16 @@ public sealed class PlayerActions3D : MonoBehaviour
     public void SetActionsEnabled(bool enabled)
     {
         actionsEnabled = enabled;
+        if (enabled)
+        {
+            pulseAction?.Enable();
+            dashAction?.Enable();
+        }
+        else
+        {
+            pulseAction?.Disable();
+            dashAction?.Disable();
+        }
         if (!enabled)
         {
             ClearActionState();
@@ -542,52 +550,63 @@ public sealed class PlayerActions3D : MonoBehaviour
         LineRenderer authoredRingRenderer = authoredRing != null
             ? authoredRing.GetComponent<LineRenderer>()
             : null;
-        pulseMaterial = authoredRingRenderer != null
-            ? authoredRingRenderer.sharedMaterial
-            : null;
-
-        Shader shader = Shader.Find("Sprites/Default");
-        if (pulseMaterial == null && shader != null)
+        pulseMaterial = ResolvePresentationMaterial(authoredRingRenderer);
+        if (authoredRing == null)
         {
-            pulseMaterial = new Material(shader)
+            Debug.LogError(
+                "AirFooty player is missing the authored Hover Pulse Charge.",
+                this);
+        }
+        else
+        {
+            pulseRing = BuildLineRenderer(
+                authoredRing.gameObject,
+                PulseRingSegments,
+                0.06f);
+            if (pulseRing != null)
             {
-                name = "AirFooty Pulse (Runtime)"
-            };
-            ownsPulseMaterial = true;
+                pulseRing.enabled = false;
+            }
         }
 
-        GameObject ringObject = authoredRing != null
-            ? authoredRing.gameObject
-            : new GameObject("Hover Pulse Charge");
-        ringObject.transform.SetParent(transform, false);
-        ringObject.transform.localPosition = Vector3.up * 0.04f;
-        pulseRing = BuildLineRenderer(
-            ringObject,
-            PulseRingSegments,
-            0.06f);
-        pulseRing.enabled = false;
+        if (pulseMaterial == null)
+        {
+            Debug.LogError(
+                "AirFooty player presentation is missing its authored material.",
+                this);
+        }
 
         Transform authoredAim = transform.Find("Dash Aim Indicator");
-        GameObject aimObject = authoredAim != null
-            ? authoredAim.gameObject
-            : new GameObject("Dash Aim Indicator");
-        aimObject.transform.SetParent(transform, false);
-        dashAimIndicator = aimObject.GetComponent<LineRenderer>();
-        if (dashAimIndicator == null)
+        if (authoredAim == null)
         {
-            dashAimIndicator = aimObject.AddComponent<LineRenderer>();
+            Debug.LogError("AirFooty player is missing the authored Dash Aim Indicator.", this);
         }
-        dashAimIndicator.useWorldSpace = true;
-        dashAimIndicator.loop = false;
-        dashAimIndicator.positionCount = 3;
-        dashAimIndicator.startWidth = dashAimWidth;
-        dashAimIndicator.endWidth = dashAimWidth;
-        dashAimIndicator.numCapVertices = 3;
-        dashAimIndicator.numCornerVertices = 2;
-        dashAimIndicator.shadowCastingMode =
-            UnityEngine.Rendering.ShadowCastingMode.Off;
-        dashAimIndicator.receiveShadows = false;
-        dashAimIndicator.sharedMaterial = pulseMaterial;
+        else
+        {
+            GameObject aimObject = authoredAim.gameObject;
+            dashAimIndicator = aimObject.GetComponent<LineRenderer>();
+            if (dashAimIndicator == null)
+            {
+                Debug.LogError("AirFooty Dash Aim Indicator is missing its authored LineRenderer.", aimObject);
+            }
+            else
+            {
+                dashAimIndicator.useWorldSpace = true;
+                dashAimIndicator.loop = false;
+                dashAimIndicator.positionCount = 3;
+                dashAimIndicator.startWidth = dashAimWidth;
+                dashAimIndicator.endWidth = dashAimWidth;
+                dashAimIndicator.numCapVertices = 3;
+                dashAimIndicator.numCornerVertices = 2;
+                dashAimIndicator.shadowCastingMode =
+                    UnityEngine.Rendering.ShadowCastingMode.Off;
+                dashAimIndicator.receiveShadows = false;
+                if (pulseMaterial != null)
+                {
+                    dashAimIndicator.sharedMaterial = pulseMaterial;
+                }
+            }
+        }
 
         BuildTurboPresentation();
 
@@ -596,20 +615,52 @@ public sealed class PlayerActions3D : MonoBehaviour
         for (int i = 0; i < pipCount; i++)
         {
             Transform authoredPip = transform.Find($"Ability Charge {i + 1}");
-            GameObject pipObject = authoredPip != null
-                ? authoredPip.gameObject
-                : new GameObject($"Ability Charge {i + 1}");
-            pipObject.transform.SetParent(transform, false);
-            pipObject.transform.localPosition = new Vector3(
-                (i - (pipCount - 1) * 0.5f) * 0.3f,
-                0.07f,
-                -0.86f);
+            if (authoredPip == null)
+            {
+                Debug.LogError($"AirFooty player is missing authored Ability Charge {i + 1}.", this);
+                continue;
+            }
+            GameObject pipObject = authoredPip.gameObject;
             chargePips[i] = BuildLineRenderer(
                 pipObject,
                 PipRingSegments,
                 0.05f);
+            if (chargePips[i] == null)
+            {
+                continue;
+            }
+            pipObject.transform.localPosition = ResolveChargePipPosition(i, pipCount);
             SetRingGeometry(chargePips[i], 0.09f);
         }
+    }
+
+    /// <summary>
+    /// Places the bank on screen-right from that team's own camera-facing
+    /// orientation. A fixed local -Z offset only works for Blue; rotating the
+    /// same layout around each home direction keeps all four banks consistent.
+    /// </summary>
+    private Vector3 ResolveChargePipPosition(int index, int count)
+    {
+        AirFootyTeamMember3D member = GetComponent<AirFootyTeamMember3D>();
+        AirFootyTeam team = member != null && member.Team != AirFootyTeam.None
+            ? member.Team
+            : AirFootyTeamMember3D.InferFromHierarchy(transform);
+        Vector3 homeDirection = AirFootyTeamMember3D.HomeDirection(team);
+        if (homeDirection.sqrMagnitude <= 0.0001f)
+        {
+            homeDirection = Vector3.left;
+        }
+
+        homeDirection.Normalize();
+        Vector3 screenRight = Vector3.Cross(homeDirection, Vector3.up).normalized;
+        Vector3 rowDirection = -homeDirection;
+        float rowOffset =
+            (index - (count - 1) * 0.5f) * ChargePipSpacing;
+        Vector3 worldOffset =
+            screenRight * ChargePipSideOffset +
+            rowDirection * rowOffset +
+            Vector3.up * ChargePipHeight;
+        return transform.InverseTransformVector(worldOffset);
     }
 
     private LineRenderer BuildLineRenderer(
@@ -620,7 +671,8 @@ public sealed class PlayerActions3D : MonoBehaviour
         LineRenderer line = owner.GetComponent<LineRenderer>();
         if (line == null)
         {
-            line = owner.AddComponent<LineRenderer>();
+            Debug.LogError("AirFooty authored presentation object is missing its LineRenderer.", owner);
+            return null;
         }
         line.useWorldSpace = false;
         line.loop = true;
@@ -630,8 +682,41 @@ public sealed class PlayerActions3D : MonoBehaviour
         line.shadowCastingMode =
             UnityEngine.Rendering.ShadowCastingMode.Off;
         line.receiveShadows = false;
-        line.sharedMaterial = pulseMaterial;
+        if (pulseMaterial != null)
+        {
+            line.sharedMaterial = pulseMaterial;
+        }
         return line;
+    }
+
+    private Material ResolvePresentationMaterial(LineRenderer preferred)
+    {
+        if (preferred != null && preferred.sharedMaterial != null)
+        {
+            return preferred.sharedMaterial;
+        }
+
+        string[] authoredObjects =
+        {
+            "Dash Aim Indicator",
+            "Turbo Stabilizers",
+            "Ability Charge 1",
+            "Ability Charge 2",
+            "Ability Charge 3"
+        };
+        foreach (string childName in authoredObjects)
+        {
+            Transform child = transform.Find(childName);
+            LineRenderer line = child != null
+                ? child.GetComponent<LineRenderer>()
+                : null;
+            if (line != null && line.sharedMaterial != null)
+            {
+                return line.sharedMaterial;
+            }
+        }
+
+        return null;
     }
 
     private void UpdatePulseRing()
@@ -714,40 +799,52 @@ public sealed class PlayerActions3D : MonoBehaviour
         turboRenderer = GetComponentInChildren<Renderer>();
 
         Transform authoredStabilizer = transform.Find("Turbo Stabilizers");
-        GameObject stabilizerObject = authoredStabilizer != null
-            ? authoredStabilizer.gameObject
-            : new GameObject("Turbo Stabilizers");
-        stabilizerObject.transform.SetParent(transform, false);
-        stabilizerObject.transform.localPosition = Vector3.up * 0.07f;
-        turboStabilizer = stabilizerObject.GetComponent<LineRenderer>();
-        if (turboStabilizer == null)
+        if (authoredStabilizer == null)
         {
-            turboStabilizer = stabilizerObject.AddComponent<LineRenderer>();
+            Debug.LogError("AirFooty player is missing authored Turbo Stabilizers.", this);
         }
-        turboStabilizer.useWorldSpace = false;
-        turboStabilizer.loop = true;
-        turboStabilizer.positionCount = 12;
-        turboStabilizer.startWidth = 0.09f;
-        turboStabilizer.endWidth = 0.05f;
-        turboStabilizer.numCornerVertices = 2;
-        turboStabilizer.shadowCastingMode =
-            UnityEngine.Rendering.ShadowCastingMode.Off;
-        turboStabilizer.receiveShadows = false;
-        turboStabilizer.sharedMaterial = pulseMaterial;
-        turboStabilizer.enabled = false;
+        else
+        {
+            GameObject stabilizerObject = authoredStabilizer.gameObject;
+            turboStabilizer = stabilizerObject.GetComponent<LineRenderer>();
+            if (turboStabilizer == null)
+            {
+                Debug.LogError("AirFooty Turbo Stabilizers is missing its authored LineRenderer.", stabilizerObject);
+            }
+            else
+            {
+                turboStabilizer.useWorldSpace = false;
+                turboStabilizer.loop = true;
+                turboStabilizer.positionCount = 12;
+                turboStabilizer.startWidth = 0.09f;
+                turboStabilizer.endWidth = 0.05f;
+                turboStabilizer.numCornerVertices = 2;
+                turboStabilizer.shadowCastingMode =
+                    UnityEngine.Rendering.ShadowCastingMode.Off;
+                turboStabilizer.receiveShadows = false;
+                if (pulseMaterial != null)
+                {
+                    turboStabilizer.sharedMaterial = pulseMaterial;
+                }
+                turboStabilizer.enabled = false;
+            }
+        }
 
         turboThrusters = new TrailRenderer[2];
         for (int i = 0; i < turboThrusters.Length; i++)
         {
             Transform authoredThruster = transform.Find($"Turbo Thruster {i + 1}");
-            GameObject thruster = authoredThruster != null
-                ? authoredThruster.gameObject
-                : new GameObject($"Turbo Thruster {i + 1}");
-            thruster.transform.SetParent(transform, true);
+            if (authoredThruster == null)
+            {
+                Debug.LogError($"AirFooty player is missing authored Turbo Thruster {i + 1}.", this);
+                continue;
+            }
+            GameObject thruster = authoredThruster.gameObject;
             TrailRenderer trail = thruster.GetComponent<TrailRenderer>();
             if (trail == null)
             {
-                trail = thruster.AddComponent<TrailRenderer>();
+                Debug.LogError($"AirFooty Turbo Thruster {i + 1} is missing its authored TrailRenderer.", thruster);
+                continue;
             }
             trail.time = turboTrailTime;
             trail.minVertexDistance = 0.025f;
@@ -757,26 +854,35 @@ public sealed class PlayerActions3D : MonoBehaviour
             trail.shadowCastingMode =
                 UnityEngine.Rendering.ShadowCastingMode.Off;
             trail.receiveShadows = false;
-            trail.sharedMaterial = pulseMaterial;
+            if (pulseMaterial != null)
+            {
+                trail.sharedMaterial = pulseMaterial;
+            }
             trail.emitting = false;
             turboThrusters[i] = trail;
         }
 
         Transform authoredGlow = transform.Find("Turbo Reactor Glow");
-        GameObject glowObject = authoredGlow != null
-            ? authoredGlow.gameObject
-            : new GameObject("Turbo Reactor Glow");
-        glowObject.transform.SetParent(transform, false);
-        glowObject.transform.localPosition = Vector3.up * 0.38f;
-        turboGlow = glowObject.GetComponent<Light>();
-        if (turboGlow == null)
+        if (authoredGlow == null)
         {
-            turboGlow = glowObject.AddComponent<Light>();
+            Debug.LogError("AirFooty player is missing authored Turbo Reactor Glow.", this);
         }
-        turboGlow.type = LightType.Point;
-        turboGlow.range = 3.3f;
-        turboGlow.shadows = LightShadows.None;
-        turboGlow.enabled = false;
+        else
+        {
+            GameObject glowObject = authoredGlow.gameObject;
+            turboGlow = glowObject.GetComponent<Light>();
+            if (turboGlow == null)
+            {
+                Debug.LogError("AirFooty Turbo Reactor Glow is missing its authored Light.", glowObject);
+            }
+            else
+            {
+                turboGlow.type = LightType.Point;
+                turboGlow.range = 3.3f;
+                turboGlow.shadows = LightShadows.None;
+                turboGlow.enabled = false;
+            }
+        }
     }
 
     private void TriggerTurboPresentation(TurboTechnique technique)
@@ -800,31 +906,29 @@ public sealed class PlayerActions3D : MonoBehaviour
     private void UpdateTurboPresentation()
     {
         bool active = Time.unscaledTime <= turboFxUntil;
-        if (turboStabilizer == null || turboThrusters == null)
-        {
-            return;
-        }
-
         Color color = turboFxTechnique == TurboTechnique.TurboPulse
             ? turboPulseFxColor
             : turboDashFxColor;
         float flicker = 0.82f + Mathf.Sin(Time.unscaledTime * 28f) * 0.18f;
-        turboStabilizer.enabled = active;
-        turboStabilizer.startColor = color;
-        turboStabilizer.endColor = new Color(color.r, color.g, color.b, 0.28f);
-        if (active)
+        if (turboStabilizer != null)
         {
-            float spin = Time.unscaledTime * 5.5f;
-            for (int i = 0; i < turboStabilizer.positionCount; i++)
+            turboStabilizer.enabled = active;
+            turboStabilizer.startColor = color;
+            turboStabilizer.endColor = new Color(color.r, color.g, color.b, 0.28f);
+            if (active)
             {
-                float angle =
-                    i / (float)turboStabilizer.positionCount * Mathf.PI * 2f +
-                    spin;
-                float radius = i % 2 == 0 ? 0.72f : 0.52f;
-                turboStabilizer.SetPosition(i, new Vector3(
-                    Mathf.Cos(angle) * radius,
-                    0f,
-                    Mathf.Sin(angle) * radius));
+                float spin = Time.unscaledTime * 5.5f;
+                for (int i = 0; i < turboStabilizer.positionCount; i++)
+                {
+                    float angle =
+                        i / (float)turboStabilizer.positionCount * Mathf.PI * 2f +
+                        spin;
+                    float radius = i % 2 == 0 ? 0.72f : 0.52f;
+                    turboStabilizer.SetPosition(i, new Vector3(
+                        Mathf.Cos(angle) * radius,
+                        0f,
+                        Mathf.Sin(angle) * radius));
+                }
             }
         }
 
@@ -834,9 +938,13 @@ public sealed class PlayerActions3D : MonoBehaviour
         Vector3 side = Vector3.Cross(Vector3.up, direction).normalized;
         Vector3 rear =
             transform.position - direction * 0.46f + Vector3.up * 0.16f;
-        for (int i = 0; i < turboThrusters.Length; i++)
+        for (int i = 0; turboThrusters != null && i < turboThrusters.Length; i++)
         {
             TrailRenderer trail = turboThrusters[i];
+            if (trail == null)
+            {
+                continue;
+            }
             trail.transform.position =
                 rear + side * (i == 0 ? -0.24f : 0.24f);
             trail.startColor = color * flicker;
@@ -885,6 +993,10 @@ public sealed class PlayerActions3D : MonoBehaviour
         for (int i = 0; i < chargePips.Length; i++)
         {
             LineRenderer pip = chargePips[i];
+            if (pip == null)
+            {
+                continue;
+            }
             bool available = i < chargeBank.CurrentCharges;
             Color color = available ? pulseTapColor : unavailableColor;
             if (!available && i == chargeBank.CurrentCharges)
@@ -901,13 +1013,21 @@ public sealed class PlayerActions3D : MonoBehaviour
 
     private IEnumerator PlayPulseWave(float radius, Color color)
     {
-        GameObject waveObject = new GameObject("Hover Pulse Wave");
-        waveObject.transform.SetParent(transform, false);
-        waveObject.transform.localPosition = Vector3.up * 0.045f;
-        LineRenderer wave = BuildLineRenderer(
-            waveObject,
-            PulseRingSegments,
-            0.09f);
+        Transform authoredWave = transform.Find("Hover Pulse Wave");
+        if (authoredWave == null)
+        {
+            yield break;
+        }
+        GameObject waveObject = authoredWave.gameObject;
+        waveObject.SetActive(true);
+
+        LineRenderer wave = waveObject.GetComponent<LineRenderer>();
+        if (wave == null)
+        {
+            Debug.LogError("AirFooty Hover Pulse Wave is missing its authored LineRenderer.", waveObject);
+            waveObject.SetActive(false);
+            yield break;
+        }
 
         float startedAt = Time.unscaledTime;
         while (wave != null)
@@ -934,7 +1054,7 @@ public sealed class PlayerActions3D : MonoBehaviour
 
         if (waveObject != null)
         {
-            Destroy(waveObject);
+            waveObject.SetActive(false);
         }
     }
 

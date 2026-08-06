@@ -1,7 +1,7 @@
 # Labyrinth Crawler runtime asset boundary
 
 **Maintainer:** JD<br>
-**Revised:** 1 August 2026
+**Revised:** 5 August 2026
 
 I keep stable presentation in prefabs and runtime variability in the systems that need it.
 
@@ -29,6 +29,13 @@ The maze is the primary designed exception: baking one layout would remove the s
 
 ## Guarded fallbacks
 
-Some scripts can still fill a missing authored reference for old or test prefabs. Those branches are recovery paths, not the normal scene setup. The maintenance bake and validation pass should keep production prefabs on the authored route.
+Only two compatibility fallbacks remain:
 
-The same project maintenance pass also authors Air Footy's fixed selection UI and display camera; this prevents unrelated scene-start UI construction from becoming the normal path.
+- `LabyrinthRuntimeUtility.EnsureSphereTrigger` can repair an old/test trigger and emits a warning.
+- `Room3D` can construct a minimal missing wall socket for an old/test room and emits a warning.
+
+Stable production support content no longer has a silent runtime fallback. Missing game timer/audio/containers, player combat/overlay, enemy hit/audio/wing support, projectile audio/prefabs, hitscan beam or HUD title wave is reported as an authoring error.
+
+## Completed migration
+
+The one-time authored-content migration is complete and its temporary editor tooling has been removed. Missing production references are reported directly at runtime. The retained regression tools cover deterministic maze signatures and the 40-seed pit/building solvability audit.

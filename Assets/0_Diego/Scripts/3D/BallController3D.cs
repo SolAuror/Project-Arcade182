@@ -77,6 +77,7 @@ public class BallController3D : MonoBehaviour
     private float nextAiMovementContactTime;
     private float rallyMaximumSpeed = float.PositiveInfinity;
     private Vector3 preSimulationPlanarVelocity;
+    private bool overtimeLethal;
     private readonly Collider[] stalledProximityResults = new Collider[8];
 
     public event Action Stalled;
@@ -84,6 +85,22 @@ public class BallController3D : MonoBehaviour
     public event Action<Collision> CollisionEntered;
     public event Action ShotSequenceReset;
     public event Action PlayStopped;
+
+    /// <summary>Victim team, then the team that armed the ball.</summary>
+    public event Action<AirFootyTeam, AirFootyTeam> LethalContact;
+
+    /// <summary>
+    /// The team whose pulse armed this ball. Only a deliberate strike sets it, so
+    /// a player who is merely shoved into the ball never inherits ownership.
+    /// </summary>
+    public AirFootyTeam ArmedOwner { get; private set; }
+
+    /// <summary>
+    /// True once overtime is live and somebody has claimed the ball. Until then
+    /// the ball is inert and can be walked into safely.
+    /// </summary>
+    public bool IsLethal =>
+        overtimeLethal && canMove && ArmedOwner != AirFootyTeam.None;
 
     public bool CanMove => canMove;
     public float OrdinaryMaximumSpeed => ordinaryMaximumSpeed;
@@ -149,6 +166,17 @@ public class BallController3D : MonoBehaviour
     {
         float speed = collision.relativeVelocity.magnitude;
         AirFootyTeam strikerTeam = ResolveStrikerTeam(collision.collider);
+
+        // An armed ball vaporises whoever it reaches, including the team that
+        // armed it. This returns before the passive-touch bookkeeping below on
+        // purpose: registering the victim would overwrite LastTouchTeam and the
+        // goal would be credited to the player who just died.
+        if (strikerTeam != AirFootyTeam.None && IsLethal)
+        {
+            LethalContact?.Invoke(strikerTeam, ArmedOwner);
+            return;
+        }
+
         if (strikerTeam != AirFootyTeam.None &&
             !IsActiveStrikeCollision(strikerTeam))
         {
@@ -158,6 +186,36 @@ public class BallController3D : MonoBehaviour
 
         PlayImpactFeedback(speed);
         CollisionEntered?.Invoke(collision);
+    }
+
+    /// <summary>
+    /// Arms or disarms the overtime contingency for this ball. Turning it on
+    /// leaves the ball inert: it only becomes lethal once somebody pulses it.
+    /// </summary>
+    public void SetOvertimeLethal(bool lethal)
+    {
+        overtimeLethal = lethal;
+        if (!lethal)
+        {
+            ArmedOwner = AirFootyTeam.None;
+        }
+    }
+
+    /// <summary>
+    /// Marks the instant an inert ball goes live, in the colour of whoever claimed
+    /// it. Without this the switch from safe to lethal is invisible.
+    /// </summary>
+    private void FlashArmed(AirFootyTeam owner)
+    {
+        if (ballRenderer == null || !isActiveAndEnabled)
+        {
+            return;
+        }
+
+        StartCoroutine(AirFootyFeedbackUtility.FlashRenderer(
+            ballRenderer,
+            AirFootyTeamMember3D.ColorFor(owner),
+            0.18f));
     }
 
     private void PlayImpactFeedback(float speed)
@@ -292,7 +350,10 @@ public class BallController3D : MonoBehaviour
         Vector3 direction,
         float targetSpeed)
     {
-        if (!canMove ||
+        // Overtime is pulse only. Refusing here covers the player's dash kick and
+        // both AI controllers in one place.
+        if (overtimeLethal ||
+            !canMove ||
             team == AirFootyTeam.None ||
             touchType == AirFootyTouchType.None ||
             touchType == AirFootyTouchType.Passive ||
@@ -310,6 +371,7 @@ public class BallController3D : MonoBehaviour
         lastStrikeFixedTime = Time.fixedTime;
         activeStrikeTeam = team;
         activeStrikeContactUntil = Time.fixedTime + Mathf.Max(0.05f, Time.fixedDeltaTime * 1.5f);
+        ArmedOwner = team;
         RegisterTouch(team, touchType);
         ResetStallDetection();
         DeliberateStrike?.Invoke(team, touchType);
@@ -338,7 +400,10 @@ public class BallController3D : MonoBehaviour
         Vector3 strikerVelocity,
         Vector3 strikerPosition)
     {
-        if (!canMove ||
+        // Overtime is pulse only: bodies no longer shove the ball around, and an
+        // armed ball kills on contact instead.
+        if (overtimeLethal ||
+            !canMove ||
             team == AirFootyTeam.None ||
             IsActiveStrikeCollision(team))
         {
@@ -460,6 +525,14 @@ public class BallController3D : MonoBehaviour
         activeStrikeTeam = team;
         activeStrikeContactUntil =
             Time.fixedTime + Mathf.Max(0.05f, Time.fixedDeltaTime * 1.5f);
+        // In overtime this is the moment an inert ball goes live, and every later
+        // pulse hands the kill credit to whoever touched it last.
+        bool armingNow = overtimeLethal && ArmedOwner == AirFootyTeam.None;
+        ArmedOwner = team;
+        if (armingNow)
+        {
+            FlashArmed(team);
+        }
         RegisterTouch(team, touchType);
         ResetStallDetection();
         DeliberateStrike?.Invoke(team, touchType);
@@ -695,6 +768,9 @@ public class BallController3D : MonoBehaviour
         LastTouchTeam = AirFootyTeam.None;
         LastTouchType = AirFootyTouchType.None;
         LastTouchTime = float.NegativeInfinity;
+        // A re-dropped ball goes back to inert, so the victim gets a safe window
+        // and whoever pulses first owns the threat again.
+        ArmedOwner = AirFootyTeam.None;
         activeStrikeTeam = AirFootyTeam.None;
         activeStrikeContactUntil = float.NegativeInfinity;
         nextPlayerMovementContactTime = float.NegativeInfinity;
@@ -748,7 +824,8 @@ public class BallController3D : MonoBehaviour
         speedTrail = GetComponent<TrailRenderer>();
         if (speedTrail == null)
         {
-            speedTrail = gameObject.AddComponent<TrailRenderer>();
+            Debug.LogError("AirFooty ball is missing its authored TrailRenderer.", this);
+            return;
         }
 
         speedTrail.time = 0.2f;
@@ -760,13 +837,9 @@ public class BallController3D : MonoBehaviour
         speedTrail.emitting = false;
         speedTrail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
-        Shader shader = Shader.Find("Sprites/Default");
-        if (speedTrail.sharedMaterial == null && shader != null)
+        if (speedTrail.sharedMaterial == null)
         {
-            speedTrail.material = new Material(shader)
-            {
-                name = "AirFooty Speed Trail (Runtime)"
-            };
+            Debug.LogError("AirFooty ball TrailRenderer is missing its authored material.", speedTrail);
         }
     }
 
@@ -775,7 +848,8 @@ public class BallController3D : MonoBehaviour
         impactAudio = GetComponent<AudioSource>();
         if (impactAudio == null)
         {
-            impactAudio = gameObject.AddComponent<AudioSource>();
+            Debug.LogError("AirFooty ball is missing its authored impact AudioSource.", this);
+            return;
         }
         impactAudio.playOnAwake = false;
         impactAudio.spatialBlend = 0.35f;
@@ -785,13 +859,16 @@ public class BallController3D : MonoBehaviour
     private void BuildHoverPresentation()
     {
         Transform authoredVisual = transform.Find("AirFooty Ball Hover");
-        GameObject visual = authoredVisual != null
-            ? authoredVisual.gameObject
-            : new GameObject("AirFooty Ball Hover");
-        AirFootyHoverVisual hover = visual.GetComponent<AirFootyHoverVisual>();
+        if (authoredVisual == null)
+        {
+            Debug.LogError("AirFooty ball is missing its authored AirFooty Ball Hover child.", this);
+            return;
+        }
+        AirFootyHoverVisual hover = authoredVisual.GetComponent<AirFootyHoverVisual>();
         if (hover == null)
         {
-            hover = visual.AddComponent<AirFootyHoverVisual>();
+            Debug.LogError("AirFooty Ball Hover is missing its authored AirFootyHoverVisual component.", authoredVisual);
+            return;
         }
         hover.Initialize(transform, startingPosition.y, trailColor);
     }

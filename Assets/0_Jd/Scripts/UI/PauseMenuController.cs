@@ -8,12 +8,16 @@ using UnityEngine.UI;
 namespace Sol.Arcade
 {
     /// <summary>
-    /// Escape-key pause menu. Prefab-authored (Resources/UI/PauseMenu, built
-    /// once by Sol/Setup/Menus And UI Prefabs) and instantiated for the whole
+    /// Escape-key pause menu. Prefab-authored at
+    /// Assets/0_Jd/Resources/UI/PauseMenu.prefab and instantiated for the whole
     /// session by <see cref="ArcadeMetaBootstrap"/> — no UI is generated at
     /// runtime. Minigame scenes get Resume / Quit to Hub / Quit to Menu (Atom
     /// Smasher adds a 2D-3D camera toggle); the hub gets Resume / Options /
     /// Quit to Menu / Quit Game. The main menu scene gets nothing.
+    ///
+    /// The prefab has to stay under a Resources folder: the bootstrap is a
+    /// static initialiser with no scene presence, so there is nowhere to
+    /// serialise a reference to it.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Sol/Arcade/Pause Menu Controller")]
@@ -80,7 +84,9 @@ namespace Sol.Arcade
             if (prefab == null)
             {
                 Debug.LogWarning(
-                    $"Pause menu prefab missing at Resources/{PauseMenuResourcePath}. Run Sol/Setup/Menus And UI Prefabs.");
+                    $"Pause menu prefab missing at Resources/{PauseMenuResourcePath}. " +
+                    "It must live under a Resources folder to be loadable here; " +
+                    "the authored copy is Assets/0_Jd/Resources/UI/PauseMenu.prefab.");
                 return;
             }
 
@@ -309,7 +315,7 @@ namespace Sol.Arcade
             pausedFromTimeScale = Time.timeScale;
             Time.timeScale = 0f;
             AudioListener.pause = true;
-            SimpleUiBuilder.EnsureEventSystem();
+            ArcadeInputCoordinator.EnsureExists();
             pauseCanvas.SetActive(true);
             ArcadeInputCoordinator.PushMenu(
                 pauseCanvas,

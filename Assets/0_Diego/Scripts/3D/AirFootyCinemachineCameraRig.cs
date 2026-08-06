@@ -1,6 +1,7 @@
 using Unity.Cinemachine;
 using Unity.Cinemachine.TargetTracking;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [DefaultExecutionOrder(-100)]
 [DisallowMultipleComponent]
@@ -17,6 +18,12 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
     [SerializeField, Min(0f)] private float edgeLookLift = 0.35f;
     [SerializeField] private Vector2 trackedScreenPosition = new Vector2(0f, -0.06f);
 
+    [Header("Team Isometric View")]
+    [Tooltip("Distance behind the active player's home edge and to their right.")]
+    [SerializeField, Min(0.1f)] private float cornerDistance = 11f;
+    [Tooltip("Height matching the two equal corner axes for a true isometric angle.")]
+    [SerializeField, Min(0.1f)] private float cameraHeight = 11f;
+
     [Header("Broadcast Follow")]
     [SerializeField, Min(0f)] private float horizontalFollowDamping = 0.75f;
     [SerializeField, Min(0f)] private float verticalFollowDamping = 1f;
@@ -25,35 +32,99 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
     [SerializeField, Min(0f)] private float charmSway = 0.08f;
     [SerializeField, Min(0.01f)] private float charmSwayPeriod = 7f;
 
+    [Header("Player Camera Input")]
+    [Tooltip("How much mouse movement contributes to the camera wiggle.")]
+    [SerializeField, Min(0f)] private float mouseWiggleSensitivity = 0.0035f;
+    [Tooltip("World-space look-target movement produced by full stick/mouse input.")]
+    [SerializeField, Min(0f)] private float inputWiggleAmplitude = 0.65f;
+    [SerializeField, Min(0f)] private float inputWiggleDamping = 8f;
+    [SerializeField, Range(0f, 1f)] private float stickWiggleDeadzone = 0.15f;
+    [Tooltip("Maximum FOV change from the neutral camera framing.")]
+    [SerializeField, Min(0f)] private float maximumZoomDegrees = 3f;
+    [SerializeField, Min(0f)] private float zoomStep = 0.35f;
+    [SerializeField, Min(0f)] private float zoomDamping = 7f;
+
     [Header("Subtle Impact Noise")]
     [SerializeField, Range(0f, 1f)] private float impactResponse = 0.65f;
     [SerializeField, Min(0f)] private float impactDecayPerSecond = 1.2f;
     [SerializeField, Range(0f, 1f)] private float maximumImpactAmplitude = 0.5f;
 
-    private CinemachineBrain brain;
-    private CinemachineCamera broadcastCamera;
-    private CinemachineFollow followComponent;
-    private CinemachineBasicMultiChannelPerlin impactNoise;
-    private NoiseSettings impactNoiseProfile;
-    private Transform followTarget;
-    private Transform lookTarget;
+    [Header("Authored Rig")]
+    [SerializeField] private CinemachineBrain brain;
+    [SerializeField] private CinemachineCamera broadcastCamera;
+    [SerializeField] private CinemachineFollow followComponent;
+    [SerializeField] private CinemachineBasicMultiChannelPerlin impactNoise;
+    [SerializeField] private NoiseSettings impactNoiseProfile;
+    [SerializeField] private Transform followTarget;
+    [SerializeField] private Transform lookTarget;
     private Vector3 baseCameraOffset;
     private Vector3 baseViewForward;
     private Vector3 baseViewRight;
-    private Vector3 blueCameraPosition;
-    private Quaternion blueCameraRotation;
     private Quaternion teamRotation = Quaternion.identity;
-    private bool bluePoseCaptured;
+    private bool configurationErrorLogged;
     private float impactAmplitude;
+    private int teamCullingMask = ~0;
+    private InputAction mouseDeltaAction;
+    private InputAction leftStickAction;
+    private InputAction zoomWheelAction;
+    private InputAction zoomInAction;
+    private InputAction zoomOutAction;
+    private Vector2 inputWiggle;
+    private float zoomAmount;
+    private float targetZoomAmount;
+    private float baseFieldOfView;
 
-    public bool IsReady => broadcastCamera != null && outputCamera != null;
+    public bool IsReady =>
+        outputCamera != null &&
+        brain != null &&
+        broadcastCamera != null &&
+        followComponent != null &&
+        impactNoise != null &&
+        impactNoiseProfile != null &&
+        followTarget != null &&
+        lookTarget != null;
     public Camera OutputCamera => outputCamera;
+
+    /// <summary>
+    /// Culling mask for the selected team, with that team's own corner dressing
+    /// excluded. Anything that re-enables the camera should restore this rather
+    /// than resetting to "everything".
+    /// </summary>
+    public int TeamCullingMask => teamCullingMask;
 
     private void Awake()
     {
+        BuildInputActions();
         ResolveReferences();
-        CaptureBlueCameraPose();
+        ApplyTeamPerspective(ResolvePlayerTeam());
         BuildRig();
+    }
+
+    private void OnEnable()
+    {
+        mouseDeltaAction?.Enable();
+        leftStickAction?.Enable();
+        zoomWheelAction?.Enable();
+        zoomInAction?.Enable();
+        zoomOutAction?.Enable();
+    }
+
+    private void OnDisable()
+    {
+        mouseDeltaAction?.Disable();
+        leftStickAction?.Disable();
+        zoomWheelAction?.Disable();
+        zoomInAction?.Disable();
+        zoomOutAction?.Disable();
+    }
+
+    private void OnDestroy()
+    {
+        mouseDeltaAction?.Dispose();
+        leftStickAction?.Dispose();
+        zoomWheelAction?.Dispose();
+        zoomInAction?.Dispose();
+        zoomOutAction?.Dispose();
     }
 
     private void LateUpdate()
@@ -68,16 +139,17 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
             }
         }
 
+        // Re-assert rather than trusting whoever last touched the camera: the
+        // menu resets the mask to "everything" when it hands over to gameplay,
+        // which would put this team's own corner dressing back in front of it.
+        if (outputCamera.cullingMask != teamCullingMask)
+        {
+            outputCamera.cullingMask = teamCullingMask;
+        }
+
+        UpdatePlayerCameraInput();
         UpdateTargets();
         UpdateImpactNoise();
-    }
-
-    private void OnDestroy()
-    {
-        if (impactNoiseProfile != null)
-        {
-            Destroy(impactNoiseProfile);
-        }
     }
 
     public void AddImpact(float amount)
@@ -93,9 +165,8 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
     {
         player = selectedPlayer;
         ResolveReferences();
-        CaptureBlueCameraPose();
         ApplyTeamPerspective(selectedTeam);
-        if (player != null && broadcastCamera == null)
+        if (player != null && !IsReady)
         {
             BuildRig();
         }
@@ -116,7 +187,7 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
 
     private void BuildRig()
     {
-        if (broadcastCamera != null || player == null || outputCamera == null)
+        if (player == null || outputCamera == null)
         {
             return;
         }
@@ -124,7 +195,10 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
         brain = outputCamera.GetComponent<CinemachineBrain>();
         if (brain == null)
         {
-            brain = outputCamera.gameObject.AddComponent<CinemachineBrain>();
+            LogConfigurationErrorOnce(
+                "AirFooty camera is missing its authored CinemachineBrain.",
+                outputCamera);
+            return;
         }
 
         brain.UpdateMethod = CinemachineBrain.UpdateMethods.SmartUpdate;
@@ -136,23 +210,45 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
 
         RefreshViewBasis();
 
-        followTarget = CreateRuntimeChild("AirFooty Camera Follow Target");
-        lookTarget = CreateRuntimeChild("AirFooty Camera Look Target");
+        followTarget ??= transform.Find("AirFooty Camera Follow Target");
+        lookTarget ??= transform.Find("AirFooty Camera Look Target");
+        Transform cameraTransform = broadcastCamera != null
+            ? broadcastCamera.transform
+            : transform.Find("AirFooty Broadcast Camera");
+        if (followTarget == null || lookTarget == null || cameraTransform == null)
+        {
+            LogConfigurationErrorOnce(
+                "AirFooty camera rig is missing an authored target or broadcast camera child.",
+                this);
+            return;
+        }
+
+        broadcastCamera ??= cameraTransform.GetComponent<CinemachineCamera>();
+        followComponent ??= cameraTransform.GetComponent<CinemachineFollow>();
+        impactNoise ??= cameraTransform.GetComponent<CinemachineBasicMultiChannelPerlin>();
+        CinemachineRotationComposer aim =
+            cameraTransform.GetComponent<CinemachineRotationComposer>();
+        if (broadcastCamera == null || followComponent == null || aim == null || impactNoise == null || impactNoiseProfile == null)
+        {
+            LogConfigurationErrorOnce(
+                "AirFooty broadcast camera is missing an authored Cinemachine component or noise profile.",
+                cameraTransform);
+            return;
+        }
+
         UpdateTargets();
 
-        GameObject cameraObject = new GameObject("AirFooty Broadcast Camera");
-        cameraObject.transform.SetParent(transform, false);
-        cameraObject.transform.SetPositionAndRotation(
+        cameraTransform.SetPositionAndRotation(
             outputCamera.transform.position,
             outputCamera.transform.rotation);
 
-        broadcastCamera = cameraObject.AddComponent<CinemachineCamera>();
         broadcastCamera.Priority = 100;
-        broadcastCamera.Lens = LensSettings.FromCamera(outputCamera);
+        LensSettings outputLens = LensSettings.FromCamera(outputCamera);
+        baseFieldOfView = outputLens.FieldOfView;
+        broadcastCamera.Lens = outputLens;
         broadcastCamera.Follow = followTarget;
         broadcastCamera.LookAt = lookTarget;
 
-        followComponent = cameraObject.AddComponent<CinemachineFollow>();
         followComponent.FollowOffset = baseCameraOffset;
         followComponent.TrackerSettings = new TrackerSettings
         {
@@ -166,8 +262,6 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
             QuaternionDamping = 0f
         };
 
-        CinemachineRotationComposer aim =
-            cameraObject.AddComponent<CinemachineRotationComposer>();
         aim.Damping = new Vector2(horizontalAimDamping, verticalAimDamping);
         aim.CenterOnActivate = true;
         ScreenComposerSettings composition = ScreenComposerSettings.Default;
@@ -185,44 +279,71 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
         };
         aim.Composition = composition;
 
-        impactNoise = cameraObject.AddComponent<CinemachineBasicMultiChannelPerlin>();
-        impactNoiseProfile = BuildImpactNoiseProfile();
         impactNoise.NoiseProfile = impactNoiseProfile;
         impactNoise.AmplitudeGain = 0f;
         impactNoise.FrequencyGain = 1f;
+        configurationErrorLogged = false;
     }
 
-    private Transform CreateRuntimeChild(string childName)
+    private void LogConfigurationErrorOnce(string message, Object context)
     {
-        GameObject child = new GameObject(childName);
-        child.transform.SetParent(transform, false);
-        return child.transform;
-    }
-
-    private void CaptureBlueCameraPose()
-    {
-        if (bluePoseCaptured || outputCamera == null)
+        if (configurationErrorLogged)
         {
             return;
         }
 
-        blueCameraPosition = outputCamera.transform.position;
-        blueCameraRotation = outputCamera.transform.rotation;
-        bluePoseCaptured = true;
+        configurationErrorLogged = true;
+        Debug.LogError(message, context);
+    }
+
+    private AirFootyTeam ResolvePlayerTeam()
+    {
+        if (player == null)
+        {
+            return AirFootyTeam.Blue;
+        }
+
+        AirFootyTeamMember3D member =
+            player.GetComponent<AirFootyTeamMember3D>();
+        AirFootyTeam team = member != null
+            ? member.Team
+            : AirFootyTeamMember3D.InferFromHierarchy(player.transform);
+        return team != AirFootyTeam.None ? team : AirFootyTeam.Blue;
     }
 
     private void ApplyTeamPerspective(AirFootyTeam selectedTeam)
     {
-        if (!bluePoseCaptured || outputCamera == null)
+        if (outputCamera == null)
         {
             return;
         }
 
+        if (selectedTeam == AirFootyTeam.None)
+        {
+            selectedTeam = AirFootyTeam.Blue;
+        }
+
+        // Drop this team's own corner dressing, which sits between its camera and
+        // the pitch. Stored so SetGameplayPresentationActive can restore it
+        // without clobbering the exclusion.
+        teamCullingMask = AirFootyTeamViewMask.CullingMaskFor(selectedTeam);
+        outputCamera.cullingMask = teamCullingMask;
+
         teamRotation = Quaternion.Euler(0f, TeamCameraYaw(selectedTeam), 0f);
-        Vector3 rotatedPosition = arenaCentre +
-                                  teamRotation *
-                                  (blueCameraPosition - arenaCentre);
-        Quaternion rotatedRotation = teamRotation * blueCameraRotation;
+        Vector3 homeDirection =
+            AirFootyTeamMember3D.HomeDirection(selectedTeam).normalized;
+        Vector3 inwardDirection = -homeDirection;
+        Vector3 playerRight = Vector3.Cross(
+            Vector3.up,
+            inwardDirection).normalized;
+        Vector3 rotatedPosition =
+            arenaCentre +
+            homeDirection * cornerDistance +
+            playerRight * cornerDistance +
+            Vector3.up * cameraHeight;
+        Quaternion rotatedRotation = Quaternion.LookRotation(
+            arenaCentre - rotatedPosition,
+            Vector3.up);
         outputCamera.transform.SetPositionAndRotation(
             rotatedPosition,
             rotatedRotation);
@@ -258,13 +379,23 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
         baseViewRight = Vector3.Cross(Vector3.up, baseViewForward).normalized;
     }
 
+    /// <summary>
+    /// Yaw that carries Blue-local tracking offsets onto another team's side,
+    /// so the follow and look targets react consistently for every player.
+    ///
+    /// The value is the rotation taking Blue's home direction onto that team's:
+    /// a Y rotation of t maps (x, z) to (x cos t + z sin t, -x sin t + z cos t),
+    /// so Blue's (-1, 0, 0) reaches Green's (0, 0, 1) at +90 and Gold's
+    /// (0, 0, -1) at -90. Green and Gold were previously the other way round,
+    /// which sat both of them behind their opponent's goal.
+    /// </summary>
     private static float TeamCameraYaw(AirFootyTeam team)
     {
         return team switch
         {
             AirFootyTeam.Red => 180f,
-            AirFootyTeam.Green => -90f,
-            AirFootyTeam.Gold => 90f,
+            AirFootyTeam.Green => 90f,
+            AirFootyTeam.Gold => -90f,
             _ => 0f
         };
     }
@@ -305,10 +436,102 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
             localPlayerOffset.z * lookInfluence.y);
         Vector3 lookPosition = arenaCentre +
                                teamRotation * localLookOffset +
-                               sway;
+                               sway +
+                               baseViewRight * (inputWiggle.x * inputWiggleAmplitude) +
+                               Vector3.up * (inputWiggle.y * inputWiggleAmplitude);
 
         followTarget.position = followPosition;
         lookTarget.position = lookPosition;
+    }
+
+    private void UpdatePlayerCameraInput()
+    {
+        Vector2 mouseInput = mouseDeltaAction != null
+            ? mouseDeltaAction.ReadValue<Vector2>() * mouseWiggleSensitivity
+            : Vector2.zero;
+        Vector2 stickInput = leftStickAction != null
+            ? ApplyDeadzone(leftStickAction.ReadValue<Vector2>(), stickWiggleDeadzone)
+            : Vector2.zero;
+        Vector2 desiredWiggle = Vector2.ClampMagnitude(mouseInput + stickInput, 1f);
+        float wiggleBlend = 1f - Mathf.Exp(-inputWiggleDamping * Time.unscaledDeltaTime);
+        inputWiggle = Vector2.Lerp(inputWiggle, desiredWiggle, wiggleBlend);
+
+        float wheel = zoomWheelAction != null
+            ? zoomWheelAction.ReadValue<float>()
+            : 0f;
+        if (Mathf.Abs(wheel) > 0.001f)
+        {
+            // Mouse scroll-up reports a positive value, which zooms in by
+            // reducing the field of view below.
+            targetZoomAmount = Mathf.Clamp(
+                targetZoomAmount + Mathf.Sign(wheel) * zoomStep,
+                -1f,
+                1f);
+        }
+
+        float triggerZoom = 0f;
+        if (zoomInAction != null)
+        {
+            triggerZoom += zoomInAction.ReadValue<float>();
+        }
+        if (zoomOutAction != null)
+        {
+            triggerZoom -= zoomOutAction.ReadValue<float>();
+        }
+        targetZoomAmount = Mathf.Clamp(
+            targetZoomAmount + triggerZoom * zoomStep * Time.unscaledDeltaTime,
+            -1f,
+            1f);
+
+        float zoomBlend = 1f - Mathf.Exp(-zoomDamping * Time.unscaledDeltaTime);
+        zoomAmount = Mathf.Lerp(zoomAmount, targetZoomAmount, zoomBlend);
+        if (broadcastCamera != null && maximumZoomDegrees > 0f)
+        {
+            LensSettings lens = broadcastCamera.Lens;
+            lens.FieldOfView = Mathf.Max(
+                1f,
+                baseFieldOfView - zoomAmount * maximumZoomDegrees);
+            broadcastCamera.Lens = lens;
+        }
+    }
+
+    private static Vector2 ApplyDeadzone(Vector2 input, float deadzone)
+    {
+        float magnitude = input.magnitude;
+        if (magnitude <= deadzone)
+        {
+            return Vector2.zero;
+        }
+
+        return input / magnitude * Mathf.InverseLerp(deadzone, 1f, magnitude);
+    }
+
+    private void BuildInputActions()
+    {
+        mouseDeltaAction = new InputAction(
+            "AirFooty Camera Mouse Wiggle",
+            InputActionType.Value);
+        mouseDeltaAction.AddBinding("<Mouse>/delta");
+
+        leftStickAction = new InputAction(
+            "AirFooty Camera Stick Wiggle",
+            InputActionType.Value);
+        leftStickAction.AddBinding("<Gamepad>/leftStick");
+
+        zoomWheelAction = new InputAction(
+            "AirFooty Camera Zoom Wheel",
+            InputActionType.Value);
+        zoomWheelAction.AddBinding("<Mouse>/scroll/y");
+
+        zoomInAction = new InputAction(
+            "AirFooty Camera Zoom In",
+            InputActionType.Value);
+        zoomInAction.AddBinding("<Gamepad>/rightTrigger");
+
+        zoomOutAction = new InputAction(
+            "AirFooty Camera Zoom Out",
+            InputActionType.Value);
+        zoomOutAction.AddBinding("<Gamepad>/leftTrigger");
     }
 
     private void UpdateImpactNoise()
@@ -324,42 +547,6 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
         impactNoise.AmplitudeGain = impactAmplitude;
     }
 
-    private static NoiseSettings BuildImpactNoiseProfile()
-    {
-        NoiseSettings profile = ScriptableObject.CreateInstance<NoiseSettings>();
-        profile.name = "AirFooty Subtle Impact Noise (Runtime)";
-        profile.hideFlags = HideFlags.HideAndDontSave;
-        profile.PositionNoise = new[]
-        {
-            new NoiseSettings.TransformNoiseParams
-            {
-                X = NoiseChannel(0.08f, 2.1f),
-                Y = NoiseChannel(0.05f, 2.6f),
-                Z = NoiseChannel(0.025f, 1.7f)
-            }
-        };
-        profile.OrientationNoise = new[]
-        {
-            new NoiseSettings.TransformNoiseParams
-            {
-                X = NoiseChannel(0.28f, 2.4f),
-                Y = NoiseChannel(0.2f, 1.9f),
-                Z = NoiseChannel(0.42f, 2.8f)
-            }
-        };
-        return profile;
-    }
-
-    private static NoiseSettings.NoiseParams NoiseChannel(float amplitude, float frequency)
-    {
-        return new NoiseSettings.NoiseParams
-        {
-            Amplitude = amplitude,
-            Frequency = frequency,
-            Constant = false
-        };
-    }
-
     private void OnValidate()
     {
         followInfluence.x = Mathf.Max(0f, followInfluence.x);
@@ -367,12 +554,20 @@ public sealed class AirFootyCinemachineCameraRig : MonoBehaviour
         lookInfluence.x = Mathf.Max(0f, lookInfluence.x);
         lookInfluence.y = Mathf.Max(0f, lookInfluence.y);
         edgeLookLift = Mathf.Max(0f, edgeLookLift);
+        cornerDistance = Mathf.Max(0.1f, cornerDistance);
+        cameraHeight = Mathf.Max(0.1f, cameraHeight);
         horizontalFollowDamping = Mathf.Max(0f, horizontalFollowDamping);
         verticalFollowDamping = Mathf.Max(0f, verticalFollowDamping);
         horizontalAimDamping = Mathf.Max(0f, horizontalAimDamping);
         verticalAimDamping = Mathf.Max(0f, verticalAimDamping);
         charmSway = Mathf.Max(0f, charmSway);
         charmSwayPeriod = Mathf.Max(0.01f, charmSwayPeriod);
+        mouseWiggleSensitivity = Mathf.Max(0f, mouseWiggleSensitivity);
+        inputWiggleAmplitude = Mathf.Max(0f, inputWiggleAmplitude);
+        inputWiggleDamping = Mathf.Max(0f, inputWiggleDamping);
+        zoomStep = Mathf.Max(0f, zoomStep);
+        maximumZoomDegrees = Mathf.Max(0f, maximumZoomDegrees);
+        zoomDamping = Mathf.Max(0f, zoomDamping);
         impactDecayPerSecond = Mathf.Max(0f, impactDecayPerSecond);
     }
 }
@@ -381,6 +576,10 @@ internal static class AirFootyCameraLookup
 {
     public static Camera FindDisplayCamera()
     {
+        Camera namedInactive = null;
+        Camera taggedActive = null;
+        Camera taggedInactive = null;
+        Camera activeCandidate = null;
         Camera inactiveCandidate = null;
         foreach (Camera candidate in Object.FindObjectsByType<Camera>(
                      FindObjectsInactive.Include,
@@ -391,14 +590,44 @@ internal static class AirFootyCameraLookup
                 continue;
             }
 
-            if (candidate.isActiveAndEnabled)
+            if (candidate.name == "AirFooty Display Camera")
             {
-                return candidate;
+                if (candidate.isActiveAndEnabled)
+                {
+                    return candidate;
+                }
+
+                namedInactive ??= candidate;
+                continue;
             }
 
-            inactiveCandidate ??= candidate;
+            if (candidate.CompareTag("MainCamera"))
+            {
+                if (candidate.isActiveAndEnabled)
+                {
+                    taggedActive ??= candidate;
+                }
+                else
+                {
+                    taggedInactive ??= candidate;
+                }
+                continue;
+            }
+
+            if (candidate.isActiveAndEnabled)
+            {
+                activeCandidate ??= candidate;
+            }
+            else
+            {
+                inactiveCandidate ??= candidate;
+            }
         }
 
-        return inactiveCandidate;
+        return namedInactive ??
+               taggedActive ??
+               taggedInactive ??
+               activeCandidate ??
+               inactiveCandidate;
     }
 }

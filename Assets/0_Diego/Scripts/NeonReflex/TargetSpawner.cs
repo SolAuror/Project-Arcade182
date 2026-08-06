@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace NeonReflex
 {
+    [DisallowMultipleComponent]
     public class TargetSpawner : MonoBehaviour
     {
         [SerializeField] private GameManager gameManager;
@@ -21,8 +22,50 @@ namespace NeonReflex
         private float spawnDelay;
         private float fakeChance;
 
+        public bool HasRequiredReferences
+        {
+            get
+            {
+                if (gameManager == null || targetPrefab == null ||
+                    !targetPrefab.HasRequiredReferences ||
+                    spawnPoints == null || spawnPoints.Length == 0)
+                {
+                    return false;
+                }
+
+                foreach (Transform spawnPoint in spawnPoints)
+                {
+                    if (spawnPoint == null)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        private void Awake()
+        {
+            if (!HasRequiredReferences)
+            {
+                Debug.LogError(
+                    $"{name} requires an authored GameManager, configured ReactionTarget " +
+                    "prefab, and non-empty spawn-point list with no missing entries. " +
+                    "Check the authored Neon Reflex scene and target prefab.",
+                    this);
+                enabled = false;
+            }
+        }
+
         public void StartLevel(int level, int targetAmount)
         {
+            if (!isActiveAndEnabled)
+            {
+                Debug.LogError($"{name} cannot start a level because its authored setup is invalid.", this);
+                return;
+            }
+
             StopSpawning();
             amountToSpawn = targetAmount;
             amountSpawned = 0;
@@ -97,6 +140,11 @@ namespace NeonReflex
             target.transform.localScale = Vector3.one * targetSize;
             target.Setup(gameManager, this, targetLifetime, isFake);
             activeTargets.Add(target);
+        }
+
+        private void OnDisable()
+        {
+            StopSpawning();
         }
 
         private Transform FindFreeSpawnPoint()

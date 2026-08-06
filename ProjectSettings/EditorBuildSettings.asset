@@ -27,9 +27,6 @@ EditorBuildSettings:
     path: Assets/0_Diego/Scenes/(LEGACY)AirFooty.unity
     guid: 37bc7bf9160f39543904905e57adab61
   - enabled: 1
-    path: Assets/0_Diego/Scenes/AirFooty3D.unity
-    guid: a0f8e66efd8b7ce419907dc93999c8f7
-  - enabled: 1
     path: Assets/0_Diego/Scenes/AirFootyFinal.unity
     guid: c2bf7b77f0b3ed6458eb2ecf9865c282
   - enabled: 1

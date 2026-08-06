@@ -201,6 +201,10 @@ namespace Sol // Controls room walls for generated maze paths.
                 ScalePosterDecor(
                     closedDecor,
                     Mathf.Max(0.01f, posterScaleMultiplier));
+                Debug.LogWarning(
+                    $"{name}: {direction} wall was missing its authored WallSocket; " +
+                    "a minimal runtime recovery socket was added.",
+                    wall);
                 WallSocket socket = wall.AddComponent<WallSocket>();
                 socket.ConfigureMinimal(defaultSolid, passageVariants, closedDecor);
                 sockets[direction] = socket;

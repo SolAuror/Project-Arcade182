@@ -5,20 +5,23 @@ namespace Sol.Minigames
     /// <summary>
     /// Shockwave for burst spells: a translucent sphere that expands from the
     /// caster to the blast radius while fading out. The sphere is the authored
-    /// Resources/SpellBurstVisual.prefab; <see cref="Spawn"/> instantiates it
-    /// and drives scale plus tint per burst.
+    /// Resources/VFX/SpellBurstVisual.prefab; <see cref="Spawn"/> instantiates
+    /// it and drives scale plus tint per burst.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Sol/Minigames/Spell Burst Visual")]
     public class SpellBurstVisual : MonoBehaviour
     {
-        private const string PrefabResourcePath = "SpellBurstVisual";
+        private const string PrefabResourcePath = "VFX/SpellBurstVisual";
+
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
 
         private static SpellBurstVisual cachedPrefab;
 
         [Tooltip("Sphere renderer tinted and expanded by the burst. Authored on the prefab.")]
         [SerializeField] private Renderer burstRenderer;
 
+        private MaterialPropertyBlock propertyBlock;
         private Color baseColor;
         private float startTime;
         private float lifeSeconds;
@@ -64,9 +67,17 @@ namespace Sol.Minigames
             float eased = 1f - (1f - progress) * (1f - progress);
             transform.localScale = Vector3.one * Mathf.Lerp(maxDiameter * 0.2f, maxDiameter, eased);
 
+            // A property block, not renderer.material — this runs every frame,
+            // and touching .material would clone the shared material per burst
+            // per frame.
             if (burstRenderer != null)
             {
-                burstRenderer.material.color = new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * (1f - eased));
+                propertyBlock ??= new MaterialPropertyBlock();
+                burstRenderer.GetPropertyBlock(propertyBlock);
+                propertyBlock.SetColor(
+                    ColorId,
+                    new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * (1f - eased)));
+                burstRenderer.SetPropertyBlock(propertyBlock);
             }
         }
     }

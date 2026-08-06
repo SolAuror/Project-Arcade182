@@ -230,6 +230,9 @@ namespace Sol.Minigames
         [Tooltip("Visual sparks released when an atom is smashed; they bounce off walls, not atoms.")]
         [SerializeField, Min(0)] private int electronsPerTargetHit = 4;
 
+        [Tooltip("Authored temporary electron prefab. Runtime varies its motion, scale, color, and lifetime.")]
+        [SerializeField] private AtomSmasherElectron electronPrefab;
+
         [SerializeField, Min(0)] private int electronMaxBounces = 2;
         [SerializeField, Min(0.2f)] private float electronLifeSeconds = 1.1f;
         [SerializeField, Min(0.5f)] private float electronMinSpeed = 7f;
@@ -247,8 +250,11 @@ namespace Sol.Minigames
         [Tooltip("Semitone steps the hit clip climbs as a ball's chain grows; clamps at the last entry. Default is a major scale.")]
         [SerializeField] private int[] chainPitchSemitones = { 0, 2, 4, 5, 7, 9, 11, 12 };
 
-        [Tooltip("Voices for overlapping pitched hits; created under the feedback source at runtime.")]
+        [Tooltip("Number of authored pitched voices created by the Atom Smasher migration utility.")]
         [SerializeField, Min(1)] private int pitchedVoiceCount = 4;
+
+        [Tooltip("Authored voice pool for overlapping pitched hits.")]
+        [SerializeField] private AudioSource[] pitchedVoices = Array.Empty<AudioSource>();
         [SerializeField] private ParticleSystem targetHitParticles;
         [SerializeField] private ParticleSystem quantumTriggerParticles;
         [SerializeField] private ParticleSystem waveClearParticles;
@@ -338,7 +344,6 @@ namespace Sol.Minigames
         private float activeHitstopTimeScale = 1f;
         private float lastLaunchTime = float.NegativeInfinity;
         private bool hasLaunchedThisRun;
-        private AudioSource[] pitchedVoices;
         private int nextPitchedVoice;
 
         public AtomSmasherBall BallPrefab => ballPrefab;
@@ -382,35 +387,19 @@ namespace Sol.Minigames
 
         private void Awake()
         {
-            RefreshTargetsFromScene();
+            if (!ValidateAuthoredGameplayReferences())
+            {
+                enabled = false;
+                return;
+            }
 
             foreach (AtomSmasherTarget target in targets)
             {
                 target?.AssignGame(this);
             }
 
-            if (launcher == null)
-            {
-                launcher = FindFirstObjectByType<AtomSmasherLauncher>();
-            }
-
-            launcher?.AssignGame(this);
-
-            if (feedbackAudioSource == null)
-            {
-                feedbackAudioSource = GetComponent<AudioSource>();
-            }
-
-            EnsurePitchedVoices();
-
-            ResolveCameraFx();
-
-            // Restock is always in the quantum pool, even on boards whose
-            // authored effect list predates it.
-            if (!quantumEffectOptions.Exists(option => option != null && option.Modifier == QuantumModifier.Restock))
-            {
-                quantumEffectOptions.Add(new QuantumEffectOption(QuantumModifier.Restock, "Restock", 1, 1));
-            }
+            launcher.AssignGame(this);
+            ValidateAuthoredFeedbackReferences();
 
             ResolveScoreCarrier();
             PlayerScoreCarrier.ScoreRecord scoreRecord = ReadScoreRecord();
@@ -751,28 +740,95 @@ namespace Sol.Minigames
             }
         }
 
-        private void RefreshTargetsFromScene()
+        private bool ValidateAuthoredGameplayReferences()
         {
+            bool valid = true;
+            if (launcher == null)
+            {
+                Debug.LogError(
+                    $"{nameof(AtomSmasherGame)} on {name} requires an authored launcher reference. " +
+                    "Check the authored Atom Smasher scene and game prefab.",
+                    this);
+                valid = false;
+            }
+
+            if (ballPrefab == null)
+            {
+                Debug.LogError($"{nameof(AtomSmasherGame)} on {name} requires an authored ball prefab.", this);
+                valid = false;
+            }
+
             HashSet<AtomSmasherTarget> uniqueTargets = new HashSet<AtomSmasherTarget>();
-            for (int i = targets.Count - 1; i >= 0; i--)
+            if (targets.Count == 0)
+            {
+                Debug.LogError($"{nameof(AtomSmasherGame)} on {name} requires authored target references.", this);
+                valid = false;
+            }
+
+            for (int i = 0; i < targets.Count; i++)
             {
                 AtomSmasherTarget target = targets[i];
-                if (target == null || !uniqueTargets.Add(target))
+                if (target == null)
                 {
-                    targets.RemoveAt(i);
+                    Debug.LogError($"{nameof(AtomSmasherGame)} on {name} has a missing target at index {i}.", this);
+                    valid = false;
+                }
+                else if (!uniqueTargets.Add(target))
+                {
+                    Debug.LogError($"{nameof(AtomSmasherGame)} on {name} contains duplicate target {target.name}.", this);
+                    valid = false;
                 }
             }
 
-            AtomSmasherTarget[] sceneTargets = FindObjectsByType<AtomSmasherTarget>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-
-            foreach (AtomSmasherTarget target in sceneTargets)
+            if (quantumEffectOptions == null || quantumEffectOptions.Count == 0)
             {
-                if (target != null && uniqueTargets.Add(target) && target.GetComponent<AtomSmasherQuantumTarget>() == null)
-                {
-                    targets.Add(target);
-                }
+                Debug.LogError($"{nameof(AtomSmasherGame)} on {name} requires authored quantum effect options.", this);
+                valid = false;
+            }
+            else if (!quantumEffectOptions.Exists(option => option != null && option.Modifier == QuantumModifier.Restock))
+            {
+                Debug.LogError(
+                    $"{nameof(AtomSmasherGame)} on {name} requires an authored Restock quantum effect. " +
+                    "Check the authored Atom Smasher scene and game prefab.",
+                    this);
+                valid = false;
+            }
+
+            return valid;
+        }
+
+        private void ValidateAuthoredFeedbackReferences()
+        {
+            if (electronsPerTargetHit > 0 && electronPrefab == null)
+            {
+                Debug.LogError(
+                    $"{nameof(AtomSmasherGame)} on {name} requires an authored electron prefab. " +
+                    "Check the authored Atom Smasher scene and game prefab.",
+                    this);
+            }
+
+            if (feedbackAudioSource == null)
+            {
+                Debug.LogError(
+                    $"{nameof(AtomSmasherGame)} on {name} requires an authored feedback AudioSource. " +
+                    "Check the authored Atom Smasher scene and game prefab.",
+                    this);
+            }
+
+            if (pitchedVoices == null || pitchedVoices.Length == 0)
+            {
+                Debug.LogError(
+                    $"{nameof(AtomSmasherGame)} on {name} requires an authored pitched voice pool. " +
+                    "Check the authored Atom Smasher scene and game prefab.",
+                    this);
+            }
+
+            if (cameraFx == null)
+            {
+                Debug.LogError(
+                    $"{nameof(AtomSmasherGame)} on {name} requires AtomSmasherCameraFx on its authored board camera. " +
+                    "Check the authored Atom Smasher scene and game prefab.",
+                    this);
             }
         }
 
@@ -1324,6 +1380,11 @@ namespace Sol.Minigames
 
         private void SpawnElectronBurst(Vector3 position)
         {
+            if (electronPrefab == null)
+            {
+                return;
+            }
+
             for (int i = 0; i < electronsPerTargetHit; i++)
             {
                 Vector2 direction = Random.insideUnitCircle.normalized;
@@ -1333,7 +1394,15 @@ namespace Sol.Minigames
                 }
 
                 Vector3 velocity = new Vector3(direction.x, direction.y, 0f) * Random.Range(electronMinSpeed, electronMaxSpeed);
-                AtomSmasherElectron.Spawn(position, velocity, electronColor, electronLifeSeconds, electronMaxBounces, electronScale, physicsPlaneZ);
+                AtomSmasherElectron.Spawn(
+                    electronPrefab,
+                    position,
+                    velocity,
+                    electronColor,
+                    electronLifeSeconds,
+                    electronMaxBounces,
+                    electronScale,
+                    physicsPlaneZ);
             }
         }
 
@@ -2005,8 +2074,16 @@ namespace Sol.Minigames
             PlayFeedback(quantumTriggerClip, quantumTriggerParticles, feedbackPosition, quantumBoostColor);
 
             QuantumEffectOption effectOption = PickWeightedQuantumEffectOption();
-            QuantumModifier modifier = effectOption != null ? effectOption.Modifier : ChooseFallbackQuantumModifier();
-            string effectName = effectOption != null ? effectOption.DisplayName : GetDefaultQuantumEffectName(modifier);
+            if (effectOption == null)
+            {
+                Debug.LogError(
+                    $"{nameof(AtomSmasherGame)} on {name} has no available authored quantum effect for wave {waveNumber}.",
+                    this);
+                return;
+            }
+
+            QuantumModifier modifier = effectOption.Modifier;
+            string effectName = effectOption.DisplayName;
 
             switch (modifier)
             {
@@ -2040,31 +2117,6 @@ namespace Sol.Minigames
             if (candidates.Count > 0)
             {
                 MakeAtomQuantum(candidates[Random.Range(0, candidates.Count)]);
-            }
-        }
-
-        private QuantumModifier ChooseFallbackQuantumModifier()
-        {
-            if (ActiveBallCount >= maxActiveBalls || ballPrefab == null)
-            {
-                return Random.value < 0.5f ? QuantumModifier.SpeedBoost : QuantumModifier.Restock;
-            }
-
-            switch (Random.Range(0, 3))
-            {
-                case 0: return QuantumModifier.SpeedBoost;
-                case 1: return QuantumModifier.SplitBall;
-                default: return QuantumModifier.Restock;
-            }
-        }
-
-        private static string GetDefaultQuantumEffectName(QuantumModifier modifier)
-        {
-            switch (modifier)
-            {
-                case QuantumModifier.SplitBall: return "Split";
-                case QuantumModifier.Restock: return "Restock";
-                default: return "Speed Boost";
             }
         }
 
@@ -2163,29 +2215,6 @@ namespace Sol.Minigames
             voice.PlayOneShot(clip);
         }
 
-        private void EnsurePitchedVoices()
-        {
-            if (feedbackAudioSource == null || (pitchedVoices != null && pitchedVoices.Length > 0))
-            {
-                return;
-            }
-
-            pitchedVoices = new AudioSource[Mathf.Max(1, pitchedVoiceCount)];
-            for (int i = 0; i < pitchedVoices.Length; i++)
-            {
-                GameObject voiceObject = new GameObject($"PitchedFeedbackVoice{i}");
-                voiceObject.transform.SetParent(feedbackAudioSource.transform, false);
-                AudioSource voice = voiceObject.AddComponent<AudioSource>();
-                voice.playOnAwake = false;
-                voice.loop = false;
-                voice.outputAudioMixerGroup = feedbackAudioSource.outputAudioMixerGroup;
-                voice.volume = feedbackAudioSource.volume;
-                voice.spatialBlend = feedbackAudioSource.spatialBlend;
-                voice.priority = feedbackAudioSource.priority;
-                pitchedVoices[i] = voice;
-            }
-        }
-
         private Vector3 GetBoardFeedbackPosition()
         {
             Transform origin = feedbackOrigin != null ? feedbackOrigin : transform;
@@ -2206,31 +2235,6 @@ namespace Sol.Minigames
             if (timeRemaining <= 0f)
             {
                 FinishGame(false);
-            }
-        }
-
-        // The board camera is the scene camera that does not belong to the
-        // player rig, so effects never fight the shared controller.
-        private void ResolveCameraFx()
-        {
-            if (cameraFx != null)
-            {
-                return;
-            }
-
-            cameraFx = FindFirstObjectByType<AtomSmasherCameraFx>();
-            if (cameraFx != null)
-            {
-                return;
-            }
-
-            foreach (Camera sceneCamera in FindObjectsByType<Camera>(FindObjectsSortMode.None))
-            {
-                if (sceneCamera != null && sceneCamera.GetComponentInParent<Player.Controller>() == null)
-                {
-                    cameraFx = sceneCamera.gameObject.AddComponent<AtomSmasherCameraFx>();
-                    return;
-                }
             }
         }
 

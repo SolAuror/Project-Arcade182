@@ -3,10 +3,25 @@ using UnityEngine.InputSystem;
 
 namespace NeonReflex
 {
+    [DisallowMultipleComponent]
     public class PlayerInput : MonoBehaviour
     {
         [SerializeField] private Camera playerCamera;
         [SerializeField] private float rayDistance = 100f;
+
+        public bool HasRequiredReferences => playerCamera != null;
+
+        private void Awake()
+        {
+            if (!HasRequiredReferences)
+            {
+                Debug.LogError(
+                    $"{name} requires an authored gameplay Camera reference. Check the authored " +
+                    "Neon Reflex scene.",
+                    this);
+                enabled = false;
+            }
+        }
 
         private void Update()
         {

@@ -1,20 +1,19 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Sol.Minigames
 {
     /// <summary>
     /// Floating world-space damage number: rises, faces the camera, fades out,
     /// and destroys itself. Spawn via <see cref="Spawn"/> from any combat code.
-    /// Uses the optional Resources/DamagePopup prefab when present, otherwise
-    /// builds the same text-and-shadow visual at runtime. Popup spawning is
-    /// therefore independent of where the authored prefab is organised.
+    /// The visual is the authored Resources/VFX/DamagePopup.prefab — it has to
+    /// stay under a Resources folder because spawning is static, with no scene
+    /// presence to serialise a reference from.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Sol/Minigames/Shared/Damage Popup")]
     public class DamagePopup : MonoBehaviour
     {
-        private const string PrefabResourcePath = "DamagePopup";
+        private const string PrefabResourcePath = "VFX/DamagePopup";
         // Sized for legibility at the 240-line retro render target.
         private const float BaseCharacterSize = 0.05f;
 
@@ -44,57 +43,28 @@ namespace Sol.Minigames
         {
             if (cachedPrefab == null)
             {
-                if (!resourceLookupCompleted)
+                if (resourceLookupCompleted)
                 {
-                    cachedPrefab = Resources.Load<DamagePopup>(PrefabResourcePath);
-                    resourceLookupCompleted = true;
+                    return null;
+                }
+
+                resourceLookupCompleted = true;
+                cachedPrefab = Resources.Load<DamagePopup>(PrefabResourcePath);
+                if (cachedPrefab == null)
+                {
+                    Debug.LogWarning(
+                        $"DamagePopup prefab missing from a Resources folder " +
+                        $"('{PrefabResourcePath}'); popup skipped. The authored " +
+                        "copy is Assets/0_Jd/Resources/VFX/DamagePopup.prefab.");
+                    return null;
                 }
             }
 
             Vector2 jitter = Random.insideUnitCircle * 0.2f;
-            DamagePopup popup = cachedPrefab != null
-                ? Instantiate(cachedPrefab)
-                : CreateRuntimePopup();
+            DamagePopup popup = Instantiate(cachedPrefab);
             popup.transform.position = position + new Vector3(jitter.x, Random.value * 0.2f, jitter.y);
             popup.Configure(message, color ?? DefaultColor, lifeSeconds, sizeScale);
             return popup;
-        }
-
-        private static DamagePopup CreateRuntimePopup()
-        {
-            GameObject popupObject = new GameObject("DamagePopup");
-            TextMesh mainText = ConfigureTextMesh(
-                popupObject.AddComponent<TextMesh>());
-
-            GameObject shadowObject = new GameObject("Shadow");
-            shadowObject.transform.SetParent(popupObject.transform, false);
-            shadowObject.transform.localPosition = new Vector3(0.04f, -0.04f, 0.02f);
-            TextMesh shadowText = ConfigureTextMesh(
-                shadowObject.AddComponent<TextMesh>());
-
-            DamagePopup popup = popupObject.AddComponent<DamagePopup>();
-            popup.textMesh = mainText;
-            popup.shadowMesh = shadowText;
-            return popup;
-        }
-
-        private static TextMesh ConfigureTextMesh(TextMesh mesh)
-        {
-            mesh.text = "0";
-            mesh.characterSize = BaseCharacterSize;
-            mesh.fontSize = 46;
-            mesh.fontStyle = FontStyle.Bold;
-            mesh.anchor = TextAnchor.MiddleCenter;
-            mesh.alignment = TextAlignment.Center;
-            mesh.richText = true;
-
-            MeshRenderer renderer = mesh.GetComponent<MeshRenderer>();
-            if (renderer != null)
-            {
-                renderer.shadowCastingMode = ShadowCastingMode.Off;
-                renderer.receiveShadows = false;
-            }
-            return mesh;
         }
 
         private void Configure(string message, Color color, float overrideLifeSeconds, float sizeScale)

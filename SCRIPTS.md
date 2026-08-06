@@ -44,10 +44,11 @@ Paths are under `Assets/0_Diego/Scripts/`.
 
 | Script | Role |
 |---|---|
-| `AirFootySessionConfig.cs` | Carries selected 2-player/4-player mode and human team into the match. |
-| `MainMenuUI.cs` | Air Footy mode/team menu and activation of the matching authored prefab. |
-| `3D/GameManager3D.cs` | Countdown, goals, re-drops, head-to-head result, four-team elimination, persistence and return flow. |
-| `3D/BallController3D.cs` | Planar ball physics, stall detection, collision sweeps, touch metadata and active strike authority. |
+| `AirFootySessionConfig.cs` | Carries selected 2-player/4-player mode, human team and the overtime rule into the match. |
+| `MainMenuUI.cs` | Air Footy mode/team menu, overtime toggle, and activation of the matching authored prefab. |
+| `3D/GameManager3D.cs` | Countdown, goals, re-drops, match clock and overtime contingency, head-to-head result, four-team elimination, persistence and return flow. |
+| `3D/BallController3D.cs` | Planar ball physics, stall detection, collision sweeps, touch metadata, active strike authority and overtime lethality. |
+| `3D/AirFootyMatchClock3D.cs` | Diegetic match clock rendered on the stadium jumbotrons. |
 | `3D/PlayerMovement3D.cs` | Camera-relative movement and team-area bounds. |
 | `3D/PlayerActions3D.cs` | Pulse, dash, shared-charge input and player feedback rig. |
 | `3D/AirFootyStrikeMotor3D.cs` | Shared player/AI pulse range, strength and dash-contact rules. |

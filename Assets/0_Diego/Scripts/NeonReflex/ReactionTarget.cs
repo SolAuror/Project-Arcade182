@@ -3,11 +3,14 @@ using UnityEngine;
 
 namespace NeonReflex
 {
+    [DisallowMultipleComponent]
     public class ReactionTarget : MonoBehaviour
     {
         [SerializeField] private Renderer targetRenderer;
-        [SerializeField] private Color realColour = new Color(0f, 1f, 0.85f);
-        [SerializeField] private Color fakeColour = new Color(1f, 0.05f, 0.15f);
+        [Tooltip("Authored materials for the two target kinds. Swapped in as " +
+                 "shared materials, so spawning never clones one at runtime.")]
+        [SerializeField] private Material realMaterial;
+        [SerializeField] private Material fakeMaterial;
         [SerializeField] private ParticleSystem hitParticles;
 
         private GameManager gameManager;
@@ -15,21 +18,44 @@ namespace NeonReflex
         private bool isFake;
         private bool finished;
 
+        public bool HasRequiredReferences =>
+            targetRenderer != null && realMaterial != null && fakeMaterial != null;
+
+        private void Awake()
+        {
+            if (!HasRequiredReferences)
+            {
+                Debug.LogError(
+                    $"{name} requires an authored Renderer plus real and fake target materials. " +
+                    "Check the authored Neon Reflex target prefab.",
+                    this);
+                enabled = false;
+            }
+        }
+
         public void Setup(GameManager manager, TargetSpawner spawner, float lifetime, bool fakeTarget)
         {
+            if (!isActiveAndEnabled)
+            {
+                return;
+            }
+
             gameManager = manager;
             targetSpawner = spawner;
             isFake = fakeTarget;
 
-            if (targetRenderer == null) targetRenderer = GetComponent<Renderer>();
-            if (targetRenderer != null) targetRenderer.material.color = isFake ? fakeColour : realColour;
+            Material kindMaterial = isFake ? fakeMaterial : realMaterial;
+            if (targetRenderer != null && kindMaterial != null)
+            {
+                targetRenderer.sharedMaterial = kindMaterial;
+            }
 
             StartCoroutine(LifetimeTimer(lifetime));
         }
 
         public void ClickTarget()
         {
-            if (finished) return;
+            if (!isActiveAndEnabled || finished) return;
             finished = true;
 
             if (hitParticles != null)

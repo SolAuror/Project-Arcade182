@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Noise_AirFooty_Impact
+  m_EditorClassIdentifier: 
+  m_Script: {fileID: 11500000, guid: b7f59e54f2bfd184b9dd451a678d089b, type: 3}
+  PositionNoise:
+  - X: {Amplitude: 0.08, Frequency: 2.1, Constant: 0}
+    Y: {Amplitude: 0.05, Frequency: 2.6, Constant: 0}
+    Z: {Amplitude: 0.025, Frequency: 1.7, Constant: 0}
+  OrientationNoise:
+  - X: {Amplitude: 0.28, Frequency: 2.4, Constant: 0}
+    Y: {Amplitude: 0.2, Frequency: 1.9, Constant: 0}
+    Z: {Amplitude: 0.42, Frequency: 2.8, Constant: 0}

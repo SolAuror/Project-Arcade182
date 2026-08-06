@@ -23,7 +23,7 @@ namespace Sol.Minigames.EditorTools
     public static class PopulateWallSockets
     {
         private const string ModelsDir = "Assets/0_Jd/Minigames/LabyrinthCrawler/Models";
-        private const string RoomsDir = "Assets/0_Jd/Minigames/LabyrinthCrawler/DungeonRooms";
+        private const string RoomsDir = "Assets/0_Jd/Minigames/LabyrinthCrawler/Prefabs/DungeonRooms";
 
         // Ground cells + the full-height upper cell: substitute full walls.
         private static readonly string[] FullWallPrefabPaths =

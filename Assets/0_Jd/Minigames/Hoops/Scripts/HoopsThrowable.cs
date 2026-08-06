@@ -27,6 +27,9 @@ namespace Sol.Minigames
         [Tooltip("Flight trail appears above this speed so throws read in the air. 0 disables.")]
         [SerializeField, Min(0f)] private float trailMinSpeed = 4f;
 
+        [Tooltip("Authored trail component. Use the Hoops migration command to add and configure it to existing balls.")]
+        [SerializeField] private TrailRenderer flightTrail;
+
         [SerializeField] private Color trailColor = new Color(1f, 0.72f, 0.35f, 0.5f);
 
         [Tooltip("Scale squash on hard bounces; eases back each frame. 1 disables.")]
@@ -36,8 +39,9 @@ namespace Sol.Minigames
         [SerializeField, Min(0f)] private float impactPunchMinSpeed = 4f;
 
         private Rigidbody rb;
-        private PhysicsMaterial runtimePhysicsMaterial;
-        private TrailRenderer flightTrail;
+        [Tooltip("Authored bounce material. Runtime no longer creates a PhysicsMaterial for each ball.")]
+        [SerializeField] private PhysicsMaterial bounceMaterial;
+
         private Vector3 spawnPosition;
         private Quaternion spawnRotation;
         private Vector3 baseScale;
@@ -53,36 +57,6 @@ namespace Sol.Minigames
             spawnRotation = transform.rotation;
             baseScale = transform.localScale;
             ConfigureBounce();
-            BuildFlightTrail();
-        }
-
-        private void BuildFlightTrail()
-        {
-            if (trailMinSpeed <= 0f)
-            {
-                return;
-            }
-
-            float width = 0.12f;
-            Collider ballCollider = GetComponent<Collider>();
-            if (ballCollider != null)
-            {
-                width = Mathf.Max(0.04f, ballCollider.bounds.extents.magnitude * 0.45f);
-            }
-
-            flightTrail = gameObject.AddComponent<TrailRenderer>();
-            Shader trailShader = Shader.Find("Sprites/Default");
-            if (trailShader != null)
-            {
-                flightTrail.material = new Material(trailShader);
-            }
-
-            flightTrail.time = 0.22f;
-            flightTrail.startWidth = width;
-            flightTrail.endWidth = 0f;
-            flightTrail.startColor = trailColor;
-            flightTrail.endColor = new Color(trailColor.r, trailColor.g, trailColor.b, 0f);
-            flightTrail.emitting = false;
         }
 
         private void ConfigureBounce()
@@ -97,19 +71,16 @@ namespace Sol.Minigames
                 return;
             }
 
-            if (runtimePhysicsMaterial == null)
+            if (bounceMaterial == null)
             {
-                runtimePhysicsMaterial = new PhysicsMaterial($"{name} Basketball")
-                {
-                    bounciness = bounciness,
-                    dynamicFriction = friction,
-                    staticFriction = friction,
-                    bounceCombine = PhysicsMaterialCombine.Average,
-                    frictionCombine = PhysicsMaterialCombine.Average
-                };
+                Debug.LogError(
+                    $"{nameof(HoopsThrowable)} on {name} requires an authored bounce PhysicsMaterial. " +
+                    "Check the authored Hoops throwable prefab.",
+                    this);
+                return;
             }
 
-            ballCollider.material = runtimePhysicsMaterial;
+            ballCollider.sharedMaterial = bounceMaterial;
         }
 
         private void Update()
@@ -142,6 +113,17 @@ namespace Sol.Minigames
         private void OnValidate()
         {
             scoreCooldownSeconds = Mathf.Max(0f, scoreCooldownSeconds);
+            // Retained as migration source values; runtime uses bounceMaterial.
+            bounciness = Mathf.Clamp01(bounciness);
+            friction = Mathf.Clamp01(friction);
+
+            if (trailMinSpeed > 0f && flightTrail == null)
+            {
+                Debug.LogWarning(
+                    $"{nameof(HoopsThrowable)} on {name} has no authored TrailRenderer. " +
+                    "Check the authored Hoops throwable prefab.",
+                    this);
+            }
         }
 
         public void MarkScored()

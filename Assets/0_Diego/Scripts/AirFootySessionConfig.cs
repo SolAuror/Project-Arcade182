@@ -12,14 +12,24 @@ public static class AirFootySessionConfig
         AirFootyTeam.Blue;
     public static bool HasSelection { get; private set; }
 
+    /// <summary>
+    /// Whether the match runs a clock that ends in the overtime contingency.
+    /// Optional in two player, mandatory in four player.
+    /// </summary>
+    public static bool OvertimeEnabled { get; private set; } = true;
+
     public static void Configure(
         AirFootyGameMode mode,
-        AirFootyTeam humanTeam)
+        AirFootyTeam humanTeam,
+        bool overtimeRequested = true)
     {
         Mode = mode;
         HumanTeam = IsTeamAvailable(mode, humanTeam)
             ? humanTeam
             : AirFootyTeam.Blue;
+        // Four player elimination always ends in overtime, so the rule cannot be
+        // turned off by a stale menu state or a caller that skipped the toggle.
+        OvertimeEnabled = mode == AirFootyGameMode.FourPlayer || overtimeRequested;
         HasSelection = true;
     }
 
@@ -27,6 +37,7 @@ public static class AirFootySessionConfig
     {
         Mode = AirFootyGameMode.TwoPlayer;
         HumanTeam = AirFootyTeam.Blue;
+        OvertimeEnabled = true;
         HasSelection = false;
     }
 

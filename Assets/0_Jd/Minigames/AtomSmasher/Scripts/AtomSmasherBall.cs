@@ -10,11 +10,6 @@ namespace Sol.Minigames
         [Header("Plane Lock")]
         [SerializeField] private float physicsPlaneZ = 0f;
 
-        [Header("Bounce")]
-        [Tooltip("Kept under 1 so wall rallies bleed energy; atom hits re-arm the ball's life instead.")]
-        [SerializeField, Range(0f, 1f)] private float bounciness = 0.85f;
-        [SerializeField, Range(0f, 1f)] private float friction = 0f;
-
         [Header("Round End")]
         [SerializeField] private float drainY = -6.5f;
         [SerializeField] private float settleSpeed = 0.15f;
@@ -68,7 +63,6 @@ namespace Sol.Minigames
 
         private AtomSmasherGame game;
         private Rigidbody rb;
-        private PhysicsMaterial runtimePhysicsMaterial;
         private MaterialPropertyBlock propertyBlock;
         private Vector3 baseScale;
         private float launchTime;
@@ -133,6 +127,15 @@ namespace Sol.Minigames
             settleSeconds = Mathf.Max(0f, settleSeconds);
             minimumLifeSeconds = Mathf.Max(0f, minimumLifeSeconds);
             maxLifeSeconds = Mathf.Max(1f, maxLifeSeconds);
+
+            Collider ballCollider = GetComponent<Collider>();
+            if (ballCollider != null && ballCollider.sharedMaterial == null)
+            {
+                Debug.LogWarning(
+                    $"{nameof(AtomSmasherBall)} on {name} requires an authored bounce PhysicsMaterial on its Collider. " +
+                    "Check the authored Atom Smasher ball prefab.",
+                    this);
+            }
         }
 
         private void FixedUpdate()
@@ -454,19 +457,13 @@ namespace Sol.Minigames
                 return;
             }
 
-            if (runtimePhysicsMaterial == null)
+            if (ballCollider.sharedMaterial == null)
             {
-                runtimePhysicsMaterial = new PhysicsMaterial($"{name} Bounce")
-                {
-                    bounciness = bounciness,
-                    dynamicFriction = friction,
-                    staticFriction = friction,
-                    bounceCombine = PhysicsMaterialCombine.Maximum,
-                    frictionCombine = PhysicsMaterialCombine.Minimum
-                };
+                Debug.LogError(
+                    $"{nameof(AtomSmasherBall)} on {name} requires an authored bounce PhysicsMaterial on its Collider. " +
+                    "Check the authored Atom Smasher ball prefab.",
+                    this);
             }
-
-            ballCollider.material = runtimePhysicsMaterial;
         }
 
         private void LockToPlane()

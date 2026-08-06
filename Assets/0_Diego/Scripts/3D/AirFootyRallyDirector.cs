@@ -172,14 +172,17 @@ public sealed class AirFootyRallyDirector : MonoBehaviour
     private void BuildGlow()
     {
         Transform authoredGlow = transform.Find("Rally Heat Glow");
-        GameObject glowObject = authoredGlow != null
-            ? authoredGlow.gameObject
-            : new GameObject("Rally Heat Glow");
-        glowObject.transform.SetParent(transform, false);
+        if (authoredGlow == null)
+        {
+            Debug.LogError("AirFooty ball is missing its authored Rally Heat Glow.", this);
+            return;
+        }
+        GameObject glowObject = authoredGlow.gameObject;
         rallyGlow = glowObject.GetComponent<Light>();
         if (rallyGlow == null)
         {
-            rallyGlow = glowObject.AddComponent<Light>();
+            Debug.LogError("AirFooty Rally Heat Glow is missing its authored Light.", glowObject);
+            return;
         }
         rallyGlow.type = LightType.Point;
         rallyGlow.shadows = LightShadows.None;

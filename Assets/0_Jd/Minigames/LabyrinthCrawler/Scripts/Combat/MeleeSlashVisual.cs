@@ -5,16 +5,28 @@ namespace Sol.Minigames
     /// <summary>
     /// Short-lived triple crescent that makes a melee arc legible without an
     /// animator or imported VFX dependency.
+    ///
+    /// The arcs are the authored Resources/VFX/MeleeSlashVisual.prefab — three
+    /// LineRenderers and their material are assets, not built at runtime. Only
+    /// the curve itself is computed per cast, because its radius and sweep come
+    /// from the casting spell's range and arc.
     /// </summary>
     [DisallowMultipleComponent]
+    [AddComponentMenu("Sol/Minigames/Melee Slash Visual")]
     public sealed class MeleeSlashVisual : MonoBehaviour
     {
-        private const int SlashCount = 3;
+        private const string PrefabResourcePath = "VFX/MeleeSlashVisual";
         private const int SegmentCount = 18;
 
-        private static Material sharedMaterial;
+        private static MeleeSlashVisual cachedPrefab;
 
-        private readonly LineRenderer[] lines = new LineRenderer[SlashCount];
+        [Tooltip("Authored claw arcs, innermost first. Their points are " +
+                 "rewritten per cast from the spell's range and arc.")]
+        [SerializeField] private LineRenderer[] lines;
+
+        [Tooltip("Colour the arcs fade towards at their trailing edge.")]
+        [SerializeField] private Color trailColor = new Color(1f, 0.55f, 0.08f, 1f);
+
         private Color color;
         private float startTime;
         private float lifeSeconds;
@@ -28,35 +40,50 @@ namespace Sol.Minigames
             float lifeSeconds,
             float width)
         {
-            GameObject visualObject = new GameObject("Melee Triple Slash");
-            visualObject.transform.position = origin;
-            visualObject.transform.rotation = Quaternion.LookRotation(forward, Vector3.up);
+            if (cachedPrefab == null)
+            {
+                cachedPrefab = Resources.Load<MeleeSlashVisual>(PrefabResourcePath);
+                if (cachedPrefab == null)
+                {
+                    Debug.LogWarning(
+                        $"MeleeSlashVisual prefab missing from a Resources folder " +
+                        $"('{PrefabResourcePath}'); slash skipped. The authored " +
+                        "copy is Assets/0_Jd/Resources/VFX/MeleeSlashVisual.prefab.");
+                    return null;
+                }
+            }
 
-            MeleeSlashVisual visual = visualObject.AddComponent<MeleeSlashVisual>();
+            MeleeSlashVisual visual = Instantiate(cachedPrefab);
+            visual.transform.SetPositionAndRotation(
+                origin,
+                Quaternion.LookRotation(forward, Vector3.up));
             visual.color = color;
             visual.lifeSeconds = Mathf.Max(0.05f, lifeSeconds);
             visual.startTime = Time.time;
-            visual.Build(range, arcDegrees, width);
+            visual.ApplyGeometry(range, arcDegrees, width);
             return visual;
         }
 
-        private void Build(float range, float arcDegrees, float width)
+        private void ApplyGeometry(float range, float arcDegrees, float width)
         {
-            for (int slashIndex = 0; slashIndex < SlashCount; slashIndex++)
+            if (lines == null)
             {
-                GameObject lineObject = new GameObject($"Claw Arc {slashIndex + 1}");
-                lineObject.transform.SetParent(transform, false);
+                return;
+            }
 
-                LineRenderer line = lineObject.AddComponent<LineRenderer>();
-                line.useWorldSpace = false;
+            for (int slashIndex = 0; slashIndex < lines.Length; slashIndex++)
+            {
+                LineRenderer line = lines[slashIndex];
+                if (line == null)
+                {
+                    continue;
+                }
+
                 line.positionCount = SegmentCount;
                 line.startWidth = width;
                 line.endWidth = width * 0.55f;
-                line.numCornerVertices = 3;
-                line.sharedMaterial = GetMaterial();
                 line.startColor = color;
-                line.endColor = new Color(1f, 0.55f, 0.08f, color.a);
-                lines[slashIndex] = line;
+                line.endColor = new Color(trailColor.r, trailColor.g, trailColor.b, color.a);
 
                 float radius = range * (0.74f + slashIndex * 0.07f);
                 float verticalOffset = (slashIndex - 1) * 0.18f;
@@ -83,31 +110,28 @@ namespace Sol.Minigames
             transform.Rotate(0f, Time.deltaTime * 65f, 0f, Space.Self);
 
             float alpha = 1f - eased;
-            foreach (LineRenderer line in lines)
+            if (lines != null)
             {
-                line.startColor = new Color(color.r, color.g, color.b, color.a * alpha);
-                line.endColor = new Color(1f, 0.55f, 0.08f, color.a * alpha);
+                foreach (LineRenderer line in lines)
+                {
+                    if (line == null)
+                    {
+                        continue;
+                    }
+
+                    line.startColor = new Color(color.r, color.g, color.b, color.a * alpha);
+                    line.endColor = new Color(
+                        trailColor.r,
+                        trailColor.g,
+                        trailColor.b,
+                        color.a * alpha);
+                }
             }
 
             if (progress >= 1f)
             {
                 Destroy(gameObject);
             }
-        }
-
-        private static Material GetMaterial()
-        {
-            if (sharedMaterial != null)
-            {
-                return sharedMaterial;
-            }
-
-            sharedMaterial = new Material(Shader.Find("Sprites/Default"))
-            {
-                name = "Melee Slash (Runtime)",
-                hideFlags = HideFlags.HideAndDontSave
-            };
-            return sharedMaterial;
         }
     }
 }

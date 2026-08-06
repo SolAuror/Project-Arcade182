@@ -7,10 +7,8 @@ using UnityEngine;
 /// rather than hooking the goal path, so the existing gameplay scripts and the
 /// arena itself need no changes to get a celebrating crowd.
 ///
-/// When the square four-goal arena lands, drive this directly instead: clear
-/// <c>Game Manager</c> so polling stops, and have the new match manager call
-/// <see cref="CelebrateForTeam(AirFootyCrowdTeam)"/> or
-/// <see cref="CelebrateAgainstSide"/> from wherever it resolves a goal.
+/// The match manager drives goals directly so FFA can celebrate every crowd
+/// except the team that conceded. Score polling remains as a 1v1 fallback.
 /// </summary>
 [DisallowMultipleComponent]
 public class AirFootyCrowdDirector : MonoBehaviour
@@ -107,7 +105,15 @@ public class AirFootyCrowdDirector : MonoBehaviour
     /// </summary>
     public void CelebrateAgainstSide(AirFootyStandSide concededSide)
     {
-        AirFootyCrowdTeam concedingTeam = TeamOnSide(concededSide);
+        CelebrateAgainstTeam(TeamOnSide(concededSide));
+    }
+
+    /// <summary>
+    /// Every team except the one whose goal was scored celebrates. This is the
+    /// FFA rule and does not depend on where a team's supporters are seated.
+    /// </summary>
+    public void CelebrateAgainstTeam(AirFootyCrowdTeam concedingTeam)
+    {
 
         for (int index = 0; index < stands.Length; index++)
         {
@@ -121,6 +127,13 @@ public class AirFootyCrowdDirector : MonoBehaviour
             {
                 stand.Slump();
             }
+            else if (stand.Team == AirFootyCrowdTeam.Neutral)
+            {
+                if (neutralStandsJoinIn)
+                {
+                    stand.Celebrate(goalCelebrationSeconds * neutralIntensity);
+                }
+            }
             else
             {
                 stand.Celebrate(goalCelebrationSeconds);
@@ -128,6 +141,45 @@ public class AirFootyCrowdDirector : MonoBehaviour
         }
 
         PulseArenaNeon(AirFootyCrowdPalette.Of(AirFootyCrowdTeam.Neutral));
+    }
+
+    public void ReactToGoal(
+        AirFootyTeam scoringTeam,
+        AirFootyTeam concedingTeam,
+        bool fourPlayerMode)
+    {
+        if (fourPlayerMode)
+        {
+            CelebrateAgainstTeam(ToCrowdTeam(concedingTeam));
+        }
+        else
+        {
+            AirFootyCrowdTeam crowdTeam = ToCrowdTeam(scoringTeam);
+            if (crowdTeam != AirFootyCrowdTeam.Neutral)
+            {
+                CelebrateForTeam(crowdTeam);
+            }
+        }
+
+        // Goal routing is immediate. Synchronise the polling fallback so it
+        // does not fire the same celebration again on the next Update.
+        if (gameManager != null)
+        {
+            lastPlayerScore = gameManager.PlayerScore;
+            lastAiScore = gameManager.AiScore;
+        }
+    }
+
+    private static AirFootyCrowdTeam ToCrowdTeam(AirFootyTeam team)
+    {
+        return team switch
+        {
+            AirFootyTeam.Blue => AirFootyCrowdTeam.Blue,
+            AirFootyTeam.Red => AirFootyCrowdTeam.Red,
+            AirFootyTeam.Green => AirFootyCrowdTeam.Green,
+            AirFootyTeam.Gold => AirFootyCrowdTeam.Gold,
+            _ => AirFootyCrowdTeam.Neutral
+        };
     }
 
     /// <summary>Settle the whole bowl back to its idle breath.</summary>

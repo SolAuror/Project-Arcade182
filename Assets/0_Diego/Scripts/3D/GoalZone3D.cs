@@ -31,7 +31,10 @@ public class GoalZone3D : MonoBehaviour
 
     private void Awake()
     {
-        goalOwner = ResolveGoalOwner();
+        if (goalOwner == AirFootyTeam.None)
+        {
+            goalOwner = ResolveGoalOwner();
+        }
         if (gameManager == null)
         {
             gameManager = GetComponentInParent<GameManager3D>();
@@ -39,15 +42,17 @@ public class GoalZone3D : MonoBehaviour
 
         if (shotTracker == null)
         {
-            shotTracker = FindFirstObjectByType<AirFootyShotTracker3D>();
+            Debug.LogError(
+                $"{nameof(GoalZone3D)} on {name} requires an authored shot tracker reference.",
+                this);
         }
 
         if (goalSound == null)
         {
-            goalSound = gameObject.AddComponent<AudioSource>();
-            goalSound.playOnAwake = false;
-            goalSound.spatialBlend = 0.25f;
-            goalSound.volume = 0.75f;
+            Debug.LogError(
+                $"{nameof(GoalZone3D)} on {name} requires an authored goal AudioSource. " +
+                "Check the authored goal prefab.",
+                this);
         }
     }
 
@@ -56,9 +61,9 @@ public class GoalZone3D : MonoBehaviour
         BallController3D ball = other.GetComponentInParent<BallController3D>();
         if (ball == null || !ballsInside.Add(ball.GetInstanceID())) return;
 
-        if (gameManager != null && gameManager.GoalConceded(OwnerTeam, ball))
+        if (gameManager != null &&
+            gameManager.GoalConceded(OwnerTeam, ball, out AirFootyTeam scoringTeam))
         {
-            AirFootyTeam scoringTeam = ball.LastTouchTeam;
             shotTracker?.RecordGoal(transform.position, scoringTeam);
             PlayGoalFeedback();
         }

@@ -40,7 +40,7 @@ namespace Sol.Minigames
         [SerializeField, Min(0.1f)] private float travelMaxDistance = 18f;
 
         private Rigidbody rb;
-        private AudioSource travelSource;
+        [SerializeField] private AudioSource travelSource;
         private float despawnTime;
         private bool consumed;
         private AudioClip impactClip;
@@ -195,9 +195,12 @@ namespace Sol.Minigames
                 return;
             }
 
-            if (travelSource == null && !TryGetComponent(out travelSource))
+            if (travelSource == null)
             {
-                travelSource = gameObject.AddComponent<AudioSource>();
+                Debug.LogError(
+                    $"Projectile '{name}' has a travel clip but no authored AudioSource.",
+                    this);
+                return;
             }
 
             travelSource.clip = travelClip;

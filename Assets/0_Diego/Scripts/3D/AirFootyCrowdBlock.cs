@@ -1,9 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// Which side of the stadium bowl a grandstand section sits on. Ordered so a
-/// future square arena can map a goal index straight to the side that defends
-/// it (goal 0 defends North, goal 1 East, and so on).
+/// Which physical side of the stadium bowl a grandstand section sits on.
+/// Four-player supporters sit opposite their players: Blue East, Red West,
+/// Green South, and Gold North.
 /// </summary>
 public enum AirFootyStandSide
 {

@@ -24,7 +24,10 @@ namespace Sol.Arcade
 
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (mode != LoadSceneMode.Single)
+            // The editor restores its backup scene while leaving play mode.
+            // Runtime bootstraps must not recreate persistent session objects
+            // during that teardown transition.
+            if (!Application.isPlaying || mode != LoadSceneMode.Single)
             {
                 return;
             }
@@ -47,7 +50,7 @@ namespace Sol.Arcade
 
         private static void ConfigureInputContext()
         {
-            SimpleUiBuilder.EnsureEventSystem();
+            ArcadeInputCoordinator.EnsureExists();
 
             MainMenu mainMenu = Object.FindFirstObjectByType<MainMenu>();
             MainMenuUI airFootyMenu = Object.FindFirstObjectByType<MainMenuUI>();

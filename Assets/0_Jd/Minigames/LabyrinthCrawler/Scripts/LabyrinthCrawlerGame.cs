@@ -14,13 +14,15 @@ namespace Sol.Minigames
     /// die and the run ends — score persists and the player returns to the hub.
     /// </summary>
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(MinigameTimer))]
+    [RequireComponent(typeof(AudioSource))]
     [AddComponentMenu("Sol/Minigames/Labyrinth Crawler Game")]
     public class LabyrinthCrawlerGame : MonoBehaviour
     {
         #region Inspector Configuration
 
         [Header("Run Timer")]
-        [Tooltip("Shared stopwatch for the run. Auto-added when missing.")]
+        [Tooltip("Authored shared stopwatch for the run.")]
         [SerializeField] private MinigameTimer runTimer;
 
         [SerializeField] private bool startOnAwake = true;
@@ -72,7 +74,7 @@ namespace Sol.Minigames
         [SerializeField] private string legacyBestScorePlayerPrefsKey = "TimedMazeEscape.BestScore";
 
         [Header("Audio")]
-        [Tooltip("2D source for run feedback. Auto-added when missing; assign clips to enable each cue.")]
+        [Tooltip("Authored 2D source for run feedback; assign clips to enable each cue.")]
         [SerializeField] private AudioSource feedbackAudioSource;
 
         [SerializeField] private AudioClip playerHurtClip;
@@ -147,10 +149,10 @@ namespace Sol.Minigames
 
         private readonly List<EnemyController> enemies = new List<EnemyController>();
 
-        private LabyrinthUpgradeScreen upgradeScreen;
+        [SerializeField] private LabyrinthUpgradeScreen upgradeScreen;
         private LabyrinthExitPad currentExitPad;
-        private Transform enemiesParent;
-        private Transform secretsParent;
+        [SerializeField] private Transform enemiesParent;
+        [SerializeField] private Transform secretsParent;
         private int secretsFound;
         private int stageSecretsFound;
         private int pendingBonusPicks;
@@ -258,29 +260,45 @@ namespace Sol.Minigames
         {
             if (mazeGenerator == null)
             {
-                mazeGenerator = FindFirstObjectByType<ArcadeGen3D>();
+                Debug.LogError(
+                    $"{name} requires an authored {nameof(ArcadeGen3D)} reference. " +
+                    "Check the authored Labyrinth Crawler game prefab.",
+                    this);
+                enabled = false;
+                return;
             }
 
-            if (runTimer == null && !TryGetComponent(out runTimer))
+            if (runTimer == null)
             {
-                runTimer = gameObject.AddComponent<MinigameTimer>();
+                Debug.LogError(
+                    $"{name} requires an authored {nameof(MinigameTimer)} reference. " +
+                    "Check the authored Labyrinth Crawler game prefab.",
+                    this);
+                enabled = false;
+                return;
             }
 
             runTimer.Mode = MinigameTimer.TimerMode.Stopwatch;
 
-            if (feedbackAudioSource == null && !TryGetComponent(out feedbackAudioSource))
+            if (feedbackAudioSource == null)
             {
-                feedbackAudioSource = gameObject.AddComponent<AudioSource>();
+                Debug.LogError(
+                    $"{name} requires an authored run-feedback {nameof(AudioSource)}. " +
+                    "Audio cues will be unavailable until the prefab is migrated.",
+                    this);
+            }
+            else
+            {
+                feedbackAudioSource.playOnAwake = false;
+                feedbackAudioSource.spatialBlend = 0f; // 2D run feedback
             }
 
-            feedbackAudioSource.playOnAwake = false;
-            feedbackAudioSource.spatialBlend = 0f; // 2D run feedback
-
-            // Authored in the LabyrinthCrawlerHud prefab; its panel starts inactive.
-            upgradeScreen = FindFirstObjectByType<LabyrinthUpgradeScreen>(FindObjectsInactive.Include);
             if (upgradeScreen == null)
             {
-                Debug.LogWarning($"{name} found no LabyrinthUpgradeScreen in the scene; stage rewards will be skipped.", this);
+                Debug.LogWarning(
+                    $"{name} has no authored {nameof(LabyrinthUpgradeScreen)} reference; " +
+                    "stage rewards will be skipped.",
+                    this);
             }
 
             ResolveScoreCarrier();
@@ -454,7 +472,11 @@ namespace Sol.Minigames
             scoreRecorded = false;
             Time.timeScale = 1f;
 
-            EnsurePlayerCombat();
+            if (!TryResolvePlayerCombat())
+            {
+                isRunning = false;
+                return;
+            }
             upgradeSystem.Bind(playerCaster, playerHealth, playerMana, playerController);
 
             runTimer.Begin();
@@ -828,7 +850,10 @@ namespace Sol.Minigames
 
             if (secretsParent == null)
             {
-                secretsParent = new GameObject("Labyrinth Secrets").transform;
+                Debug.LogError(
+                    $"{name} requires an authored Labyrinth Secrets parent.",
+                    this);
+                return;
             }
 
             secretPass.SpawnSecrets(mazeGenerator, secretsParent, CurrentStage, OnSecretRevealed, OnSecretCacheCollected);
@@ -957,7 +982,10 @@ namespace Sol.Minigames
 
             if (enemiesParent == null)
             {
-                enemiesParent = new GameObject("Labyrinth Enemies").transform;
+                Debug.LogError(
+                    $"{name} requires an authored Labyrinth Enemies parent.",
+                    this);
+                return;
             }
 
             float offsetRadius = Mathf.Min(mazeGenerator.RoomWidth, mazeGenerator.RoomLength) * 0.2f;
@@ -1020,13 +1048,15 @@ namespace Sol.Minigames
 
         #region Player Setup and Score Persistence
 
-        private void EnsurePlayerCombat()
+        private bool TryResolvePlayerCombat()
         {
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player == null)
             {
-                Debug.LogWarning($"{name} could not find a GameObject tagged 'Player' for combat setup.", this);
-                return;
+                Debug.LogError(
+                    $"{name} could not find the authored GameObject tagged 'Player' for combat setup.",
+                    this);
+                return false;
             }
 
             playerController = player.GetComponentInParent<Player.Controller>();
@@ -1035,36 +1065,29 @@ namespace Sol.Minigames
                 Debug.LogWarning($"{name} found no Player.Controller on the player; move speed upgrades will not be offered.", this);
             }
 
-            if (!player.TryGetComponent(out playerHealth))
+            player.TryGetComponent(out playerHealth);
+            player.TryGetComponent(out playerMana);
+            player.TryGetComponent(out playerCaster);
+            bool hasSpellInput = player.TryGetComponent(out PlayerSpellInput _);
+            bool hasHitFeedback = player.TryGetComponent(out PlayerHitFeedback _);
+            if (playerHealth == null ||
+                playerMana == null ||
+                playerCaster == null ||
+                !hasSpellInput ||
+                !hasHitFeedback)
             {
-                playerHealth = player.AddComponent<Health>();
+                Debug.LogError(
+                    $"Player prefab '{player.name}' is missing authored Labyrinth combat components. " +
+                    "Expected Health, Mana, SpellCaster, PlayerSpellInput and PlayerHitFeedback.",
+                    player);
+                return false;
             }
 
             playerHealth.Faction = Faction.Player;
 
-            if (!player.TryGetComponent(out playerMana))
-            {
-                playerMana = player.AddComponent<Mana>();
-            }
-
-            if (!player.TryGetComponent(out playerCaster))
-            {
-                playerCaster = player.AddComponent<SpellCaster>();
-            }
-
             if (playerCaster.SlotCount == 0 && playerSpells.Count > 0)
             {
                 playerCaster.ConfigureSlots(playerSpells, playerSpellsUnlockedAtStart);
-            }
-
-            if (!player.TryGetComponent(out PlayerSpellInput _))
-            {
-                player.AddComponent<PlayerSpellInput>();
-            }
-
-            if (!player.TryGetComponent(out PlayerHitFeedback _))
-            {
-                player.AddComponent<PlayerHitFeedback>();
             }
 
             playerHealth.ResetToMax();
@@ -1073,6 +1096,7 @@ namespace Sol.Minigames
             playerHealth.OnDied.AddListener(OnPlayerDied);
             playerHealth.OnDamaged.RemoveListener(OnPlayerDamaged);
             playerHealth.OnDamaged.AddListener(OnPlayerDamaged);
+            return true;
         }
 
         private void ResolveScoreCarrier()

@@ -29,6 +29,8 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private Button greenTeamButton;
     [SerializeField] private Button goldTeamButton;
     [SerializeField] private Button teamBackButton;
+    [SerializeField] private Button overtimeToggleButton;
+    private bool overtimeRequested = true;
     private Button firstModeButton;
     private Button firstTeamButton;
     private GameObject twoPlayerVariant;
@@ -55,7 +57,7 @@ public class MainMenuUI : MonoBehaviour
         ResolveScenePresentation();
         SetGameplayPresentationActive(false);
         BuildSelectionPanels();
-        SimpleUiBuilder.EnsureEventSystem();
+        ArcadeInputCoordinator.EnsureExists();
         ArcadeInputCoordinator.ShowMenu(mainMenuPanel, startButton);
 
         WireButton(startButton, StartGame);
@@ -108,6 +110,8 @@ public class MainMenuUI : MonoBehaviour
         Time.timeScale = 0f;
         IsMatchActive = false;
         AirFootySessionConfig.Clear();
+        overtimeRequested = true;
+        RefreshOvertimeLabel();
         SetGameplayVariantActive(null);
         SetGameplayPresentationActive(false);
         SetMenuPanel(mainMenuPanel, true);
@@ -145,6 +149,18 @@ public class MainMenuUI : MonoBehaviour
             goldTeamButton.gameObject.SetActive(fourPlayer);
         }
 
+        // Four player elimination always ends in overtime. The button stays on
+        // screen so the rule is taught rather than hidden, but cannot be changed.
+        if (fourPlayer)
+        {
+            overtimeRequested = true;
+        }
+        if (overtimeToggleButton != null)
+        {
+            overtimeToggleButton.interactable = !fourPlayer;
+        }
+        RefreshOvertimeLabel();
+
         SetMenuPanel(modeSelectionPanel, false);
         SetMenuPanel(teamSelectionPanel, true);
         ArcadeInputCoordinator.SetMenuFocus(
@@ -170,7 +186,7 @@ public class MainMenuUI : MonoBehaviour
             return;
         }
 
-        AirFootySessionConfig.Configure(selectedMode, humanTeam);
+        AirFootySessionConfig.Configure(selectedMode, humanTeam, overtimeRequested);
         IsMatchActive = true;
         SetMenuPanel(mainMenuPanel, false);
         SetMenuPanel(instructionsPanel, false);
@@ -227,6 +243,10 @@ public class MainMenuUI : MonoBehaviour
         displayCamera = AirFootyCameraLookup.FindDisplayCamera();
         if (displayCamera == null || displayCamera.targetTexture != null)
         {
+            Debug.LogWarning(
+                "AirFooty is using its recovery display camera because the authored scene camera is missing or targets a texture. " +
+                "Check the authored AirFooty scene camera.",
+                this);
             GameObject cameraObject = new GameObject("AirFooty Display Camera");
             displayCamera = cameraObject.AddComponent<Camera>();
             displayCamera.clearFlags = CameraClearFlags.SolidColor;
@@ -289,9 +309,60 @@ public class MainMenuUI : MonoBehaviour
             return;
         }
 
-        rulesText.text = selectedMode == AirFootyGameMode.FourPlayer
+        string rule = selectedMode == AirFootyGameMode.FourPlayer
             ? "5 GOALS IN YOUR OWN GOAL = ELIMINATED - LAST TEAM WINS"
             : "FIRST TEAM TO CONCEDE 5 GOALS LOSES";
+        bool overtime =
+            selectedMode == AirFootyGameMode.FourPlayer || overtimeRequested;
+        rulesText.text = overtime
+            ? rule + "\nAFTER 5:00 THE BALL GOES LIVE - PULSE ONLY, CONTACT KILLS"
+            : rule;
+    }
+
+    /// <summary>
+    /// Flips the two player overtime rule. Four player cannot be changed, so this
+    /// is a no-op there and the label keeps reading MANDATORY.
+    /// </summary>
+    private void ToggleOvertime()
+    {
+        if (selectedMode == AirFootyGameMode.FourPlayer)
+        {
+            return;
+        }
+
+        overtimeRequested = !overtimeRequested;
+        RefreshOvertimeLabel();
+    }
+
+    private void RefreshOvertimeLabel()
+    {
+        if (overtimeToggleButton == null)
+        {
+            return;
+        }
+
+        string label = selectedMode == AirFootyGameMode.FourPlayer
+            ? "OVERTIME: 5:00 (MANDATORY)"
+            : overtimeRequested
+                ? "OVERTIME: ON"
+                : "OVERTIME: OFF";
+        SetButtonLabel(overtimeToggleButton, label);
+    }
+
+    // The menu mixes TMP and legacy Text labels, so both have to be written.
+    private static void SetButtonLabel(Button button, string label)
+    {
+        TMP_Text tmpLabel = button.GetComponentInChildren<TMP_Text>(true);
+        if (tmpLabel != null)
+        {
+            tmpLabel.text = label;
+        }
+
+        Text legacyLabel = button.GetComponentInChildren<Text>(true);
+        if (legacyLabel != null)
+        {
+            legacyLabel.text = label;
+        }
     }
 
     private void PrepareScoreDisplay(AirFootyTeam humanTeam)
@@ -323,106 +394,17 @@ public class MainMenuUI : MonoBehaviour
 
     private void BuildSelectionPanels()
     {
-        if (modeSelectionPanel != null && teamSelectionPanel != null)
+        if (modeSelectionPanel == null || teamSelectionPanel == null)
         {
-            ResolveAuthoredSelectionButtons();
-            WireAuthoredSelectionButtons();
-            modeSelectionPanel.SetActive(false);
-            teamSelectionPanel.SetActive(false);
+            Debug.LogError(
+                "Air Footy menu is missing its authored mode/team selection " +
+                "panels. Assign them on the MainMenuUI component.",
+                this);
             return;
         }
 
-        Canvas canvas = GetComponentInParent<Canvas>();
-        if (canvas == null)
-        {
-            canvas = FindFirstObjectByType<Canvas>();
-        }
-        if (canvas == null)
-        {
-            Debug.LogError("Air Footy menu requires an active Canvas.", this);
-            return;
-        }
-
-        modeSelectionPanel = CreateSelectionPanel(canvas.transform, "Air Footy Mode Selection");
-        RectTransform modeColumn = SimpleUiBuilder.CreateButtonColumn(
-            modeSelectionPanel.transform,
-            "Mode Selection Column",
-            650f,
-            18f);
-        SimpleUiBuilder.CreateText(
-            modeColumn,
-            "Title",
-            "SELECT MODE",
-            54,
-            SimpleUiBuilder.AccentColor);
-        SimpleUiBuilder.CreateText(
-            modeColumn,
-            "Mode Help",
-            "Choose the arena before selecting your team",
-            24,
-            SimpleUiBuilder.TextColor);
-        twoPlayerModeButton = SimpleUiBuilder.CreateButton(
-            modeColumn,
-            "2 PLAYER - 1 BALL",
-            30,
-            () => SelectMode(AirFootyGameMode.TwoPlayer));
-        firstModeButton = twoPlayerModeButton;
-        fourPlayerModeButton = SimpleUiBuilder.CreateButton(
-            modeColumn,
-            "4 PLAYER ELIMINATION - 2 BALLS",
-            30,
-            () => SelectMode(AirFootyGameMode.FourPlayer));
-        modeBackButton = SimpleUiBuilder.CreateButton(
-            modeColumn,
-            "BACK",
-            26,
-            ShowMainMenu);
-
-        teamSelectionPanel = CreateSelectionPanel(canvas.transform, "Air Footy Team Selection");
-        RectTransform teamColumn = SimpleUiBuilder.CreateButtonColumn(
-            teamSelectionPanel.transform,
-            "Team Selection Column",
-            650f,
-            14f);
-        SimpleUiBuilder.CreateText(
-            teamColumn,
-            "Title",
-            "SELECT YOUR TEAM",
-            50,
-            SimpleUiBuilder.AccentColor);
-        SimpleUiBuilder.CreateText(
-            teamColumn,
-            "Team Help",
-            "All unselected teams are AI controlled",
-            23,
-            SimpleUiBuilder.TextColor);
-        blueTeamButton = SimpleUiBuilder.CreateButton(
-            teamColumn,
-            "BLUE",
-            30,
-            () => BeginMatch(AirFootyTeam.Blue));
-        firstTeamButton = blueTeamButton;
-        redTeamButton = SimpleUiBuilder.CreateButton(
-            teamColumn,
-            "RED",
-            30,
-            () => BeginMatch(AirFootyTeam.Red));
-        greenTeamButton = SimpleUiBuilder.CreateButton(
-            teamColumn,
-            "GREEN",
-            30,
-            () => BeginMatch(AirFootyTeam.Green));
-        goldTeamButton = SimpleUiBuilder.CreateButton(
-            teamColumn,
-            "GOLD",
-            30,
-            () => BeginMatch(AirFootyTeam.Gold));
-        teamBackButton = SimpleUiBuilder.CreateButton(
-            teamColumn,
-            "BACK TO MODE",
-            26,
-            ShowModeSelection);
-
+        ResolveAuthoredSelectionButtons();
+        WireAuthoredSelectionButtons();
         modeSelectionPanel.SetActive(false);
         teamSelectionPanel.SetActive(false);
     }
@@ -443,6 +425,9 @@ public class MainMenuUI : MonoBehaviour
         teamBackButton ??= FindButton(
             teamSelectionPanel,
             "Button BACK TO MODE");
+        overtimeToggleButton ??= FindButton(
+            teamSelectionPanel,
+            "Button OVERTIME");
         firstModeButton = twoPlayerModeButton;
         firstTeamButton = blueTeamButton;
     }
@@ -461,6 +446,7 @@ public class MainMenuUI : MonoBehaviour
         WireButton(greenTeamButton, () => BeginMatch(AirFootyTeam.Green));
         WireButton(goldTeamButton, () => BeginMatch(AirFootyTeam.Gold));
         WireButton(teamBackButton, ShowModeSelection);
+        WireButton(overtimeToggleButton, ToggleOvertime);
     }
 
     private static Button FindButton(GameObject root, string objectName)
@@ -479,16 +465,6 @@ public class MainMenuUI : MonoBehaviour
         }
 
         return null;
-    }
-
-    private static GameObject CreateSelectionPanel(Transform parent, string panelName)
-    {
-        Image tint = SimpleUiBuilder.CreateFullScreenTint(
-            parent,
-            panelName,
-            new Color(0.025f, 0.035f, 0.075f, 0.97f));
-        tint.gameObject.transform.SetAsLastSibling();
-        return tint.gameObject;
     }
 
     private static void WireButton(Button button, UnityEngine.Events.UnityAction action)

@@ -198,12 +198,16 @@ namespace Sol.Minigames
             if (locomotionMode == LocomotionMode.Flying &&
                 !TryGetComponent(out FlyingEnemyVisual _))
             {
-                gameObject.AddComponent<FlyingEnemyVisual>();
+                Debug.LogError(
+                    $"Flying enemy '{name}' is missing its authored {nameof(FlyingEnemyVisual)}.",
+                    this);
             }
 
             if (!TryGetComponent(out HitFlash _))
             {
-                gameObject.AddComponent<HitFlash>();
+                Debug.LogError(
+                    $"Enemy '{name}' is missing its authored {nameof(HitFlash)}.",
+                    this);
             }
         }
 
@@ -817,7 +821,12 @@ namespace Sol.Minigames
         {
             if (!TryGetComponent(out enemyFootstepSource))
             {
-                enemyFootstepSource = gameObject.AddComponent<AudioSource>();
+                Debug.LogError(
+                    $"Enemy '{name}' is missing its authored footstep {nameof(AudioSource)}. " +
+                    "Footsteps have been disabled for this instance.",
+                    this);
+                enemyFootstepsEnabled = false;
+                return;
             }
 
             enemyFootstepSource.playOnAwake = false;

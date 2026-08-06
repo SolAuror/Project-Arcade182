@@ -86,6 +86,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &63358364272333484
 GameObject:
   m_ObjectHideFlags: 0
@@ -171,6 +172,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &73416747509372085
 GameObject:
   m_ObjectHideFlags: 0
@@ -781,6 +783,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &130680894280716066
 GameObject:
   m_ObjectHideFlags: 0
@@ -1281,6 +1284,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &195605031257511248
 GameObject:
   m_ObjectHideFlags: 0
@@ -1367,6 +1371,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &201991628240762945
 GameObject:
   m_ObjectHideFlags: 0
@@ -1453,6 +1458,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &232677385903007004
 GameObject:
   m_ObjectHideFlags: 0
@@ -1648,6 +1654,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &322978441933696581
 GameObject:
   m_ObjectHideFlags: 0
@@ -1997,6 +2004,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &380989969871230644
 GameObject:
   m_ObjectHideFlags: 0
@@ -2543,6 +2551,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &455379721679833723
 GameObject:
   m_ObjectHideFlags: 0
@@ -3763,6 +3772,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &660141729241551440
 GameObject:
   m_ObjectHideFlags: 0
@@ -4418,6 +4428,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &686832159924489408
 GameObject:
   m_ObjectHideFlags: 0
@@ -4503,6 +4514,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &693574267939193448
 GameObject:
   m_ObjectHideFlags: 0
@@ -4709,6 +4721,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &727210547422233387
 GameObject:
   m_ObjectHideFlags: 0
@@ -5319,6 +5332,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &925960209428414839
 GameObject:
   m_ObjectHideFlags: 0
@@ -6453,6 +6467,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &1131844574854043778
 GameObject:
   m_ObjectHideFlags: 0
@@ -6897,6 +6912,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &1265231849968683011
 GameObject:
   m_ObjectHideFlags: 0
@@ -7287,6 +7303,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &1314235481124986334
 GameObject:
   m_ObjectHideFlags: 0
@@ -8711,6 +8728,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &1533619002543047731
 GameObject:
   m_ObjectHideFlags: 0
@@ -9135,6 +9153,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &1594808884313076077
 GameObject:
   m_ObjectHideFlags: 0
@@ -9942,6 +9961,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &1709597985968004526
 GameObject:
   m_ObjectHideFlags: 0
@@ -10028,6 +10048,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &1721645174759090524
 GameObject:
   m_ObjectHideFlags: 0
@@ -10113,6 +10134,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &1733091003648929689
 GameObject:
   m_ObjectHideFlags: 0
@@ -11319,6 +11341,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &1904102917107069767
 GameObject:
   m_ObjectHideFlags: 0
@@ -13216,6 +13239,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2274366027223895899
 GameObject:
   m_ObjectHideFlags: 0
@@ -13301,6 +13325,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2330686804484935445
 GameObject:
   m_ObjectHideFlags: 0
@@ -14022,6 +14047,37 @@ SpriteRenderer:
   m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &2406227559100790802
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3703331576711324586}
+  m_Layer: 0
+  m_Name: Labyrinth Enemies
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3703331576711324586
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2406227559100790802}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7003922230695055755}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2415198227822062620
 GameObject:
   m_ObjectHideFlags: 0
@@ -14849,6 +14905,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2492889504503568152
 GameObject:
   m_ObjectHideFlags: 0
@@ -15131,6 +15188,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2517985175510474216
 GameObject:
   m_ObjectHideFlags: 0
@@ -15305,6 +15363,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2530674370288462999
 GameObject:
   m_ObjectHideFlags: 0
@@ -16240,6 +16299,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2679952690832639911
 GameObject:
   m_ObjectHideFlags: 0
@@ -16325,6 +16385,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2693315147609979023
 GameObject:
   m_ObjectHideFlags: 0
@@ -16672,6 +16733,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2769904164372618081
 GameObject:
   m_ObjectHideFlags: 0
@@ -17196,6 +17258,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2838464916703815907
 GameObject:
   m_ObjectHideFlags: 0
@@ -17499,6 +17562,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2869814391475238179
 GameObject:
   m_ObjectHideFlags: 0
@@ -17585,6 +17649,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2881194792034975786
 GameObject:
   m_ObjectHideFlags: 0
@@ -17671,6 +17736,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2882267503958990407
 GameObject:
   m_ObjectHideFlags: 0
@@ -17757,6 +17823,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &2899402154499997720
 GameObject:
   m_ObjectHideFlags: 0
@@ -18388,6 +18455,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &3026696839593233946
 GameObject:
   m_ObjectHideFlags: 0
@@ -20271,6 +20339,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &3300494438188386893
 GameObject:
   m_ObjectHideFlags: 0
@@ -20841,6 +20910,37 @@ MonoBehaviour:
   EastShaft: {fileID: 0}
   WestShaft: {fileID: 0}
   spawnWeight: 10
+--- !u!1 &3433098535952992419
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5663070841283411558}
+  m_Layer: 0
+  m_Name: Labyrinth Secrets
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5663070841283411558
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3433098535952992419}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7003922230695055755}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3435936530854835563
 GameObject:
   m_ObjectHideFlags: 0
@@ -23246,6 +23346,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &3848219950906261412
 GameObject:
   m_ObjectHideFlags: 0
@@ -23364,6 +23465,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &3879045840664732784
 GameObject:
   m_ObjectHideFlags: 0
@@ -23538,6 +23640,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &3894714878086724481
 GameObject:
   m_ObjectHideFlags: 0
@@ -24162,6 +24265,7 @@ GameObject:
   - component: {fileID: 8677087556486877662}
   - component: {fileID: 2875880940287993093}
   - component: {fileID: 7345182960214477321}
+  - component: {fileID: 5437013380193092677}
   m_Layer: 0
   m_Name: LabyrinthCrawlerGame
   m_TagString: Untagged
@@ -24183,12 +24287,13 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2187780863197517657}
-  - {fileID: 8923774026690574714}
   - {fileID: 7209674775364270282}
   - {fileID: 563025722625115276}
   - {fileID: 802743654252126544}
   - {fileID: 1253904581442483406}
   - {fileID: 8702092902883210982}
+  - {fileID: 3703331576711324586}
+  - {fileID: 5663070841283411558}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8677087556486877662
@@ -24260,7 +24365,7 @@ MonoBehaviour:
   enemyPrefabs:
   - {fileID: 8582319734249912139, guid: 2f5494ed09e11fa439f8c2c715056f47, type: 3}
   - {fileID: 1788027316492838277, guid: 12f883e02348b2d4db471d361dfb2d01, type: 3}
-  - {fileID: 5347032079814501181, guid: 6ee24e40899b4bdcbe62cfd182ce9b9a, type: 3}
+  - {fileID: 2455702884722246317, guid: 6ee24e40899b4bdcbe62cfd182ce9b9a, type: 3}
   playerSpells:
   - {fileID: 11400000, guid: dc830ce8af87c6f44bdda218b65715e6, type: 2}
   - {fileID: 11400000, guid: df05d3b1092695f46898e1cea950727e, type: 2}
@@ -24279,7 +24384,7 @@ MonoBehaviour:
   scoreCarrier: {fileID: 0}
   legacyLastScorePlayerPrefsKey: TimedMazeEscape.LastScore
   legacyBestScorePlayerPrefsKey: TimedMazeEscape.BestScore
-  feedbackAudioSource: {fileID: 3896407826650233323}
+  feedbackAudioSource: {fileID: 5437013380193092677}
   playerHurtClip: {fileID: 8300000, guid: c5640f1ad7bf4ee685805e16db5b6707, type: 3}
   enemyKillClip: {fileID: 8300000, guid: b975b225b7b84c82aefbba187a441c87, type: 3}
   castFailClip: {fileID: 8300000, guid: 3ecfb397472643ff956f10cd7854dc86, type: 3}
@@ -24337,6 +24442,9 @@ MonoBehaviour:
   returnSceneName: Sc_ArcadeHub
   returnDelaySeconds: 2
   autoReturnAfterFail: 0
+  upgradeScreen: {fileID: 0}
+  enemiesParent: {fileID: 3703331576711324586}
+  secretsParent: {fileID: 5663070841283411558}
 --- !u!114 &2875880940287993093
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24375,6 +24483,103 @@ MonoBehaviour:
   overrideFog: 1
   fogColor: {r: 0.035, g: 0.045, b: 0.03, a: 1}
   fogDensity: 0.11
+--- !u!82 &5437013380193092677
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3993457218555352350}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &4007168917267275205
 GameObject:
   m_ObjectHideFlags: 0
@@ -25268,6 +25473,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &4231836565793649427
 GameObject:
   m_ObjectHideFlags: 0
@@ -25571,6 +25777,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &4246133350725188319
 GameObject:
   m_ObjectHideFlags: 0
@@ -25921,6 +26128,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &4311099317517216175
 GameObject:
   m_ObjectHideFlags: 0
@@ -26183,6 +26391,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &4351511256271050197
 GameObject:
   m_ObjectHideFlags: 0
@@ -26409,6 +26618,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &4483026072308730467
 GameObject:
   m_ObjectHideFlags: 0
@@ -27170,6 +27380,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &4629316163286791720
 GameObject:
   m_ObjectHideFlags: 0
@@ -32855,6 +33066,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &4777729623209593781
 GameObject:
   m_ObjectHideFlags: 0
@@ -33049,6 +33261,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &4818259313480738207
 GameObject:
   m_ObjectHideFlags: 0
@@ -34143,6 +34356,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &5031286953291150975
 GameObject:
   m_ObjectHideFlags: 0
@@ -35232,6 +35446,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &5218220118595963329
 GameObject:
   m_ObjectHideFlags: 0
@@ -35732,6 +35947,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &5320043125002299224
 GameObject:
   m_ObjectHideFlags: 0
@@ -37167,6 +37383,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &5456674150345203806
 GameObject:
   m_ObjectHideFlags: 0
@@ -37559,6 +37776,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &5500062844217433307
 GameObject:
   m_ObjectHideFlags: 0
@@ -38189,6 +38407,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &5597399266882740191
 GameObject:
   m_ObjectHideFlags: 0
@@ -38852,6 +39071,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &5712349085985392888
 GameObject:
   m_ObjectHideFlags: 0
@@ -39047,6 +39267,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &5782967520126574910
 GameObject:
   m_ObjectHideFlags: 0
@@ -39459,6 +39680,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &5797749405674197644
 GameObject:
   m_ObjectHideFlags: 0
@@ -39979,6 +40201,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &5827395418415513110
 GameObject:
   m_ObjectHideFlags: 0
@@ -40064,6 +40287,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &5851298665026537043
 GameObject:
   m_ObjectHideFlags: 0
@@ -41535,6 +41759,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6069084677269059262
 GameObject:
   m_ObjectHideFlags: 0
@@ -42548,6 +42773,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6210097588656207978
 GameObject:
   m_ObjectHideFlags: 0
@@ -42633,6 +42859,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6246830438633916648
 GameObject:
   m_ObjectHideFlags: 0
@@ -42828,6 +43055,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6280536119593633568
 GameObject:
   m_ObjectHideFlags: 0
@@ -43130,6 +43358,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6303508225984752020
 GameObject:
   m_ObjectHideFlags: 0
@@ -44652,6 +44881,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6484117687893790935
 GameObject:
   m_ObjectHideFlags: 0
@@ -44935,6 +45165,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6495616264881894360
 GameObject:
   m_ObjectHideFlags: 0
@@ -45415,6 +45646,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6525270946344281830
 GameObject:
   m_ObjectHideFlags: 0
@@ -46068,6 +46300,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6608807659977649024
 GameObject:
   m_ObjectHideFlags: 0
@@ -46462,16 +46695,34 @@ MonoBehaviour:
   roomPrefab: {fileID: 0}
   numX: 5
   numZ: 5
+  roomSizeOverride: {x: 0, y: 0}
   autoGenerateOnStart: 0
   allowRuntimeKeyboardRegenerate: 0
   generationStepsPerFrame: 32
+  braidRate: 0
   openStartOuterWall: 0
   startOuterWallDirection: 2
   openEndOuterWall: 0
   endOuterWallDirection: 0
-  respawnPlayerAtStartOnRegenerate: 1
   dressWallsAfterCarve: 1
   deDoubleSharedWalls: 1
+  minimalPassageVariants: []
+  minimalPosterScaleMultiplier: 1
+  scatterArcadeMachinesAfterCarve: 0
+  arcadeMachinePrefabs: []
+  targetArcadeMachinesPerRoom: 2
+  arcadeMachineUniformScale: 1
+  arcadeMachineGroundClearance: 0
+  arcadeMachineWallInset: 1.38
+  arcadeMachineBayOffset: 2.15
+  arcadeMachineClearance: 0.15
+  scatterArcadePostersAfterCarve: 0
+  arcadePosterPrefabs: []
+  postersPerClosedWall: 3
+  posterWallInset: 0.55
+  posterHeight: 3.35
+  posterHeightJitter: 0.35
+  posterCornerMargin: 1.05
   buildUpperFloors: 1
   upperCellPrefab: {fileID: 1505325232067666742, guid: e21382aa688814942aec7893e3c18934, type: 3}
   upperCellHalfPrefab: {fileID: 1505325232067666742, guid: 1b55e85cecdb66945a436e05a388b4ff, type: 3}
@@ -47437,6 +47688,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6777935350316523071
 GameObject:
   m_ObjectHideFlags: 0
@@ -47610,6 +47862,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6796633594396311915
 GameObject:
   m_ObjectHideFlags: 0
@@ -48265,6 +48518,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6914047364239156543
 GameObject:
   m_ObjectHideFlags: 0
@@ -48350,6 +48604,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &6925151577177960199
 GameObject:
   m_ObjectHideFlags: 0
@@ -50150,6 +50405,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &7188327314276947712
 GameObject:
   m_ObjectHideFlags: 0
@@ -50466,6 +50722,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &7209526151824551655
 GameObject:
   m_ObjectHideFlags: 0
@@ -50551,6 +50808,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &7235209217827202648
 GameObject:
   m_ObjectHideFlags: 0
@@ -51659,6 +51917,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &7378475954177437907
 GameObject:
   m_ObjectHideFlags: 0
@@ -51853,6 +52112,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &7386380916163698310
 GameObject:
   m_ObjectHideFlags: 0
@@ -52298,6 +52558,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &7437495106686700960
 GameObject:
   m_ObjectHideFlags: 0
@@ -52877,6 +53138,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &7487740724439326821
 GameObject:
   m_ObjectHideFlags: 0
@@ -52963,6 +53225,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &7491436605097850024
 GameObject:
   m_ObjectHideFlags: 0
@@ -54295,6 +54558,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &7684721185913830778
 GameObject:
   m_ObjectHideFlags: 0
@@ -54502,6 +54766,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &7716714390742798367
 GameObject:
   m_ObjectHideFlags: 0
@@ -54873,6 +55138,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &7777692532290151580
 GameObject:
   m_ObjectHideFlags: 0
@@ -56295,6 +56561,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8030903389199121412
 GameObject:
   m_ObjectHideFlags: 0
@@ -57005,85 +57272,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 4326394556870278002, guid: ce254d84f16e06c45b59b5a40822ebdc, type: 3}
---- !u!1 &8236867269296569039
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8923774026690574714}
-  - component: {fileID: 9196978063915042603}
-  - component: {fileID: 958841493176676856}
-  m_Layer: 0
-  m_Name: EventSystem
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8923774026690574714
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8236867269296569039}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 6.56, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7003922230695055755}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9196978063915042603
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8236867269296569039}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_FirstSelected: {fileID: 0}
-  m_sendNavigationEvents: 1
-  m_DragThreshold: 10
---- !u!114 &958841493176676856
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8236867269296569039}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01614664b831546d2ae94a42149d80ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_SendPointerHoverToParent: 1
-  m_MoveRepeatDelay: 0.5
-  m_MoveRepeatRate: 0.1
-  m_XRTrackingOrigin: {fileID: 0}
-  m_ActionsAsset: {fileID: -944628639613478452, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_PointAction: {fileID: -1654692200621890270, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_MoveAction: {fileID: -8784545083839296357, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_SubmitAction: {fileID: 392368643174621059, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_CancelAction: {fileID: 7727032971491509709, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_LeftClickAction: {fileID: 3001919216989983466, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_MiddleClickAction: {fileID: -2185481485913320682, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_RightClickAction: {fileID: -4090225696740746782, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_ScrollWheelAction: {fileID: 6240969308177333660, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_TrackedDevicePositionAction: {fileID: 6564999863303420839, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_TrackedDeviceOrientationAction: {fileID: 7970375526676320489, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  m_DeselectOnBackgroundClick: 1
-  m_PointerBehavior: 0
-  m_CursorLockBehavior: 0
-  m_ScrollDeltaPerTick: 6
 --- !u!1 &8253767985370405343
 GameObject:
   m_ObjectHideFlags: 0
@@ -57782,6 +57970,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8349594093144004259
 GameObject:
   m_ObjectHideFlags: 0
@@ -57868,6 +58057,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8367290970395869933
 GameObject:
   m_ObjectHideFlags: 0
@@ -57954,6 +58144,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8399125628043503005
 GameObject:
   m_ObjectHideFlags: 0
@@ -58446,6 +58637,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8492730307223864562
 GameObject:
   m_ObjectHideFlags: 0
@@ -58938,6 +59130,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8562020860141184562
 GameObject:
   m_ObjectHideFlags: 0
@@ -59546,6 +59739,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8626435763344548228
 GameObject:
   m_ObjectHideFlags: 0
@@ -59631,6 +59825,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8645683314021841993
 GameObject:
   m_ObjectHideFlags: 0
@@ -60043,6 +60238,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8736179694824981495
 GameObject:
   m_ObjectHideFlags: 0
@@ -60217,6 +60413,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8754011699444659036
 GameObject:
   m_ObjectHideFlags: 0
@@ -60630,6 +60827,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8814695496056421358
 GameObject:
   m_ObjectHideFlags: 0
@@ -61436,6 +61634,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8963203033742546826
 GameObject:
   m_ObjectHideFlags: 0
@@ -61728,6 +61927,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &8987383036322213376
 GameObject:
   m_ObjectHideFlags: 0
@@ -62032,6 +62232,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &9002881243885315255
 GameObject:
   m_ObjectHideFlags: 0
@@ -62554,6 +62755,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &9076045346844530778
 GameObject:
   m_ObjectHideFlags: 0
@@ -62639,6 +62841,7 @@ MonoBehaviour:
   hasCachedPlacement: 0
   cachedLocalPosition: {x: 0, y: 0, z: 0}
   cachedLocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  closedDecor: []
 --- !u!1 &9094256803035160207
 GameObject:
   m_ObjectHideFlags: 0

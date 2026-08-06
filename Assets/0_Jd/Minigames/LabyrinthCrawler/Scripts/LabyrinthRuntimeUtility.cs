@@ -30,6 +30,9 @@ namespace Sol.Minigames
             SphereCollider trigger = owner.AddComponent<SphereCollider>();
             trigger.isTrigger = true;
             trigger.radius = Mathf.Max(0.05f, radius);
+            Debug.LogWarning(
+                $"{owner.name} was missing its authored trigger; a recovery SphereCollider was added at runtime.",
+                owner);
         }
 
         public static void Shuffle<T>(IList<T> list)

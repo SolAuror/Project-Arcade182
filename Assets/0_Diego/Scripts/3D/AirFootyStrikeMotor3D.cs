@@ -53,7 +53,6 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
     private Renderer strikerRenderer;
     private AudioSource feedbackAudio;
     private AirFootyCameraFx cameraFx;
-    private Material pulseWaveMaterial;
     private float cooldownUntil;
     private float recoveryUntil;
     private float pulseReadyAt;
@@ -79,6 +78,16 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
     public void ConfigureTeam(AirFootyTeam configuredTeam)
     {
         team = configuredTeam;
+    }
+
+    /// <summary>
+    /// Draws a ring when this motor pulses. The human already spawns its own wave
+    /// from PlayerActions3D, so this is for AI sides, whose pulses would otherwise
+    /// be invisible - which matters in overtime, where a pulse is what arms a ball.
+    /// </summary>
+    public void SetPulseWaveEmission(bool emit)
+    {
+        emitPulseWave = emit;
     }
 
     public float GetChargeFraction(float heldSeconds)
@@ -382,7 +391,8 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
         feedbackAudio = GetComponent<AudioSource>();
         if (feedbackAudio == null)
         {
-            feedbackAudio = gameObject.AddComponent<AudioSource>();
+            Debug.LogError("AirFooty striker is missing its authored feedback AudioSource.", this);
+            return;
         }
 
         feedbackAudio.playOnAwake = false;
@@ -392,19 +402,21 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
 
     private IEnumerator PlayPulseWave(float radius, Color color)
     {
-        Shader shader = Shader.Find("Sprites/Default");
-        if (pulseWaveMaterial == null && shader != null)
+        Transform authoredWave = transform.Find("AI Hover Pulse Wave");
+        if (authoredWave == null)
         {
-            pulseWaveMaterial = new Material(shader)
-            {
-                name = "AirFooty AI Pulse (Runtime)"
-            };
+            yield break;
         }
+        GameObject waveObject = authoredWave.gameObject;
+        waveObject.SetActive(true);
 
-        GameObject waveObject = new GameObject("AI Hover Pulse Wave");
-        waveObject.transform.SetParent(transform, false);
-        waveObject.transform.localPosition = Vector3.up * 0.045f;
-        LineRenderer wave = waveObject.AddComponent<LineRenderer>();
+        LineRenderer wave = waveObject.GetComponent<LineRenderer>();
+        if (wave == null)
+        {
+            Debug.LogError("AirFooty AI Hover Pulse Wave is missing its authored LineRenderer.", waveObject);
+            waveObject.SetActive(false);
+            yield break;
+        }
         wave.useWorldSpace = false;
         wave.loop = true;
         wave.positionCount = PulseWaveSegments;
@@ -414,7 +426,12 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
         wave.shadowCastingMode =
             UnityEngine.Rendering.ShadowCastingMode.Off;
         wave.receiveShadows = false;
-        wave.sharedMaterial = pulseWaveMaterial;
+        if (wave.sharedMaterial == null)
+        {
+            Debug.LogError("AirFooty AI Hover Pulse Wave is missing its authored material.", wave);
+            waveObject.SetActive(false);
+            yield break;
+        }
 
         float startedAt = Time.unscaledTime;
         while (wave != null)
@@ -441,7 +458,7 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
 
         if (waveObject != null)
         {
-            Destroy(waveObject);
+            waveObject.SetActive(false);
         }
     }
 
@@ -509,14 +526,6 @@ public sealed class AirFootyStrikeMotor3D : MonoBehaviour
                     Color.white,
                     0.1f));
             }
-        }
-    }
-
-    private void OnDestroy()
-    {
-        if (pulseWaveMaterial != null)
-        {
-            Destroy(pulseWaveMaterial);
         }
     }
 

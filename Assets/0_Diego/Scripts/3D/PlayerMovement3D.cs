@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -8,6 +8,14 @@ public class PlayerMovement3D : MonoBehaviour
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField, Min(0f)] private float midfieldOverlap = 0.15f;
     [SerializeField, Min(0f)] private float wallSweepSkin = 0.012f;
+
+    [Header("Response")]
+    [Tooltip(
+        "Seconds to reach full speed. Deliberately short: this is here to give " +
+        "the striker weight, not to put latency between the stick and the puck.")]
+    [SerializeField, Min(0f)] private float accelerationTime = 0.045f;
+    [Tooltip("Seconds to coast to a stop. Slightly longer than acceleration, so it reads as a hovering puck.")]
+    [SerializeField, Min(0f)] private float decelerationTime = 0.085f;
 
     [Header("View-relative Controls")]
     [SerializeField] private bool cameraRelativeMovement = true;
@@ -19,12 +27,11 @@ public class PlayerMovement3D : MonoBehaviour
     private bool movementEnabled = true;
     private float moveSpeedMultiplier = 1f;
     private Vector3 dashDirection;
+    private Vector3 smoothedVelocity;
     private float dashSpeedMultiplier;
     private float dashUntil;
     private bool useFourPlayerTeamArea;
     private Vector3 arenaCentre;
-    private float teamAreaApexDepth = 1.1f;
-    private float teamAreaGoalLineDepth = 7.75f;
 
     public Vector3 CurrentMovementDirection => movementDirection;
     public Vector3 CurrentPlanarVelocity { get; private set; }
@@ -73,21 +80,42 @@ public class PlayerMovement3D : MonoBehaviour
     private void FixedUpdate()
     {
         Vector3 previousPosition = playerBody.position;
-        Vector3 activeDirection = IsDashing ? dashDirection : movementDirection;
+        bool dashing = IsDashing;
+        Vector3 activeDirection = dashing ? dashDirection : movementDirection;
         float activeSpeedMultiplier =
-            IsDashing ? dashSpeedMultiplier : moveSpeedMultiplier;
+            dashing ? dashSpeedMultiplier : moveSpeedMultiplier;
+        Vector3 targetVelocity =
+            activeDirection * (moveSpeed * activeSpeedMultiplier);
+
+        if (dashing)
+        {
+            // A dash snaps. Ramping it would blunt the one move that is meant to
+            // feel like a commitment.
+            smoothedVelocity = targetVelocity;
+        }
+        else
+        {
+            float ramp = targetVelocity.sqrMagnitude >= smoothedVelocity.sqrMagnitude
+                ? accelerationTime
+                : decelerationTime;
+            smoothedVelocity = ramp <= 0f
+                ? targetVelocity
+                : Vector3.MoveTowards(
+                    smoothedVelocity,
+                    targetVelocity,
+                    moveSpeed / ramp * Time.fixedDeltaTime);
+        }
+
         Vector3 newPosition =
-            previousPosition +
-            activeDirection * (moveSpeed * activeSpeedMultiplier * Time.fixedDeltaTime);
+            previousPosition + smoothedVelocity * Time.fixedDeltaTime;
         AirFootyTeam team = ResolveTeam();
         newPosition = useFourPlayerTeamArea
-            ? AirFootyArenaMovement3D.ResolvePositionInTeamSemicircle(
+            ? AirFootyArenaMovement3D.ResolvePositionOnTeamSide(
                 playerBody,
                 newPosition,
                 arenaCentre,
                 AirFootyTeamMember3D.HomeDirection(team),
-                teamAreaApexDepth,
-                teamAreaGoalLineDepth,
+                -midfieldOverlap,
                 wallSweepSkin)
             : AirFootyArenaMovement3D.ResolvePositionOnHalf(
                 playerBody,
@@ -121,6 +149,9 @@ public class PlayerMovement3D : MonoBehaviour
             movementDirection = Vector3.zero;
             moveSpeedMultiplier = 1f;
             CurrentPlanarVelocity = Vector3.zero;
+            // Drop the ramp too, or the striker coasts on through a kick-off
+            // freeze or a goal reset instead of stopping where it stood.
+            smoothedVelocity = Vector3.zero;
             CancelDash();
         }
     }
@@ -138,10 +169,6 @@ public class PlayerMovement3D : MonoBehaviour
     {
         useFourPlayerTeamArea = fourPlayerMode;
         arenaCentre = centre;
-        teamAreaApexDepth = Mathf.Max(0.1f, apexDepth);
-        teamAreaGoalLineDepth = Mathf.Max(
-            teamAreaApexDepth + 0.5f,
-            goalLineDepth);
     }
 
     public void BeginDash(
@@ -417,13 +444,12 @@ internal static class AirFootyArenaMovement3D
             minimumHomeProjection);
     }
 
-    public static Vector3 ResolvePositionInTeamSemicircle(
+    public static Vector3 ResolvePositionOnTeamSide(
         Rigidbody body,
         Vector3 desiredPosition,
         Vector3 arenaCentre,
         Vector3 homeDirection,
-        float apexDepth,
-        float goalLineDepth,
+        float minimumHomeProjection,
         float skin)
     {
         homeDirection.y = 0f;
@@ -438,70 +464,38 @@ internal static class AirFootyArenaMovement3D
         }
 
         homeDirection.Normalize();
-        desiredPosition = ClampToTeamSemicircle(
-            body,
+        desiredPosition = ClampToTeamHalf(
             desiredPosition,
             arenaCentre,
             homeDirection,
-            apexDepth,
-            goalLineDepth);
+            minimumHomeProjection);
         Vector3 resolved = ResolvePosition(
             body,
             desiredPosition,
             float.NegativeInfinity,
             float.PositiveInfinity,
             skin);
-        return ClampToTeamSemicircle(
-            body,
+        return ClampToTeamHalf(
             resolved,
             arenaCentre,
             homeDirection,
-            apexDepth,
-            goalLineDepth);
+            minimumHomeProjection);
     }
 
-    private static Vector3 ClampToTeamSemicircle(
-        Rigidbody body,
+    private static Vector3 ClampToTeamHalf(
         Vector3 position,
         Vector3 arenaCentre,
         Vector3 homeDirection,
-        float apexDepth,
-        float goalLineDepth)
+        float minimumProjection)
     {
-        Vector3 tangent = Vector3.Cross(Vector3.up, homeDirection).normalized;
         Vector3 relative = position - arenaCentre;
-        float home = Vector3.Dot(relative, homeDirection);
-        float lateral = Vector3.Dot(relative, tangent);
-
-        float strikerRadius = ResolvePlanarRadius(body);
-        float circleCentre = Mathf.Max(apexDepth, goalLineDepth - strikerRadius);
-        float radius = Mathf.Max(0.1f, goalLineDepth - apexDepth - strikerRadius);
-        float radialHome = Mathf.Min(0f, home - circleCentre);
-        Vector2 radial = new Vector2(radialHome, lateral);
-        if (radial.sqrMagnitude > radius * radius)
+        float projection = Vector3.Dot(relative, homeDirection);
+        if (projection < minimumProjection)
         {
-            radial = radial.normalized * radius;
+            position += homeDirection * (minimumProjection - projection);
         }
 
-        position = arenaCentre +
-                   homeDirection * (circleCentre + radial.x) +
-                   tangent * radial.y;
-        position.y = body.position.y;
         return position;
-    }
-
-    private static float ResolvePlanarRadius(Rigidbody body)
-    {
-        SphereCollider sphere = body != null
-            ? body.GetComponent<SphereCollider>()
-            : null;
-        if (sphere == null)
-        {
-            return 0f;
-        }
-
-        Vector3 scale = sphere.transform.lossyScale;
-        return sphere.radius * Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
     }
 
     private static Vector3 ClampToHalf(

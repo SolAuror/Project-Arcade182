@@ -6,8 +6,6 @@ public sealed class AirFootyHoverVisual : MonoBehaviour
     private Transform target;
     private LineRenderer hoverRing;
     private Renderer shadowRenderer;
-    private Material ringMaterial;
-    private Material shadowMaterial;
     private Color ringColor;
     private float ballHeight;
 
@@ -19,13 +17,11 @@ public sealed class AirFootyHoverVisual : MonoBehaviour
         name = "AirFooty Ball Hover";
 
         ResolveAuthoredParts();
-        if (shadowRenderer == null)
+        if (shadowRenderer == null || hoverRing == null)
         {
-            BuildShadow();
-        }
-        if (hoverRing == null)
-        {
-            BuildRing();
+            Debug.LogError(
+                "AirFooty Ball Hover is missing its authored Hover Ring or Hover Shadow child.",
+                this);
         }
     }
 
@@ -58,18 +54,6 @@ public sealed class AirFootyHoverVisual : MonoBehaviour
         }
     }
 
-    private void OnDestroy()
-    {
-        if (ringMaterial != null)
-        {
-            Destroy(ringMaterial);
-        }
-        if (shadowMaterial != null)
-        {
-            Destroy(shadowMaterial);
-        }
-    }
-
     private void ResolveAuthoredParts()
     {
         Transform ring = transform.Find("Hover Ring");
@@ -79,66 +63,4 @@ public sealed class AirFootyHoverVisual : MonoBehaviour
         shadowRenderer = shadow != null ? shadow.GetComponent<Renderer>() : null;
     }
 
-    private void BuildRing()
-    {
-        GameObject ringObject = new GameObject("Hover Ring");
-        ringObject.transform.SetParent(transform, false);
-        ringObject.transform.localPosition = new Vector3(0f, 0.018f, 0f);
-        hoverRing = ringObject.AddComponent<LineRenderer>();
-        hoverRing.useWorldSpace = false;
-        hoverRing.loop = true;
-        hoverRing.positionCount = 48;
-        hoverRing.startWidth = 0.045f;
-        hoverRing.endWidth = 0.045f;
-        hoverRing.shadowCastingMode = ShadowCastingMode.Off;
-        hoverRing.receiveShadows = false;
-        hoverRing.textureMode = LineTextureMode.Stretch;
-
-        for (int i = 0; i < hoverRing.positionCount; i++)
-        {
-            float angle = (float)i / hoverRing.positionCount * Mathf.PI * 2f;
-            hoverRing.SetPosition(i, new Vector3(Mathf.Cos(angle) * 0.48f, 0f, Mathf.Sin(angle) * 0.48f));
-        }
-
-        Shader shader = Shader.Find("Sprites/Default");
-        if (shader != null)
-        {
-            ringMaterial = new Material(shader)
-            {
-                name = "AirFooty Hover Ring (Runtime)"
-            };
-            hoverRing.sharedMaterial = ringMaterial;
-        }
-    }
-
-    private void BuildShadow()
-    {
-        GameObject shadow = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        shadow.name = "Hover Shadow";
-        shadow.transform.SetParent(transform, false);
-        shadow.transform.localPosition = Vector3.zero;
-        shadow.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-        shadow.transform.localScale = new Vector3(0.62f, 0.62f, 0.62f);
-
-        Collider collider = shadow.GetComponent<Collider>();
-        if (collider != null)
-        {
-            Destroy(collider);
-        }
-
-        shadowRenderer = shadow.GetComponent<Renderer>();
-        shadowRenderer.shadowCastingMode = ShadowCastingMode.Off;
-        shadowRenderer.receiveShadows = false;
-
-        Shader shader = Shader.Find("Sprites/Default");
-        if (shader != null)
-        {
-            shadowMaterial = new Material(shader)
-            {
-                name = "AirFooty Hover Shadow (Runtime)",
-                color = new Color(0f, 0.06f, 0.12f, 0.28f)
-            };
-            shadowRenderer.sharedMaterial = shadowMaterial;
-        }
-    }
 }

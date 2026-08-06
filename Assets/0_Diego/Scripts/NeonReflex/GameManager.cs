@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 
 namespace NeonReflex
 {
+    [DisallowMultipleComponent]
     public class GameManager : MonoBehaviour
     {
         [SerializeField] private TargetSpawner targetSpawner;
@@ -20,6 +21,20 @@ namespace NeonReflex
         private bool gameOver;
         private bool gameStarted;
 
+        private void Awake()
+        {
+            if (targetSpawner == null || !targetSpawner.HasRequiredReferences ||
+                uiManager == null || !uiManager.HasRequiredReferences)
+            {
+                Debug.LogError(
+                    $"{name} requires authored TargetSpawner and UIManager references " +
+                    "whose own production references are complete. Check the authored " +
+                    "Neon Reflex scene and target prefab.",
+                    this);
+                enabled = false;
+            }
+        }
+
         private void Start()
         {
             lives = startingLives;
@@ -31,7 +46,7 @@ namespace NeonReflex
 
         public void StartGame()
         {
-            if (gameStarted) return;
+            if (!isActiveAndEnabled || gameStarted) return;
             gameStarted = true;
             StartLevel();
         }

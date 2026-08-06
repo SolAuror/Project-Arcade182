@@ -7,7 +7,7 @@ namespace Sol.Minigames
     /// Purely visual spark released when an atom is smashed: darts around the
     /// board plane like an electron, reflecting off walls and obstructions
     /// (never off atoms or balls) for a couple of bounces before decaying.
-    /// Built procedurally — no prefab required.
+    /// Its renderer and trail are authored on a reusable prefab.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Sol/Minigames/Atom Smasher Electron")]
@@ -26,10 +26,14 @@ namespace Sol.Minigames
         private float dieTime;
         private float fadeSeconds = 0.3f;
         private Vector3 baseScale;
-        private Renderer sparkRenderer;
+        [SerializeField] private Renderer sparkRenderer;
+        [SerializeField] private TrailRenderer sparkTrail;
+
+        private MaterialPropertyBlock propertyBlock;
         private Color baseColor;
 
         public static AtomSmasherElectron Spawn(
+            AtomSmasherElectron prefab,
             Vector3 position,
             Vector3 planarVelocity,
             Color color,
@@ -38,45 +42,39 @@ namespace Sol.Minigames
             float scale,
             float planeZ)
         {
-            GameObject spark = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            spark.name = "AtomElectron";
-            Collider sparkCollider = spark.GetComponent<Collider>();
-            if (sparkCollider != null)
+            if (prefab == null)
             {
-                Destroy(sparkCollider);
+                Debug.LogError(
+                    $"{nameof(AtomSmasherElectron)} requires an authored prefab. " +
+                    "Check the authored Atom Smasher electron prefab reference.");
+                return null;
             }
 
-            spark.transform.position = new Vector3(position.x, position.y, planeZ);
-            spark.transform.localScale = Vector3.one * scale;
-
-            Renderer sparkRenderer = spark.GetComponent<Renderer>();
-            if (sparkRenderer != null)
-            {
-                sparkRenderer.material.color = color;
-            }
-
-            TrailRenderer trail = spark.AddComponent<TrailRenderer>();
-            Shader trailShader = Shader.Find("Sprites/Default");
-            if (trailShader != null)
-            {
-                trail.material = new Material(trailShader);
-            }
-
-            trail.time = 0.18f;
-            trail.startWidth = scale * 0.7f;
-            trail.endWidth = 0f;
-            trail.startColor = color;
-            trail.endColor = new Color(color.r, color.g, color.b, 0f);
-
-            AtomSmasherElectron electron = spark.AddComponent<AtomSmasherElectron>();
+            AtomSmasherElectron electron = Instantiate(
+                prefab,
+                new Vector3(position.x, position.y, planeZ),
+                Quaternion.identity);
+            electron.transform.localScale = Vector3.one * scale;
             electron.velocity = new Vector3(planarVelocity.x, planarVelocity.y, 0f);
             electron.planeZ = planeZ;
             electron.radius = scale * 0.5f;
             electron.maxBounces = Mathf.Max(0, maxBounces);
             electron.dieTime = Time.time + Mathf.Max(0.2f, lifeSeconds);
-            electron.baseScale = spark.transform.localScale;
-            electron.sparkRenderer = sparkRenderer;
+            electron.baseScale = electron.transform.localScale;
             electron.baseColor = color;
+            electron.ApplySparkColor(color);
+
+            if (electron.sparkTrail != null)
+            {
+                electron.sparkTrail.time = 0.18f;
+                electron.sparkTrail.startWidth = scale * 0.7f;
+                electron.sparkTrail.endWidth = 0f;
+                electron.sparkTrail.startColor = color;
+                electron.sparkTrail.endColor = new Color(color.r, color.g, color.b, 0f);
+                electron.sparkTrail.Clear();
+                electron.sparkTrail.emitting = true;
+            }
+
             return electron;
         }
 
@@ -125,8 +123,22 @@ namespace Sol.Minigames
             transform.localScale = baseScale * Mathf.Lerp(0.25f, 1f, fade);
             if (sparkRenderer != null)
             {
-                sparkRenderer.material.color = new Color(baseColor.r, baseColor.g, baseColor.b, fade);
+                ApplySparkColor(new Color(baseColor.r, baseColor.g, baseColor.b, fade));
             }
+        }
+
+        private void ApplySparkColor(Color color)
+        {
+            if (sparkRenderer == null)
+            {
+                return;
+            }
+
+            propertyBlock ??= new MaterialPropertyBlock();
+            sparkRenderer.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetColor("_BaseColor", color);
+            propertyBlock.SetColor("_Color", color);
+            sparkRenderer.SetPropertyBlock(propertyBlock);
         }
 
         private void MoveWithBounces(float deltaTime)

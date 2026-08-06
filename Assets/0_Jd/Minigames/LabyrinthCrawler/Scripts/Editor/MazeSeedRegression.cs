@@ -1,14 +1,15 @@
+using System;
+using System.IO;
+using System.Reflection;
 using System.Text;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Sol.Minigames.EditorTools
 {
     /// <summary>
-    /// Regression guard for the shared maze generator. Generates the Hub maze
-    /// (activeRules == null lane) under a fixed RNG seed and writes a
+    /// Regression guard for the shared maze generator. Generates the authored
+    /// Labyrinth prefab under a fixed RNG seed and writes a
     /// deterministic wall-open signature to a text file. Run it before and
     /// after any ArcadeGen3D change: the signatures MUST match, proving the
     /// Labyrinth-only braid/pit passes never perturbed the Hub's generation.
@@ -23,32 +24,118 @@ namespace Sol.Minigames.EditorTools
     /// </summary>
     public static class MazeSeedRegression
     {
-        private const string HubScenePath = "Assets/Shared/Scenes/Sc_ArcadeHub.unity";
+        private const string GeneratorPrefabPath =
+            "Assets/0_Jd/Minigames/LabyrinthCrawler/LabyrinthCrawlerGame.prefab";
         private const string OutputPath = "Assets/../MazeSeedSignature.txt";
         private const int Seed = 1337;
 
         public static void Capture()
         {
-            Scene scene = EditorSceneManager.OpenScene(HubScenePath, OpenSceneMode.Single);
-
-            ArcadeGen3D generator = Object.FindFirstObjectByType<ArcadeGen3D>(FindObjectsInactive.Include);
-            if (generator == null)
+            GameObject root = PrefabUtility.LoadPrefabContents(GeneratorPrefabPath);
+            if (root == null)
             {
-                Debug.LogError("MazeSeedRegression: no ArcadeGen3D in the hub scene.");
-                return;
+                throw new InvalidOperationException(
+                    $"MazeSeedRegression: could not load {GeneratorPrefabPath}.");
             }
 
-            // Fixed seed makes the DFS carve, special-room picks and weighted
-            // prefab selection all reproducible.
-            Random.InitState(Seed);
-            generator.RegenerateMazeFromInspector();
+            try
+            {
+                ArcadeGen3D generator = root.GetComponentInChildren<ArcadeGen3D>(true);
+                LabyrinthCrawlerGame game = root.GetComponent<LabyrinthCrawlerGame>();
+                if (generator == null)
+                {
+                    throw new InvalidOperationException(
+                        $"MazeSeedRegression: no ArcadeGen3D in {GeneratorPrefabPath}.");
+                }
 
-            string signature = BuildSignature(generator);
-            System.IO.File.WriteAllText(System.IO.Path.GetFullPath(OutputPath), signature);
-            Debug.Log($"MazeSeedRegression: wrote signature ({signature.Length} chars) to {OutputPath}.");
+                if (game == null)
+                {
+                    throw new InvalidOperationException(
+                        $"MazeSeedRegression: no LabyrinthCrawlerGame in {GeneratorPrefabPath}.");
+                }
 
-            // Never leave the regenerated Hub scene dirtied on disk.
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                // Fixed seed makes the DFS carve, special-room picks and weighted
+                // prefab selection all reproducible.
+                UnityEngine.Random.InitState(Seed);
+                ArcadeMazeRules rules = CreateStageOneRules(game);
+                if (!generator.GenerateWithRules(game, rules))
+                {
+                    throw new InvalidOperationException(
+                        "MazeSeedRegression: the game-owned stage-one generation request was rejected.");
+                }
+
+                string signature = BuildSignature(generator);
+                if (signature == "NULL_GRID")
+                {
+                    throw new InvalidOperationException(
+                        "MazeSeedRegression: generation completed without a room grid.");
+                }
+                File.WriteAllText(Path.GetFullPath(OutputPath), signature);
+                Debug.Log($"MazeSeedRegression: wrote signature ({signature.Length} chars) to {OutputPath}.");
+            }
+            finally
+            {
+                // The generated hierarchy exists only in the isolated prefab stage.
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static ArcadeMazeRules CreateStageOneRules(LabyrinthCrawlerGame game)
+        {
+            FieldInfo field = typeof(LabyrinthCrawlerGame).GetField(
+                "labyrinthMazeRules",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            object config = field?.GetValue(game);
+            if (config == null)
+            {
+                throw new InvalidOperationException(
+                    "MazeSeedRegression: Labyrinth maze rules are unavailable.");
+            }
+
+            Type type = config.GetType();
+            int width = ReadIntProperty(config, type, "StartingMazeWidth");
+            int depth = ReadIntProperty(config, type, "StartingMazeDepth");
+            int stage = 1;
+            int pits = InvokeInt(config, type, "GetPitCount", stage);
+            int plazas = InvokeInt(config, type, "GetRoomCount", stage);
+            int blocks = InvokeInt(config, type, "GetSolidBlockCount", stage);
+            int authoredBuildings = InvokeInt(config, type, "GetAuthoredBuildingCount", stage);
+            MethodInfo create = type.GetMethod(
+                "CreateArcadeRules",
+                BindingFlags.Instance | BindingFlags.Public);
+            object result = create?.Invoke(
+                config,
+                new object[] { width, depth, pits, plazas, blocks, authoredBuildings });
+            if (result is not ArcadeMazeRules rules)
+            {
+                throw new InvalidOperationException(
+                    "MazeSeedRegression: could not create stage-one ArcadeMazeRules.");
+            }
+
+            rules.activateEndRoomExit = false;
+            return rules;
+        }
+
+        private static int ReadIntProperty(object target, Type type, string name)
+        {
+            PropertyInfo property = type.GetProperty(name, BindingFlags.Instance | BindingFlags.Public);
+            if (property?.GetValue(target) is int value)
+            {
+                return value;
+            }
+
+            throw new InvalidOperationException($"MazeSeedRegression: missing rule property {name}.");
+        }
+
+        private static int InvokeInt(object target, Type type, string name, int stage)
+        {
+            MethodInfo method = type.GetMethod(name, BindingFlags.Instance | BindingFlags.Public);
+            if (method?.Invoke(target, new object[] { stage }) is int value)
+            {
+                return value;
+            }
+
+            throw new InvalidOperationException($"MazeSeedRegression: missing rule method {name}.");
         }
 
         private static string BuildSignature(ArcadeGen3D generator)

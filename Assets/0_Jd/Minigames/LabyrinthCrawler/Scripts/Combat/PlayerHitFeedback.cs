@@ -5,8 +5,8 @@ namespace Sol.Minigames
 {
     /// <summary>
     /// First-person damage feedback for the player: a full-screen red flash on
-    /// every hit and a slow heartbeat vignette while health is critical. Builds
-    /// its own overlay canvas at runtime — no prefab wiring required.
+    /// every hit and a slow heartbeat vignette while health is critical. The
+    /// full-screen overlay is authored on the player prefab.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Health))]
@@ -27,7 +27,7 @@ namespace Sol.Minigames
         [SerializeField] private Color overlayColor = new Color(0.85f, 0.05f, 0.05f, 1f);
 
         [Header("Widgets")]
-        [Tooltip("Full-screen flash image, authored on the player prefab. Built at runtime only as a fallback.")]
+        [Tooltip("Full-screen flash image authored on the player prefab.")]
         [SerializeField] private Image overlayImage;
 
         private Health health;
@@ -39,7 +39,11 @@ namespace Sol.Minigames
 
             if (overlayImage == null)
             {
-                BuildOverlay(); // fallback for players without the authored overlay
+                Debug.LogError(
+                    $"{name} requires an authored full-screen damage overlay Image. " +
+                    "Check the authored player prefab.",
+                    this);
+                enabled = false;
             }
             else
             {
@@ -86,29 +90,6 @@ namespace Sol.Minigames
             }
 
             SetOverlayAlpha(alpha);
-        }
-
-        private void BuildOverlay()
-        {
-            GameObject overlayObject = new GameObject("Player Damage Overlay");
-            overlayObject.transform.SetParent(transform, false);
-
-            Canvas canvas = overlayObject.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 40; // above gameplay HUD, below modal screens
-
-            GameObject imageObject = new GameObject("Flash");
-            imageObject.transform.SetParent(overlayObject.transform, false);
-
-            overlayImage = imageObject.AddComponent<Image>();
-            overlayImage.color = new Color(overlayColor.r, overlayColor.g, overlayColor.b, 0f);
-            overlayImage.raycastTarget = false;
-
-            RectTransform rect = overlayImage.rectTransform;
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
         }
 
         private void SetOverlayAlpha(float alpha)

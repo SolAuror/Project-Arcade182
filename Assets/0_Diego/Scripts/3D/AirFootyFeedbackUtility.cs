@@ -4,28 +4,127 @@ using UnityEngine.Rendering;
 
 public static class AirFootyFeedbackUtility
 {
-    private const int SampleRate = 44100;
+    private const float VaporiseBurstMaximumLifetime = 4f;
 
     private static AudioClip impactClip;
     private static AudioClip goalClip;
     private static AudioClip countdownClip;
-    private static Material particleMaterial;
+    private static AudioClip vaporiseClip;
+    private static GameObject vaporisePrefab;
+    private static bool missingImpactReported;
+    private static bool missingGoalReported;
+    private static bool missingCountdownReported;
+    private static bool missingVaporiseReported;
+    private static bool missingVaporisePrefabReported;
+
+    public static void Configure(
+        AudioClip authoredImpactClip,
+        AudioClip authoredGoalClip,
+        AudioClip authoredCountdownClip,
+        AudioClip authoredVaporiseClip,
+        GameObject authoredVaporisePrefab)
+    {
+        impactClip = authoredImpactClip;
+        goalClip = authoredGoalClip;
+        countdownClip = authoredCountdownClip;
+        vaporiseClip = authoredVaporiseClip;
+        vaporisePrefab = authoredVaporisePrefab;
+        missingImpactReported = false;
+        missingGoalReported = false;
+        missingCountdownReported = false;
+        missingVaporiseReported = false;
+        missingVaporisePrefabReported = false;
+    }
 
     public static AudioClip ImpactClip =>
-        impactClip != null ? impactClip : impactClip = CreateImpactClip();
+        RequiredClip(impactClip, "impact", ref missingImpactReported);
 
     public static AudioClip GoalClip =>
-        goalClip != null ? goalClip : goalClip = CreateGoalClip();
+        RequiredClip(goalClip, "goal", ref missingGoalReported);
 
     public static AudioClip CountdownClip =>
-        countdownClip != null ? countdownClip : countdownClip = CreateCountdownClip();
+        RequiredClip(countdownClip, "countdown", ref missingCountdownReported);
+
+    /// <summary>
+    /// The authored vaporise sting. Baked to a wav asset rather than synthesised,
+    /// so it is auditable in the project like every other authored asset.
+    /// </summary>
+    public static AudioClip VaporiseClip
+    {
+        get
+        {
+            if (vaporiseClip != null)
+            {
+                return vaporiseClip;
+            }
+
+            if (!missingVaporiseReported)
+            {
+                missingVaporiseReported = true;
+                Debug.LogWarning(
+                    "AirFooty is missing its authored vaporise clip. Falling back to the goal clip. " +
+                    "Check the authored AirFooty feedback assets.");
+            }
+
+            return GoalClip;
+        }
+    }
+
+    /// <summary>
+    /// Spawns the authored vaporise burst, tinted to the victim's team. Falls back
+    /// to the runtime goal burst only if the prefab has not been authored yet.
+    /// </summary>
+    public static void SpawnVaporiseBurst(Vector3 position, Color color)
+    {
+        if (vaporisePrefab == null)
+        {
+            if (!missingVaporisePrefabReported)
+            {
+                missingVaporisePrefabReported = true;
+                Debug.LogWarning(
+                    "AirFooty is missing its authored vaporise VFX prefab. Falling back to the goal burst. " +
+                    "Check the authored AirFooty feedback assets.");
+            }
+            SpawnGoalBurst(position, color);
+            return;
+        }
+
+        GameObject instance = Object.Instantiate(vaporisePrefab, position, Quaternion.identity);
+        instance.name = "AirFooty Vaporise Burst";
+
+        // The prefab owns its shape, timing and lifetime. The only thing decided
+        // at spawn is whose colour it wears.
+        foreach (ParticleSystem particles in instance.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            ParticleSystem.MainModule main = particles.main;
+            main.startColor = new ParticleSystem.MinMaxGradient(color, Color.white);
+        }
+
+        // Backstop so a mis-authored prefab cannot leak an object per kill.
+        Object.Destroy(instance, VaporiseBurstMaximumLifetime);
+    }
 
     public static void SpawnGoalBurst(Vector3 position, Color color)
     {
-        GameObject burstObject = new GameObject("AirFooty Goal Burst");
-        burstObject.transform.position = position;
+        GameObject burstObject =
+            AirFootyPrefabLibrary.InstantiateGoalBurst(position);
+        if (burstObject == null)
+        {
+            Debug.LogError("AirFooty goal burst prefab is missing.");
+            return;
+        }
+        else
+        {
+            burstObject.name = "AirFooty Goal Burst";
+        }
 
-        ParticleSystem particles = burstObject.AddComponent<ParticleSystem>();
+        ParticleSystem particles = burstObject.GetComponent<ParticleSystem>();
+        if (particles == null)
+        {
+            Debug.LogError("AirFooty goal burst prefab is missing its authored ParticleSystem.", burstObject);
+            Object.Destroy(burstObject);
+            return;
+        }
         particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         ParticleSystem.MainModule main = particles.main;
         main.playOnAwake = false;
@@ -75,7 +174,12 @@ public static class AirFootyFeedbackUtility
         renderer.velocityScale = 0.12f;
         renderer.lengthScale = 1.8f;
         renderer.shadowCastingMode = ShadowCastingMode.Off;
-        renderer.sharedMaterial = GetParticleMaterial();
+        if (renderer.sharedMaterial == null)
+        {
+            Debug.LogError("AirFooty goal burst ParticleSystem is missing its authored material.", renderer);
+            Object.Destroy(burstObject);
+            return;
+        }
 
         particles.Play();
     }
@@ -122,141 +226,19 @@ public static class AirFootyFeedbackUtility
         }
     }
 
-    private static Material GetParticleMaterial()
+    private static AudioClip RequiredClip(
+        AudioClip clip,
+        string clipRole,
+        ref bool reported)
     {
-        if (particleMaterial != null)
+        if (clip == null && !reported)
         {
-            return particleMaterial;
+            reported = true;
+            Debug.LogError(
+                $"AirFooty is missing its authored {clipRole} clip. " +
+                "Check the authored AirFooty feedback assets.");
         }
 
-        Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-        if (shader == null)
-        {
-            shader = Shader.Find("Particles/Standard Unlit");
-        }
-        if (shader == null)
-        {
-            shader = Shader.Find("Sprites/Default");
-        }
-
-        if (shader != null)
-        {
-            particleMaterial = new Material(shader)
-            {
-                name = "AirFooty Goal Particles (Runtime)"
-            };
-        }
-
-        return particleMaterial;
-    }
-
-    private static AudioClip CreateImpactClip()
-    {
-        const float duration = 0.075f;
-        return CreateClip("AirFooty Impact", duration, (time, progress) =>
-        {
-            float envelope = (1f - progress) * (1f - progress);
-            float tone = Mathf.Sin(2f * Mathf.PI * Mathf.Lerp(230f, 105f, progress) * time);
-            float tick = Mathf.Sin(2f * Mathf.PI * 920f * time) * (1f - Mathf.Clamp01(progress * 6f));
-            return (tone * 0.65f + tick * 0.35f) * envelope * 0.5f;
-        });
-    }
-
-    private static AudioClip CreateGoalClip()
-    {
-        const float duration = 0.52f;
-        return CreateClip("AirFooty Goal", duration, (time, progress) =>
-        {
-            float envelope = Mathf.Sin(Mathf.PI * Mathf.Clamp01(progress)) * (1f - progress * 0.35f);
-            float first = Mathf.Sin(2f * Mathf.PI * 392f * time);
-            float second = Mathf.Sin(2f * Mathf.PI * 523.25f * time);
-            float octave = Mathf.Sin(2f * Mathf.PI * 784f * time) * 0.25f;
-            float blend = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.18f, 0.65f, progress));
-            return Mathf.Lerp(first, second + octave, blend) * envelope * 0.23f;
-        });
-    }
-
-    private static AudioClip CreateCountdownClip()
-    {
-        const float duration = 0.09f;
-        return CreateClip("AirFooty Countdown", duration, (time, progress) =>
-        {
-            float envelope = 1f - progress;
-            return Mathf.Sin(2f * Mathf.PI * 660f * time) * envelope * envelope * 0.2f;
-        });
-    }
-
-    private static AudioClip CreateClip(
-        string clipName,
-        float duration,
-        System.Func<float, float, float> sample)
-    {
-        int sampleCount = Mathf.CeilToInt(duration * SampleRate);
-        float[] data = new float[sampleCount];
-        for (int i = 0; i < sampleCount; i++)
-        {
-            float time = (float)i / SampleRate;
-            float progress = (float)i / Mathf.Max(1, sampleCount - 1);
-            data[i] = Mathf.Clamp(sample(time, progress), -1f, 1f);
-        }
-
-        AudioClip clip = AudioClip.Create(clipName, sampleCount, 1, SampleRate, false);
-        clip.SetData(data, 0);
         return clip;
-    }
-}
-
-public sealed class AirFootyWorldPopup : MonoBehaviour
-{
-    private TextMesh textMesh;
-    private Color baseColor;
-    private float startTime;
-    private float lifeSeconds;
-
-    public static void Spawn(Vector3 position, string message, Color color)
-    {
-        GameObject popupObject = new GameObject("AirFooty Goal Message");
-        popupObject.transform.position = position;
-        AirFootyWorldPopup popup = popupObject.AddComponent<AirFootyWorldPopup>();
-        popup.Configure(message, color, 0.9f);
-    }
-
-    private void Configure(string message, Color color, float lifetime)
-    {
-        textMesh = gameObject.AddComponent<TextMesh>();
-        textMesh.text = message;
-        textMesh.anchor = TextAnchor.MiddleCenter;
-        textMesh.alignment = TextAlignment.Center;
-        textMesh.fontSize = 72;
-        textMesh.characterSize = 0.04f;
-        textMesh.fontStyle = FontStyle.Bold;
-        textMesh.color = color;
-
-        MeshRenderer renderer = textMesh.GetComponent<MeshRenderer>();
-        renderer.shadowCastingMode = ShadowCastingMode.Off;
-
-        baseColor = color;
-        lifeSeconds = lifetime;
-        startTime = Time.unscaledTime;
-    }
-
-    private void Update()
-    {
-        float progress = (Time.unscaledTime - startTime) / Mathf.Max(0.01f, lifeSeconds);
-        if (progress >= 1f)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        Camera view = AirFootyCameraLookup.FindDisplayCamera();
-        if (view != null)
-        {
-            transform.rotation = view.transform.rotation;
-        }
-
-        transform.position += Vector3.up * (0.7f * Time.unscaledDeltaTime);
-        transform.localScale = Vector3.one * Mathf.Lerp(0.75f, 1.15f, 1f - (1f - progress) * (1f - progress));
-        textMesh.color = new Color(baseColor.r, baseColor.g, baseColor.b, 1f - progress);
     }
 }

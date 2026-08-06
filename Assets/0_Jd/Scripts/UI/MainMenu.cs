@@ -8,10 +8,11 @@ using UnityEngine.UI;
 namespace Sol.Arcade
 {
     /// <summary>
-    /// "Insert Coin to Exit" main menu. Prefab-authored (built once by
-    /// Sol/Setup/Menus And UI Prefabs); this component only wires behavior
-    /// into the referenced widgets — no UI is generated at runtime. Minigames
-    /// unlock for direct play after being finished once in the arcade.
+    /// "Insert Coin to Exit" main menu. Prefab-authored at
+    /// Assets/0_Jd/Prefabs/UI/MainMenu.prefab; this component only wires
+    /// behavior into the referenced widgets — no UI is generated at runtime.
+    /// Minigames unlock for direct play after being finished once in the
+    /// arcade.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Sol/Arcade/Main Menu")]
@@ -43,6 +44,7 @@ namespace Sol.Arcade
         [SerializeField] private Text hoopsLabel;
         [SerializeField] private Button atomSmasherButton;
         [SerializeField] private Text atomSmasherLabel;
+        [SerializeField] private Button airFootyButton;
         [SerializeField] private Button minigamesBackButton;
 
         [Header("Options")]
@@ -56,7 +58,7 @@ namespace Sol.Arcade
         {
             Time.timeScale = 1f;
             AudioListener.pause = false;
-            SimpleUiBuilder.EnsureEventSystem();
+            ArcadeInputCoordinator.EnsureExists();
             ArcadeInputCoordinator.ShowMenu(rootPanel, startButton);
 
             WireButton(startButton, () => LoadScene(hubSceneName));
@@ -66,7 +68,7 @@ namespace Sol.Arcade
             WireButton(labyrinthButton, () => LoadScene(labyrinthSceneName));
             WireButton(hoopsButton, () => LoadScene(hoopsSceneName));
             WireButton(atomSmasherButton, () => LoadScene(atomSmasherSceneName));
-            BuildAirFootyButton();
+            WireButton(airFootyButton, () => LoadScene(airFootySceneName));
             WireButton(minigamesBackButton, () => ShowPanel(rootPanel));
             WireButton(volumeButton, CycleVolume);
             WireButton(optionsBackButton, () => ShowPanel(rootPanel));
@@ -82,26 +84,6 @@ namespace Sol.Arcade
 
             RefreshVolumeLabel();
             ShowPanel(rootPanel);
-        }
-
-        private void BuildAirFootyButton()
-        {
-            if (minigamesPanel == null ||
-                minigamesPanel.transform.Find("Button AIR FOOTY") != null)
-            {
-                return;
-            }
-
-            Button airFootyButton = SimpleUiBuilder.CreateButton(
-                minigamesPanel.transform,
-                "AIR FOOTY",
-                28,
-                () => LoadScene(airFootySceneName));
-            if (minigamesBackButton != null)
-            {
-                airFootyButton.transform.SetSiblingIndex(
-                    minigamesBackButton.transform.GetSiblingIndex());
-            }
         }
 
         private static void WireButton(Button button, UnityEngine.Events.UnityAction onClick)

@@ -12,8 +12,8 @@ using UnityEngine;
 /// <list type="bullet">
 /// <item>2-goal: inset 10.5 x 6.0, Blue behind the player goal at -X, Red behind
 /// the AI goal at +X, both long sides split at the halfway line.</item>
-/// <item>4-goal square: inset 10.5 x 10.5, one team per side (Blue North, Red
-/// East, Gold South, Green West).</item>
+/// <item>4-goal square: inset 10.5 x 10.5, with each team's supporters opposite
+/// its player (Blue East, Red West, Green South, Gold North).</item>
 /// </list>
 /// </summary>
 [DisallowMultipleComponent]

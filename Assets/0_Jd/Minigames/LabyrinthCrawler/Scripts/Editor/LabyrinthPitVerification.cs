@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -27,7 +28,7 @@ namespace Sol.Minigames.EditorTools
     {
         private const string LabyrinthScenePath = "Assets/0_Jd/Scenes/Sc_LabyrinthCrawler.unity";
         private const string PitVoidPrefabPath =
-            "Assets/0_Jd/Minigames/LabyrinthCrawler/DungeonRooms/PitVoid.prefab";
+            "Assets/0_Jd/Minigames/LabyrinthCrawler/Prefabs/DungeonRooms/PitVoid.prefab";
         private const int SeedCount = 40;
         private const int PitsPerMaze = 3;
 
@@ -35,20 +36,19 @@ namespace Sol.Minigames.EditorTools
         {
             EditorSceneManager.OpenScene(LabyrinthScenePath, OpenSceneMode.Single);
 
-            ArcadeGen3D generator = Object.FindFirstObjectByType<ArcadeGen3D>(FindObjectsInactive.Include);
-            LabyrinthCrawlerGame game = Object.FindFirstObjectByType<LabyrinthCrawlerGame>(FindObjectsInactive.Include);
+            ArcadeGen3D generator = UnityEngine.Object.FindFirstObjectByType<ArcadeGen3D>(FindObjectsInactive.Include);
+            LabyrinthCrawlerGame game = UnityEngine.Object.FindFirstObjectByType<LabyrinthCrawlerGame>(FindObjectsInactive.Include);
             if (generator == null || game == null)
             {
-                Debug.LogError("LabyrinthPitVerification: the scene needs both LabyrinthCrawlerGame and its maze generator.");
-                return;
+                throw new InvalidOperationException(
+                    "LabyrinthPitVerification: the scene needs both LabyrinthCrawlerGame and its maze generator.");
             }
 
             GameObject pitVoidPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PitVoidPrefabPath);
             if (pitVoidPrefab == null)
             {
-                Debug.LogWarning(
-                    $"LabyrinthPitVerification: {PitVoidPrefabPath} not found. Run " +
-                    "Sol/Labyrinth/Build Pit Void Prefab first; verifying solvability/alignment with no pits.");
+                throw new InvalidOperationException(
+                    $"LabyrinthPitVerification: required pit prefab is missing at {PitVoidPrefabPath}.");
             }
 
             int failures = 0;
@@ -59,7 +59,7 @@ namespace Sol.Minigames.EditorTools
 
             for (int seed = 1; seed <= SeedCount; seed++)
             {
-                Random.InitState(seed * 7919);
+                UnityEngine.Random.InitState(seed * 7919);
 
                 ArcadeMazeRules rules = new ArcadeMazeRules
                 {
@@ -128,6 +128,13 @@ namespace Sol.Minigames.EditorTools
                 $"{mazesWithBuildings} had buildings, {indoorExits} had indoor exits, " +
                 $"avg {(float)totalPits / SeedCount:0.0} pits/maze, failures={failures}.");
 
+            if (mazesWithPits == 0 || mazesWithBuildings == 0 || indoorExits == 0)
+            {
+                failures++;
+                Debug.LogError(
+                    "LabyrinthPitVerification: coverage failed; pits, buildings and indoor exits must all occur.");
+            }
+
             if (failures == 0)
             {
                 Debug.Log(
@@ -136,6 +143,11 @@ namespace Sol.Minigames.EditorTools
             }
 
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            if (failures > 0)
+            {
+                throw new InvalidOperationException(
+                    $"LabyrinthPitVerification: {failures} regression failure(s) across {SeedCount} seeds.");
+            }
         }
 
         // Every room must sit on a regular grid: spacing RoomWidth in x,

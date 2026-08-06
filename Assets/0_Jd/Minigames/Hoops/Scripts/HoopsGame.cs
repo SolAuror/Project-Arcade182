@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 namespace Sol.Minigames
 {
     [DisallowMultipleComponent]
+    [RequireComponent(typeof(AudioSource))]
     [AddComponentMenu("Sol/Minigames/Hoops Game")]
     public class HoopsGame : MonoBehaviour
     {
@@ -58,7 +59,7 @@ namespace Sol.Minigames
         [SerializeField, Min(1)] private int wingedBonusMultiplier = 2;
 
         [Header("Audio")]
-        [Tooltip("2D source for game feedback. Auto-added when missing; assign clips to enable each cue.")]
+        [Tooltip("Authored 2D source for game feedback; assign clips to enable each cue.")]
         [SerializeField] private AudioSource feedbackAudioSource;
 
         [SerializeField] private AudioClip scoreClip;
@@ -131,19 +132,10 @@ namespace Sol.Minigames
 
         private void Awake()
         {
-            if (hoops.Count == 0)
+            if (!ValidateAuthoredReferences())
             {
-                hoops.AddRange(FindObjectsByType<HoopsScoreZone>(FindObjectsSortMode.None));
-            }
-
-            if (throwables.Count == 0)
-            {
-                throwables.AddRange(FindObjectsByType<HoopsThrowable>(FindObjectsSortMode.None));
-            }
-
-            if (scorables.Count == 0)
-            {
-                scorables.AddRange(FindObjectsByType<HoopsScorable>(FindObjectsSortMode.None));
+                enabled = false;
+                return;
             }
 
             foreach (HoopsScoreZone hoop in hoops)
@@ -154,7 +146,12 @@ namespace Sol.Minigames
                 }
             }
 
-            EnsureAudioSource();
+            if (!ValidateAudioSource())
+            {
+                enabled = false;
+                return;
+            }
+
             remainingSeconds = Mathf.Max(0f, roundSeconds);
             ResolveScoreCarrier();
             PlayerScoreCarrier.ScoreRecord scoreRecord = ReadScoreRecord();
@@ -301,6 +298,14 @@ namespace Sol.Minigames
             roundSeconds = Mathf.Max(1f, roundSeconds);
             ticketsPerPoint = Mathf.Max(0f, ticketsPerPoint);
             returnDelaySeconds = Mathf.Max(0f, returnDelaySeconds);
+
+            // Prefab contents live in a temporary preview scene and cannot hold
+            // references to the score zones and throwables in Sc_Hoops.
+            if (gameObject.scene.IsValid() && gameObject.scene.path.EndsWith(".unity"))
+            {
+                ValidateAuthoredReferences();
+                ValidateAudioSource();
+            }
         }
 
         public void StartGame()
@@ -429,15 +434,71 @@ namespace Sol.Minigames
             Debug.Log(won ? $"Hoops complete with {score} points." : $"Hoops failed with {score} points.", this);
         }
 
-        private void EnsureAudioSource()
+        private bool ValidateAuthoredReferences()
         {
-            if (feedbackAudioSource == null && !TryGetComponent(out feedbackAudioSource))
+            bool valid = true;
+            if (hoops.Count == 0)
             {
-                feedbackAudioSource = gameObject.AddComponent<AudioSource>();
+                Debug.LogError(
+                    $"{nameof(HoopsGame)} on {name} requires authored HoopsScoreZone references. " +
+                    "Check the authored Hoops scene and game prefab.",
+                    this);
+                valid = false;
+            }
+
+            if (throwables.Count == 0)
+            {
+                Debug.LogError(
+                    $"{nameof(HoopsGame)} on {name} requires authored HoopsThrowable references. " +
+                    "Check the authored Hoops scene and game prefab.",
+                    this);
+                valid = false;
+            }
+
+            for (int i = 0; i < hoops.Count; i++)
+            {
+                if (hoops[i] == null)
+                {
+                    Debug.LogError($"{nameof(HoopsGame)} on {name} has a missing hoop reference at index {i}.", this);
+                    valid = false;
+                }
+            }
+
+            for (int i = 0; i < throwables.Count; i++)
+            {
+                if (throwables[i] == null)
+                {
+                    Debug.LogError($"{nameof(HoopsGame)} on {name} has a missing throwable reference at index {i}.", this);
+                    valid = false;
+                }
+            }
+
+            for (int i = 0; i < scorables.Count; i++)
+            {
+                if (scorables[i] == null)
+                {
+                    Debug.LogError($"{nameof(HoopsGame)} on {name} has a missing scorable reference at index {i}.", this);
+                    valid = false;
+                }
+            }
+
+            return valid;
+        }
+
+        private bool ValidateAudioSource()
+        {
+            if (feedbackAudioSource == null)
+            {
+                Debug.LogError(
+                    $"{nameof(HoopsGame)} on {name} requires an authored feedback AudioSource reference. " +
+                    "Check the authored Hoops scene and game prefab.",
+                    this);
+                return false;
             }
 
             feedbackAudioSource.playOnAwake = false;
             feedbackAudioSource.spatialBlend = 0f; // 2D game feedback
+            return true;
         }
 
         private void PlayClip(AudioClip clip, float pitch = 1f)

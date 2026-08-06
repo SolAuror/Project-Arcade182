@@ -138,10 +138,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1859323328868734342, guid: 57f3a77f74d8c934f9af056c60e04c70, type: 3}
+      propertyPath: game
+      value: 
+      objectReference: {fileID: 4150133669329179006}
     - target: {fileID: 3824566442836615837, guid: 57f3a77f74d8c934f9af056c60e04c70, type: 3}
       propertyPath: m_Name
       value: LabyrinthCrawlerHud
       objectReference: {fileID: 0}
+    - target: {fileID: 4706763759412030058, guid: 57f3a77f74d8c934f9af056c60e04c70, type: 3}
+      propertyPath: game
+      value: 
+      objectReference: {fileID: 4150133669329179006}
     - target: {fileID: 5687062303672979064, guid: 57f3a77f74d8c934f9af056c60e04c70, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -227,6 +235,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 57f3a77f74d8c934f9af056c60e04c70, type: 3}
+--- !u!114 &374332841 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 221756981801624843, guid: 57f3a77f74d8c934f9af056c60e04c70, type: 3}
+  m_PrefabInstance: {fileID: 374332840}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30a336dd081155540858bdbc59194004, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &775503158
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -332,6 +351,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3511749483195693680, guid: 0ad1861558572874bb75a70fbddff53b, type: 3}
+      propertyPath: game
+      value: 
+      objectReference: {fileID: 4150133669329179006}
     - target: {fileID: 4684500389704870999, guid: 0ad1861558572874bb75a70fbddff53b, type: 3}
       propertyPath: m_Name
       value: LabCrawlerController
@@ -397,11 +420,26 @@ PrefabInstance:
       propertyPath: scoreCarrier
       value: 
       objectReference: {fileID: 38808830}
+    - target: {fileID: 8677087556486877662, guid: ae9f263b7c07f764a80327911d8de7c7, type: 3}
+      propertyPath: upgradeScreen
+      value: 
+      objectReference: {fileID: 374332841}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ae9f263b7c07f764a80327911d8de7c7, type: 3}
+--- !u!114 &4150133669329179006 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8677087556486877662, guid: ae9f263b7c07f764a80327911d8de7c7, type: 3}
+  m_PrefabInstance: {fileID: 4150133669329179005}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6bcf8378ed3d4a5d9fb6457b459a3d45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

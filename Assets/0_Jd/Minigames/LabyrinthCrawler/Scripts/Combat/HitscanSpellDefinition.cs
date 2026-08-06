@@ -15,11 +15,10 @@ namespace Sol.Minigames
         [SerializeField, Min(0.5f)] private float range = 30f;
 
         [Header("Beam Visual")]
-        [Tooltip("Authored layered beam prefab (core + glow + motes). Falls back to a runtime LineRenderer when empty.")]
+        [Tooltip("Required authored layered beam prefab (core + glow + motes).")]
         [SerializeField] private HitscanBeam beamPrefab;
 
         [SerializeField] private Color beamColor = new Color(0.4f, 0.9f, 1f, 1f);
-        [SerializeField, Min(0.001f)] private float beamWidth = 0.05f;
         [SerializeField, Min(0.01f)] private float beamLifeSeconds = 0.08f;
 
         public float Range => range;
@@ -28,7 +27,6 @@ namespace Sol.Minigames
         // allocate a GameObject + Material every shot. Recreated when a scene
         // unload destroys the beam object.
         private HitscanBeam beam;
-        private Material beamMaterial;
 
         public override void Cast(in SpellCastContext context)
         {
@@ -104,30 +102,10 @@ namespace Sol.Minigames
                 return true;
             }
 
-            if (beamMaterial == null)
-            {
-                Shader shader = Shader.Find("Sprites/Default");
-                if (shader == null)
-                {
-                    return false;
-                }
-
-                beamMaterial = new Material(shader); // one shared material per spell asset
-            }
-
-            GameObject beamObject = new GameObject($"{name} Beam");
-            LineRenderer line = beamObject.AddComponent<LineRenderer>();
-            line.useWorldSpace = true;
-            line.positionCount = 2;
-            line.startWidth = beamWidth;
-            line.endWidth = beamWidth;
-            line.startColor = beamColor;
-            line.endColor = beamColor;
-            line.sharedMaterial = beamMaterial;
-            line.enabled = false;
-
-            beam = beamObject.AddComponent<HitscanBeam>();
-            return true;
+            Debug.LogError(
+                $"Hitscan spell '{name}' requires an authored HitscanBeam prefab.",
+                this);
+            return false;
         }
     }
 }

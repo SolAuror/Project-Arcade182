@@ -109,7 +109,6 @@ public class AIPlayer3D : MonoBehaviour
     private ShotCandidate plannedShot;
     private LineRenderer telegraphLine;
     private Light telegraphGlow;
-    private Material telegraphMaterial;
     private TrailRenderer dashTrail;
     private AudioSource feedbackAudio;
     private float reactionTimer;
@@ -208,14 +207,6 @@ public class AIPlayer3D : MonoBehaviour
         if (telegraphGlow != null)
         {
             telegraphGlow.intensity = Mathf.Lerp(0.8f, 2f, pulse);
-        }
-    }
-
-    private void OnDestroy()
-    {
-        if (telegraphMaterial != null)
-        {
-            Destroy(telegraphMaterial);
         }
     }
 
@@ -852,15 +843,18 @@ public class AIPlayer3D : MonoBehaviour
     private void BuildTelegraph()
     {
         Transform authoredTelegraph = transform.Find("AI Shot Telegraph");
-        GameObject telegraphObject = authoredTelegraph != null
-            ? authoredTelegraph.gameObject
-            : new GameObject("AI Shot Telegraph");
-        telegraphObject.transform.SetParent(transform, false);
+        if (authoredTelegraph == null)
+        {
+            Debug.LogError("AirFooty AI is missing its authored AI Shot Telegraph.", this);
+            return;
+        }
+        GameObject telegraphObject = authoredTelegraph.gameObject;
 
         telegraphLine = telegraphObject.GetComponent<LineRenderer>();
         if (telegraphLine == null)
         {
-            telegraphLine = telegraphObject.AddComponent<LineRenderer>();
+            Debug.LogError("AirFooty AI Shot Telegraph is missing its authored LineRenderer.", telegraphObject);
+            return;
         }
         telegraphLine.useWorldSpace = true;
         telegraphLine.loop = false;
@@ -878,21 +872,18 @@ public class AIPlayer3D : MonoBehaviour
             telegraphColor.b,
             0.16f);
 
-        Shader shader = Shader.Find("Sprites/Default");
-        if (telegraphLine.sharedMaterial == null && shader != null)
+        if (telegraphLine.sharedMaterial == null)
         {
-            telegraphMaterial = new Material(shader)
-            {
-                name = "AI Shot Telegraph (Runtime)"
-            };
-            telegraphLine.sharedMaterial = telegraphMaterial;
+            Debug.LogError("AirFooty AI Shot Telegraph is missing its authored material.", telegraphLine);
+            return;
         }
         telegraphLine.enabled = false;
 
         dashTrail = GetComponent<TrailRenderer>();
         if (dashTrail == null)
         {
-            dashTrail = gameObject.AddComponent<TrailRenderer>();
+            Debug.LogError("AirFooty AI is missing its authored dash TrailRenderer.", this);
+            return;
         }
         dashTrail.time = 0.26f;
         dashTrail.minVertexDistance = 0.04f;
@@ -913,7 +904,8 @@ public class AIPlayer3D : MonoBehaviour
         telegraphGlow = telegraphObject.GetComponent<Light>();
         if (telegraphGlow == null)
         {
-            telegraphGlow = telegraphObject.AddComponent<Light>();
+            Debug.LogError("AirFooty AI Shot Telegraph is missing its authored Light.", telegraphObject);
+            return;
         }
         telegraphGlow.type = LightType.Point;
         telegraphGlow.color = telegraphColor;
@@ -924,11 +916,12 @@ public class AIPlayer3D : MonoBehaviour
         feedbackAudio = GetComponent<AudioSource>();
         if (feedbackAudio == null)
         {
-            feedbackAudio = gameObject.AddComponent<AudioSource>();
-            feedbackAudio.playOnAwake = false;
-            feedbackAudio.spatialBlend = 0.25f;
-            feedbackAudio.dopplerLevel = 0f;
+            Debug.LogError("AirFooty AI is missing its authored feedback AudioSource.", this);
+            return;
         }
+        feedbackAudio.playOnAwake = false;
+        feedbackAudio.spatialBlend = 0.25f;
+        feedbackAudio.dopplerLevel = 0f;
     }
 
     private void UpdateTelegraphPath()

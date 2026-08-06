@@ -18,12 +18,12 @@ namespace Sol.Minigames.EditorTools
     {
         private static readonly string[] RoomPrefabPaths =
         {
-            "Assets/0_Jd/Minigames/LabyrinthCrawler/DungeonRooms/DungeonCell.prefab",
-            "Assets/0_Jd/Minigames/LabyrinthCrawler/DungeonRooms/DungeonCellLit.prefab",
-            "Assets/0_Jd/Minigames/LabyrinthCrawler/DungeonRooms/DungeonSpawn.prefab",
-            "Assets/0_Jd/Minigames/LabyrinthCrawler/DungeonRooms/DungeonExit.prefab",
-            "Assets/0_Jd/Minigames/LabyrinthCrawler/DungeonRooms/UpperCell.prefab",
-            "Assets/0_Jd/Minigames/LabyrinthCrawler/DungeonRooms/UpperCell_Half.prefab",
+            "Assets/0_Jd/Minigames/LabyrinthCrawler/Prefabs/DungeonRooms/DungeonCell.prefab",
+            "Assets/0_Jd/Minigames/LabyrinthCrawler/Prefabs/DungeonRooms/DungeonCellLit.prefab",
+            "Assets/0_Jd/Minigames/LabyrinthCrawler/Prefabs/DungeonRooms/DungeonSpawn.prefab",
+            "Assets/0_Jd/Minigames/LabyrinthCrawler/Prefabs/DungeonRooms/DungeonExit.prefab",
+            "Assets/0_Jd/Minigames/LabyrinthCrawler/Prefabs/DungeonRooms/UpperCell.prefab",
+            "Assets/0_Jd/Minigames/LabyrinthCrawler/Prefabs/DungeonRooms/UpperCell_Half.prefab",
         };
 
         [MenuItem("Sol/Labyrinth/Wire Wall Sockets")]
