@@ -29,6 +29,7 @@ namespace Finn.Minigames
     /// reference wired by the builder so the machine stays one self-contained unit.
     /// </summary>
     [AddComponentMenu("Finn/Fungus Pachinko/Fungus Game Controller")]
+    [RequireComponent(typeof(AudioSource))]
     public class FungusGameController : MonoBehaviour
     {
         [Header("Rig")]
@@ -48,6 +49,16 @@ namespace Finn.Minigames
         [SerializeField] private string returnSceneName = "Sc_ArcadeHub";
         [SerializeField] private float returnDelaySeconds = 4f;
 
+        [Header("Audio")]
+        [SerializeField] private AudioClip ballFinishedSound;
+        [SerializeField] private float ballFinishedVolume = 1f;
+
+        [SerializeField] private AudioClip gameOverSound;
+        [SerializeField] private float gameOverVolume = 1f;
+
+        [SerializeField] private AudioClip allLightsOutSound;
+        [SerializeField] private float allLightsOutVolume = 1f;
+
         public int Score { get; private set; }
         public int BallsRemaining { get; private set; }
         public FungusGamePhase Phase { get; private set; } = FungusGamePhase.Aiming;
@@ -57,10 +68,12 @@ namespace Finn.Minigames
         public event Action<FungusGameResult> GameEnded;
 
         private FungusBall activeBall;
+        private AudioSource audioSource;
 
         private void Awake()
         {
             BallsRemaining = ballsPerGame;
+            audioSource = GetComponent<AudioSource>();
         }
 
         private void OnEnable()
@@ -104,7 +117,9 @@ namespace Finn.Minigames
 
         private void HandleDropRequested()
         {
-            if (Phase != FungusGamePhase.Aiming || BallsRemaining <= 0 || ballPrefab == null)
+            if (Phase != FungusGamePhase.Aiming ||
+                BallsRemaining <= 0 ||
+                ballPrefab == null)
             {
                 return;
             }
@@ -112,7 +127,13 @@ namespace Finn.Minigames
             BallsRemaining--;
             BallsChanged?.Invoke(BallsRemaining);
 
-            activeBall = Instantiate(ballPrefab, dropper.BallSpawnPoint.position, Quaternion.identity, transform);
+            activeBall = Instantiate(
+                ballPrefab,
+                dropper.BallSpawnPoint.position,
+                Quaternion.identity,
+                transform
+            );
+
             activeBall.Finished += HandleBallFinished;
 
             Phase = FungusGamePhase.BallInPlay;
@@ -128,27 +149,48 @@ namespace Finn.Minigames
 
             Score++;
             ScoreChanged?.Invoke(Score);
-            DamagePopup.SpawnText(boardLight.transform.position, "+1", new Color(1f, 0.9f, 0.3f));
+
+            DamagePopup.SpawnText(
+                boardLight.transform.position,
+                "+1",
+                new Color(1f, 0.9f, 0.3f)
+            );
         }
 
         private void HandleAllLightsOut()
         {
-            // Perfect clear ends the game on the spot — nothing left on the board to score.
-            if (Phase != FungusGamePhase.GameOver)
+            if (Phase == FungusGamePhase.GameOver)
             {
-                EndGame();
+                return;
             }
+
+            if (audioSource != null && audioSource.isPlaying)
+            {
+                audioSource.Stop();
+            }
+
+            // Play the special victory sound immediately when
+            // the final light is collected.
+            if (allLightsOutSound != null && audioSource != null)
+            {
+                audioSource.PlayOneShot(
+                    allLightsOutSound,
+                    allLightsOutVolume
+                );
+            }
+
+            EndGame();
         }
 
         private void HandleBallFinished(FungusBall ball)
         {
-            ball.Finished -= HandleBallFinished;
             if (activeBall == ball)
             {
                 activeBall = null;
             }
 
-            Destroy(ball.gameObject);
+            // This is a normal ball finish, so play the ball-finished sound.
+            DestroyBall(ball, true);
 
             if (Phase == FungusGamePhase.GameOver)
             {
@@ -158,7 +200,11 @@ namespace Finn.Minigames
             if (BallsRemaining > 0)
             {
                 Phase = FungusGamePhase.Aiming;
-                dropper.AllowInput = true;
+
+                if (dropper != null)
+                {
+                    dropper.AllowInput = true;
+                }
             }
             else
             {
@@ -166,34 +212,93 @@ namespace Finn.Minigames
             }
         }
 
+        /// <summary>
+        /// Destroys the ball.
+        /// playFinishSound controls whether the normal ball-finished sound plays.
+        /// </summary>
+        private void DestroyBall(FungusBall ball, bool playFinishSound)
+        {
+            if (ball == null)
+            {
+                return;
+            }
+
+            if (playFinishSound &&
+                ballFinishedSound != null &&
+                audioSource != null)
+            {
+                audioSource.PlayOneShot(
+                    ballFinishedSound,
+                    ballFinishedVolume
+                );
+            }
+
+            ball.Finished -= HandleBallFinished;
+
+            Destroy(ball.gameObject);
+        }
+
         private void EndGame()
         {
             Phase = FungusGamePhase.GameOver;
+
             if (dropper != null)
             {
                 dropper.AllowInput = false;
             }
 
+            bool allOut = lightBank != null && lightBank.AllOut;
+
+            // If all lights were collected, the special victory sound
+            // has already played. Destroy the active ball silently so
+            // we don't immediately play the normal ball-finished sound.
             if (activeBall != null)
             {
-                activeBall.Finished -= HandleBallFinished;
-                Destroy(activeBall.gameObject);
+                DestroyBall(activeBall, !allOut);
                 activeBall = null;
             }
 
-            bool allOut = lightBank != null && lightBank.AllOut;
-            int finalScore = Score + (allOut ? allLightsBonusPoints : 0);
+            int finalScore = Score +
+                             (allOut ? allLightsBonusPoints : 0);
 
             int ticketsAwarded;
+
             PlayerScoreCarrier carrier = PlayerScoreCarrier.FindForPlayer();
+
             if (carrier != null)
             {
-                ticketsAwarded = carrier.RecordScore(minigameId, finalScore, ticketsPerPoint).TicketsAwarded;
+                ticketsAwarded = carrier
+                    .RecordScore(
+                        minigameId,
+                        finalScore,
+                        ticketsPerPoint
+                    )
+                    .TicketsAwarded;
             }
             else
             {
-                Debug.LogWarning("FungusGameController: no PlayerScoreCarrier found; tickets were not persisted.", this);
-                ticketsAwarded = Mathf.FloorToInt(finalScore * Mathf.Max(0f, ticketsPerPoint));
+                Debug.LogWarning(
+                    "FungusGameController: no PlayerScoreCarrier found; " +
+                    "tickets were not persisted.",
+                    this
+                );
+
+                ticketsAwarded = Mathf.FloorToInt(
+                    finalScore *
+                    Mathf.Max(0f, ticketsPerPoint)
+                );
+            }
+
+            // Only play the normal game-over sound if this was NOT
+            // a perfect clear.
+            if (!allOut &&
+                gameOverSound != null &&
+                audioSource != null)
+            {
+                audioSource.PlayOneShot(
+                    gameOverSound,
+                    gameOverVolume
+                );
             }
 
             GameEnded?.Invoke(new FungusGameResult
@@ -210,15 +315,21 @@ namespace Finn.Minigames
         {
             yield return new WaitForSeconds(returnDelaySeconds);
 
-            if (!string.IsNullOrEmpty(returnSceneName) && Application.CanStreamedLevelBeLoaded(returnSceneName))
+            if (!string.IsNullOrEmpty(returnSceneName) &&
+                Application.CanStreamedLevelBeLoaded(returnSceneName))
             {
-                SceneManager.LoadScene(returnSceneName, LoadSceneMode.Single);
+                SceneManager.LoadScene(
+                    returnSceneName,
+                    LoadSceneMode.Single
+                );
             }
             else
             {
                 Debug.LogWarning(
-                    $"FungusGameController: return scene '{returnSceneName}' is not loadable; staying in the minigame scene.",
-                    this);
+                    $"FungusGameController: return scene '{returnSceneName}' " +
+                    "is not loadable; staying in the minigame scene.",
+                    this
+                );
             }
         }
     }

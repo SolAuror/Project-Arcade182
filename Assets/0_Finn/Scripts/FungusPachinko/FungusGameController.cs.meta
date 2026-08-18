@@ -1,2 +1,15 @@
 fileFormatVersion: 2
 guid: 544c944044c1aff4cb27c3c638d428a8
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - dropper: {instanceID: 0}
+  - lightBank: {instanceID: 0}
+  - ballPrefab: {instanceID: 0}
+  - ballFinishedSound: {fileID: 8300000, guid: 9ff9780e189d1e941b459e350562487b, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
